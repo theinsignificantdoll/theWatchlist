@@ -1,6 +1,7 @@
 import PySimpleGUI as sg
 import csv
 import os
+import webbrowser
 
 sg.theme("DarkBrown4")
 
@@ -48,8 +49,12 @@ def sortshows(lst):
             continue
         dct[n[-1]] = [n]
     lt = []
+    slist = []
     for n in dct:
-        lt += dct[n]
+        slist.append(int(n))
+    slist.sort()
+    for n in slist:
+        lt += dct[str(n)]
     lt.reverse()
     return lt
 
@@ -190,7 +195,7 @@ class openwin:
                 break
 
             elif event[:9] == "gotolink:" and len(event) > 9:
-                os.system(f"start {event[9:]}")
+                webbrowser.open(event[9:])
 
             elif event[:7] == "delete:":
                 delme = -1
