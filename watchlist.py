@@ -80,6 +80,8 @@ def sortshows(lst):
 
 
 def gethighestid(lst):
+    if len(lst) == 0:
+        return -1
     return max([int(l[0]) for l in lst])
 
 
