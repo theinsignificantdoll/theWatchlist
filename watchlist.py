@@ -176,7 +176,7 @@ def showprop(poptitle="Show Editor", popshowname="", popep="1", popseas="1", pop
 
 
 def butt(button_text="", key=None, tooltip=None, button_color=(False, None), border_width=None, size=(None, None),
-         mouseover_colors=sg.theme_background_color(), disabled=False, ):
+         mouseover_colors=sg.theme_background_color(), disabled=False,):
     if not button_color[0]:
         button_color = (buttoncolor, button_color[1])
     return sg.Button(button_text=button_text, key=key, tooltip=tooltip, button_color=button_color,
@@ -219,6 +219,7 @@ class openwin:
                                     text_color=f"{txtcolor if tshow[6] == '0' else greyedcolor}")])
             linkcolumn.append([butt("LINK", key=f"gotolink:{tshow[4]}", tooltip=tshow[4], border_width=0)])
             propcolumn.append([butt("*", key=f"properties{tshow[0]}", border_width=0)])
+
         showscol = [[sg.Col([[delcolumn[ind][0], titcolumn[ind][0]] for ind in range(len(titcolumn))]),
                      sg.Col([[emincolumn[ind][0], ecolumn[ind][0], scolumn[ind][0], linkcolumn[ind][0], propcolumn[ind][0]] for ind in range(len(titcolumn))])]]
 
@@ -236,8 +237,23 @@ class openwin:
                         element_padding=(3, 1), use_custom_titlebar=False, titlebar_font=(fonttype, 13),
                         titlebar_text_color=txtcolor)
 
+        for e in linkcolumn:
+            e[0].set_cursor("hand2")
+        for e in ecolumn:
+            e[0].set_cursor("plus")
+        for e in emincolumn:
+            e[0].set_cursor("plus")
+        for e in titcolumn:
+            e[0].set_cursor("plus")
+        for e in delcolumn:
+            e[0].set_cursor("plus")
+        for e in propcolumn:
+            e[0].set_cursor("plus")
+
         win["AddShow"].block_focus()
+        win["AddShow"].set_cursor("plus")
         win["preferences"].block_focus()
+        win["preferences"].set_cursor("plus")
 
         self.win = win
 
