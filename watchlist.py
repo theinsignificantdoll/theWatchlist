@@ -13,6 +13,8 @@ greyedcolor = "#404040"
 txtcolor = sg.theme_text_color()
 buttoncolor = txtcolor
 settingsfile = "settings.csv"
+initialwinsize = (400, 200)
+initialwinpos = (50, 50)
 
 
 if not os.path.isfile(savefile):
@@ -23,6 +25,7 @@ if not os.path.isfile(settingsfile):
     with open(settingsfile, "w", newline="") as f:
         writer = csv.writer(f, delimiter=delimiter)
         writer.writerow([fontsize, fonttype, txtcolor, greyedcolor, buttoncolor])
+        writer.writerow([*initialwinsize, *initialwinpos])
 
 
 def isvalidcolor(col):
@@ -36,9 +39,13 @@ def isvalidcolor(col):
 
 
 def writesettings():
+    global initialwinsize
+    global initialwinpos
     with open(settingsfile, "w", newline="") as csvfile:
         writer = csv.writer(csvfile, delimiter=delimiter, quotechar="|")
         writer.writerow([fontsize, fonttype, txtcolor, greyedcolor, buttoncolor])
+        print("writing", [*initialwinsize, *initialwinpos])
+        writer.writerow([*initialwinsize, *initialwinpos])
 
 
 def loadsettings():
@@ -47,14 +54,20 @@ def loadsettings():
     global txtcolor
     global greyedcolor
     global buttoncolor
+    global initialwinpos
+    global initialwinsize
     with open(settingsfile, newline="") as csvfile:
         reader = csv.reader(csvfile, delimiter=delimiter, quotechar="|")
-        for row in reader:
-            fontsize = row[0]
-            fonttype = row[1]
-            txtcolor = row[2]
-            greyedcolor = row[3]
-            buttoncolor = row[4]
+        row = reader.__next__()
+        fontsize = row[0]
+        fonttype = row[1]
+        txtcolor = row[2]
+        greyedcolor = row[3]
+        buttoncolor = row[4]
+
+        windata = reader.__next__()
+        initialwinsize = (windata[0], windata[1])
+        initialwinpos = (windata[2], windata[3])
 
 
 loadsettings()
@@ -177,6 +190,8 @@ shouldrestart = True
 class openwin:
     def __init__(self):
         global shouldrestart
+        global initialwinsize
+        global initialwinpos
 
         self.shouldbreak = False
 
@@ -207,14 +222,19 @@ class openwin:
         showscol = [[sg.Col([[delcolumn[ind][0], titcolumn[ind][0]] for ind in range(len(titcolumn))]),
                      sg.Col([[emincolumn[ind][0], ecolumn[ind][0], scolumn[ind][0], linkcolumn[ind][0], propcolumn[ind][0]] for ind in range(len(titcolumn))])]]
 
+        topcol = [[butt(" + ", key="AddShow", border_width=0),
+                   butt(" * ", key="preferences", border_width=0)]]
+
         layout = [
-                  [sg.Text("Watchlist"), butt(" + ", key="AddShow", border_width=0),
-                   butt(" * ", key="preferences", border_width=0)],
+                  [sg.Col(topcol)],
                   [sg.Column(showscol, vertical_scroll_only=True, scrollable=True, expand_x=True, expand_y=True)],
                  ]
 
         win = sg.Window(title="Watchlist", layout=layout, auto_size_text=True, auto_size_buttons=True, resizable=True,
-                        size=(800, 400), font=(fonttype, int(fontsize)),  border_depth=5, finalize=True)
+                        size=initialwinsize, font=(fonttype, int(fontsize)),  border_depth=0, finalize=True,
+                        location=initialwinpos, titlebar_background_color=sg.theme_background_color(), margins=(0, 0),
+                        element_padding=(3, 1), use_custom_titlebar=False, titlebar_font=(fonttype, 13),
+                        titlebar_text_color=txtcolor)
 
         win["AddShow"].block_focus()
         win["preferences"].block_focus()
@@ -222,9 +242,14 @@ class openwin:
         self.win = win
 
         while True:
-            event, values = win.read()
+            initialwinpos = win.CurrentLocation()
+            initialwinsize = win.Size
+            event, values = win.read(timeout=200)
 
-            if event == sg.WIN_CLOSED or self.shouldbreak:
+            if event == "__TIMEOUT__":
+                pass
+            elif event == sg.WIN_CLOSED or self.shouldbreak or event == "Close":
+                self.close()
                 break
 
             elif event[:9] == "gotolink:" and len(event) > 9:
@@ -292,9 +317,7 @@ class openwin:
                         shows[ind][3] = data["popseas"]
                         shows[ind][4] = data["poplink"]
                         shows[ind][5] = data["popweight"]
-                        writesavefile(shows)
-                        shouldrestart = True
-                        win.close()
+                        self.restart()
                         return
 
             elif event == "preferences":
@@ -305,17 +328,21 @@ class openwin:
                 if data == 1:
                     continue
                 shows.append([str(gethighestid(shows)+1), data["popshowname"], data["popep"], data["popseas"], data["poplink"], data["popweight"], "0"])
-                writesavefile(shows)
-                shouldrestart = True
-                win.close()
+                self.restart()
                 break
+
+    def close(self):
+        global initialwinsize
+        global initialwinpos
+        writesavefile(shows)
+        writesettings()
+        self.shouldbreak = True
+        self.win.close()
 
     def restart(self):
         global shouldrestart
-        writesavefile(shows)
         shouldrestart = True
-        self.shouldbreak = True
-        self.win.close()
+        self.close()
 
     def updatepreferences(self):
         global fontsize
