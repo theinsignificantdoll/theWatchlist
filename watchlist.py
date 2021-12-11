@@ -9,9 +9,8 @@ savefile = "saved.csv"
 delimiter = "\\"
 fontsize = 15
 fonttype = "Helvetica"
-greyedcolor = "#404040"
-txtcolor = sg.theme_text_color()
-buttoncolor = txtcolor
+txtcolor = [sg.theme_text_color(), "#404040"]
+buttoncolor = txtcolor[0]
 settingsfile = "settings.csv"
 initialwinsize = (400, 200)
 initialwinpos = (50, 50)
@@ -24,8 +23,16 @@ if not os.path.isfile(savefile):
 if not os.path.isfile(settingsfile):
     with open(settingsfile, "w", newline="") as f:
         writer = csv.writer(f, delimiter=delimiter)
-        writer.writerow([fontsize, fonttype, txtcolor, greyedcolor, buttoncolor])
+        writer.writerow([fontsize, fonttype, "-".join(txtcolor), buttoncolor])
         writer.writerow([*initialwinsize, *initialwinpos])
+
+
+def maxgreycolor():
+    global shows
+    global txtcolor
+    for s in shows:
+        if int(s[6]) >= len(txtcolor):
+            s[6] = str(len(txtcolor)-1)
 
 
 def isvalidcolor(col):
@@ -43,7 +50,7 @@ def writesettings():
     global initialwinpos
     with open(settingsfile, "w", newline="") as csvfile:
         writer = csv.writer(csvfile, delimiter=delimiter, quotechar="|")
-        writer.writerow([fontsize, fonttype, txtcolor, greyedcolor, buttoncolor])
+        writer.writerow([fontsize, fonttype, "-".join(txtcolor), buttoncolor])
         writer.writerow([*initialwinsize, *initialwinpos])
 
 
@@ -60,9 +67,8 @@ def loadsettings():
         row = reader.__next__()
         fontsize = row[0]
         fonttype = row[1]
-        txtcolor = row[2]
-        greyedcolor = row[3]
-        buttoncolor = row[4]
+        txtcolor = row[2].split("-")
+        buttoncolor = row[3]
 
         windata = reader.__next__()
         initialwinsize = (windata[0], windata[1])
@@ -194,7 +200,7 @@ class openwin:
 
         self.shouldbreak = False
 
-        sg.theme_text_color(txtcolor)
+        sg.theme_text_color(txtcolor[0])
         sg.theme_element_text_color(buttoncolor)
 
         delcolumn = []
@@ -204,18 +210,20 @@ class openwin:
         scolumn = []
         linkcolumn = []
         propcolumn = []
+
         for show in shows:
             tshow = stringify(show)
+
             delcolumn.append([butt("DEL", key=f"delete:{tshow[0]}", mouseover_colors="#AA0000",
                                    border_width=0)])
             titcolumn.append([sg.Text(tshow[1], key=f"title:{tshow[0]}", enable_events=True,
-                                      text_color=f"{txtcolor if tshow[6] == '0' else greyedcolor}")])
+                                      text_color=f"{txtcolor[int(tshow[6])]}")])
             emincolumn.append([sg.Text(f"Ep:", key=f"Eminus{tshow[0]}", enable_events=True,
-                                       text_color=f"{txtcolor if tshow[6] == '0' else greyedcolor}")])
+                                       text_color=f"{txtcolor[int(tshow[6])]}")])
             ecolumn.append([sg.Text(f"{tshow[2]}", key=f"Eplus{tshow[0]}", enable_events=True, size=(4, 1),
-                                    text_color=f"{txtcolor if tshow[6] == '0' else greyedcolor}")])
+                                    text_color=f"{txtcolor[int(tshow[6])]}")])
             scolumn.append([sg.Text(f"S{tshow[3]}", size=(4, 1), key=f"Season{tshow[0]}",
-                                    text_color=f"{txtcolor if tshow[6] == '0' else greyedcolor}")])
+                                    text_color=f"{txtcolor[int(tshow[6])]}")])
             linkcolumn.append([butt("LINK", key=f"gotolink:{tshow[4]}", tooltip=tshow[4], border_width=0)])
             propcolumn.append([butt("*", key=f"properties{tshow[0]}", border_width=0)])
 
@@ -234,7 +242,7 @@ class openwin:
                         size=initialwinsize, font=(fonttype, int(fontsize)),  border_depth=0, finalize=True,
                         location=initialwinpos, titlebar_background_color=sg.theme_background_color(), margins=(0, 0),
                         element_padding=(3, 1), use_custom_titlebar=False, titlebar_font=(fonttype, 13),
-                        titlebar_text_color=txtcolor)
+                        titlebar_text_color=txtcolor[0])
 
         for e in linkcolumn:
             e[0].set_cursor("hand2")
@@ -262,7 +270,7 @@ class openwin:
             event, values = win.read(timeout=200)
 
             if event == "__TIMEOUT__":
-                pass
+                continue
             elif event == sg.WIN_CLOSED or self.shouldbreak or event == "Close":
                 self.close()
                 break
@@ -306,18 +314,14 @@ class openwin:
                 tID = event[6:]
                 for ind, n in enumerate(shows):
                     if n[0] == tID:
-                        if n[6] == "1":   # Is greyed; True
-                            shows[ind][6] = "0"
-                            win[event].update(text_color=txtcolor)  # Activate
-                            win[f"Eplus{tID}"].update(text_color=txtcolor)  # Activate
-                            win[f"Eminus{tID}"].update(text_color=txtcolor)  # Activate
-                            win[f"Season{tID}"].update(text_color=txtcolor)  # Activate
-                        else:
-                            shows[ind][6] = "1"
-                            win[event].update(text_color=greyedcolor)  # Deactivate
-                            win[f"Eplus{tID}"].update(text_color=greyedcolor)  # Deactivate
-                            win[f"Eminus{tID}"].update(text_color=greyedcolor)  # Deactivate
-                            win[f"Season{tID}"].update(text_color=greyedcolor)  # Deactivate
+                        shows[ind][6] = str(int(shows[ind][6])+1)
+                        if int(shows[ind][6]) >= len(txtcolor):
+                            shows[ind][6] = 0
+                        win[event].update(text_color=txtcolor[int(n[6])])
+                        win[f"Eplus{tID}"].update(text_color=txtcolor[int(n[6])])
+                        win[f"Eminus{tID}"].update(text_color=txtcolor[int(n[6])])
+                        win[f"Season{tID}"].update(text_color=txtcolor[int(n[6])])
+
                 writesavefile(shows)
 
             elif event[:10] == "properties":
@@ -363,18 +367,15 @@ class openwin:
         global fontsize
         global fonttype
         global txtcolor
-        global greyedcolor
         global buttoncolor
         col1 = [[sg.T("Font size:")],
                 [sg.T("Font type:")],
                 [sg.T("Text Color:")],
-                [sg.T("Greyed Color")],
                 [sg.T("Button Color")]]
-        col2 = [[sg.In(fontsize, key="fsize")],
-                [sg.In(fonttype, key="ftype")],
-                [sg.In(txtcolor, key="txtcolor")],
-                [sg.In(greyedcolor, key="greyedcolor")],
-                [sg.In(buttoncolor, key="buttoncolor")]]
+        col2 = [[sg.In(fontsize, key="fsize", tooltip="Any integer")],
+                [sg.In(fonttype, key="ftype", tooltip="Any font name, as one might use in word or libreOffice Writer")],
+                [sg.In("-".join(txtcolor), key="txtcolor", tooltip="Ex: '#ff0000-#404040' or '#ff0000-#404040-#878787'")],
+                [sg.In(buttoncolor, key="buttoncolor", tooltip="A single color, Ex: '#e0e0e0'")]]
         twin = sg.Window("Preferences", layout=[
             [sg.Col(col1), sg.Col(col2)],
             [sg.Button("Save")]], default_element_size=(16, 1), font=(fonttype, fontsize))
@@ -386,16 +387,24 @@ class openwin:
             elif e == "Save":
                 try:
                     int(twin["fsize"].get())
-                    if not (isvalidcolor(twin["txtcolor"].get()) and isvalidcolor(twin["greyedcolor"].get()) and isvalidcolor(twin["buttoncolor"].get())):
+                    if not isvalidcolor(twin["buttoncolor"].get()):
                         raise ValueError
+
+                    gotcolors = twin["txtcolor"].get().split("-")
+                    if len(gotcolors) <= 0:
+                        raise ValueError
+                    for col in gotcolors:
+                        if not isvalidcolor(col):
+                            raise ValueError
+
                 except ValueError:
                     sg.popup_error("Unreadable value")
                     continue
                 twin.close()
                 fontsize = twin["fsize"].get()
                 fonttype = twin["ftype"].get()
-                txtcolor = twin["txtcolor"].get()
-                greyedcolor = twin["greyedcolor"].get()
+                txtcolor = twin["txtcolor"].get().split("-")
+                maxgreycolor()
                 buttoncolor = twin["buttoncolor"].get()
                 writesettings()
                 self.restart()
