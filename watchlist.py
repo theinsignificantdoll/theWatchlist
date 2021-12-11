@@ -44,7 +44,6 @@ def writesettings():
     with open(settingsfile, "w", newline="") as csvfile:
         writer = csv.writer(csvfile, delimiter=delimiter, quotechar="|")
         writer.writerow([fontsize, fonttype, txtcolor, greyedcolor, buttoncolor])
-        print("writing", [*initialwinsize, *initialwinpos])
         writer.writerow([*initialwinsize, *initialwinpos])
 
 
@@ -257,7 +256,7 @@ class openwin:
 
         self.win = win
 
-        while True:
+        while not self.shouldbreak:
             initialwinpos = win.CurrentLocation()
             initialwinsize = win.Size
             event, values = win.read(timeout=200)
@@ -378,7 +377,7 @@ class openwin:
                 [sg.In(buttoncolor, key="buttoncolor")]]
         twin = sg.Window("Preferences", layout=[
             [sg.Col(col1), sg.Col(col2)],
-            [sg.Button("Save")]], default_element_size=(8, 1))
+            [sg.Button("Save")]], default_element_size=(16, 1), font=(fonttype, fontsize))
 
         while True:
             e, v = twin.read()
