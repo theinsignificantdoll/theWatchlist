@@ -5,6 +5,8 @@ import webbrowser
 
 sg.theme("DarkBrown4")
 
+
+rightclickfontsize = 10
 savefile = "saved.csv"
 delimiter = "\\"
 fontsize = 15
@@ -138,7 +140,7 @@ def writesavefile(tshows, svfile=savefile, deli=delimiter):
             writer.writerow([str(data) for data in show])
 
 
-def showprop(poptitle="Show Editor", popshowname="", popep="1", popseas="1", poplink="", popweight="0"):
+def showprop(poptitle="Show Editor", popshowname="", popep="0", popseas="1", poplink="", popweight="0"):
     button, data = sg.Window(poptitle,
                         [
                          [sg.Column([
@@ -241,7 +243,7 @@ class openwin:
         win = sg.Window(title="Watchlist", layout=layout, auto_size_text=True, auto_size_buttons=True, resizable=True,
                         size=initialwinsize, font=(fonttype, int(fontsize)),  border_depth=0, finalize=True,
                         location=initialwinpos, titlebar_background_color=sg.theme_background_color(), margins=(0, 0),
-                        element_padding=(3, 1), use_custom_titlebar=False, titlebar_font=(fonttype, 13),
+                        element_padding=(3, 1), use_custom_titlebar=False,
                         titlebar_text_color=txtcolor[0])
 
         for e in linkcolumn:
