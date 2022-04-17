@@ -17,6 +17,9 @@ settingsfile = "settings.csv"
 initialwinsize = (400, 200)
 initialwinpos = (50, 50)
 
+showall = False
+showamount = 32
+
 
 if not os.path.isfile(savefile):
     with open(savefile, "w") as f:
@@ -199,6 +202,8 @@ class openwin:
         global shouldrestart
         global initialwinsize
         global initialwinpos
+        global showall
+        global showamount
 
         self.shouldbreak = False
 
@@ -213,7 +218,8 @@ class openwin:
         linkcolumn = []
         propcolumn = []
 
-        for show in shows:
+        for show in shows if showall else shows[:min(len(shows), showamount)]:  # uses the raw shows list if showall is
+            #  True, otherwise shortening it to the -showamount- index.
             tshow = stringify(show)
 
             delcolumn.append([butt("DEL", key=f"delete:{tshow[0]}", mouseover_colors="#AA0000",
@@ -233,7 +239,8 @@ class openwin:
                      sg.Col([[emincolumn[ind][0], ecolumn[ind][0], scolumn[ind][0], linkcolumn[ind][0], propcolumn[ind][0]] for ind in range(len(titcolumn))])]]
 
         topcol = [[butt(" + ", key="AddShow", border_width=0),
-                   butt(" * ", key="preferences", border_width=0)]]
+                   butt(" * ", key="preferences", border_width=0),
+                   butt(" ^ ", key="toggleshowall", border_width=0)]]
 
         layout = [
                   [sg.Col(topcol)],
@@ -344,6 +351,9 @@ class openwin:
             elif event == "preferences":
                 self.updatepreferences()
 
+            elif event == "toggleshowall":
+                self.toggleshowall()
+
             elif event == "AddShow":
                 data = showprop()
                 if data == 1:
@@ -364,6 +374,11 @@ class openwin:
         global shouldrestart
         shouldrestart = True
         self.close()
+
+    def toggleshowall(self):
+        global showall
+        showall = not showall
+        self.restart()
 
     def updatepreferences(self):
         global fontsize
