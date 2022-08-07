@@ -331,7 +331,7 @@ class openwin:
                         win[event].update(text_color=txtcolor[int(n[6])])
                         win[f"Eplus{tID}"].update(text_color=txtcolor[int(n[6])])
                         win[f"Eminus{tID}"].update(text_color=txtcolor[int(n[6])])
-                        win[f"Season{tID}"].update(text_color=txtcolor[int(n[6])])
+                        win[f"season:{tID}"].update(text_color=txtcolor[int(n[6])])
 
                 writesavefile(shows)
             elif event[:7] == "season:":
