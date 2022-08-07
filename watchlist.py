@@ -1,4 +1,6 @@
 import PySimpleGUI as sg
+import mouse
+import time
 import csv
 import os
 import webbrowser
@@ -230,17 +232,17 @@ class openwin:
                                        text_color=f"{txtcolor[int(tshow[6])]}")])
             ecolumn.append([sg.Text(f"{tshow[2]}", key=f"Eplus{tshow[0]}", enable_events=True, size=(4, 1),
                                     text_color=f"{txtcolor[int(tshow[6])]}")])
-            scolumn.append([sg.Text(f"S{tshow[3]}", size=(4, 1), key=f"Season{tshow[0]}",
-                                    text_color=f"{txtcolor[int(tshow[6])]}")])
+            scolumn.append([sg.Text(f"S{tshow[3]}", size=(4, 1), key=f"season:{tshow[0]}",
+                                    text_color=f"{txtcolor[int(tshow[6])]}", enable_events=True)])
             linkcolumn.append([butt("LINK", key=f"gotolink:{tshow[4]}", tooltip=tshow[4], border_width=0)])
             propcolumn.append([butt("*", key=f"properties{tshow[0]}", border_width=0)])
 
         showscol = [[sg.Col([[delcolumn[ind][0], titcolumn[ind][0]] for ind in range(len(titcolumn))]),
                      sg.Col([[emincolumn[ind][0], ecolumn[ind][0], scolumn[ind][0], linkcolumn[ind][0], propcolumn[ind][0]] for ind in range(len(titcolumn))])]]
 
-        topcol = [[butt(" + ", key="AddShow", border_width=0),
-                   butt(" * ", key="preferences", border_width=0),
-                   butt(" ^ ", key="toggleshowall", border_width=0)]]
+        topcol = [[butt(" + ", key="AddShow", border_width=0, tooltip="Add a show to the list"),
+                   butt(" * ", key="preferences", border_width=0, tooltip="Preferences"),
+                   butt(" ^ ", key="toggleshowall", border_width=0, tooltip="Toggle showAll")]]
 
         layout = [
                   [sg.Col(topcol)],
@@ -332,6 +334,21 @@ class openwin:
                         win[f"Season{tID}"].update(text_color=txtcolor[int(n[6])])
 
                 writesavefile(shows)
+            elif event[:7] == "season:":
+                print("bæh")
+                for s in shows:
+                    if s[0] == event[7:]:
+                        first_mouse = mouse.get_position()[1]
+                        time.sleep(0.050)
+                        second_mouse = mouse.get_position()[1]
+                        print(s[3])
+                        if first_mouse < second_mouse:
+                            s[3] = str(int(s[3]) - 1)  # Increase season counter
+                        elif first_mouse > second_mouse:
+                            s[3] = str(int(s[3]) + 1)  # Decrease season counter
+                        print(s[3])
+                        writesavefile(shows)
+                        win["season:" + event[7:]](value=f"S{s[3]}")
 
             elif event[:10] == "properties":
                 show = findfromid(event[10:], shows)
