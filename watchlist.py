@@ -253,7 +253,7 @@ class openwin:
                         size=initialwinsize, font=(fonttype, int(fontsize)),  border_depth=0, finalize=True,
                         location=initialwinpos, titlebar_background_color=sg.theme_background_color(), margins=(0, 0),
                         element_padding=(3, 1), use_custom_titlebar=False,
-                        titlebar_text_color=txtcolor[0])
+                        titlebar_text_color=txtcolor[0], return_keyboard_events=True)
 
         for e in linkcolumn:
             e[0].set_cursor("hand2")
@@ -364,6 +364,10 @@ class openwin:
                         shows[ind][5] = data["popweight"]
                         self.restart()
                         return
+
+            elif event == "h":  # Move win to mouse
+                mouse_pos = mouse.get_position()
+                win.move(*mouse_pos)
 
             elif event == "preferences":
                 self.updatepreferences()
