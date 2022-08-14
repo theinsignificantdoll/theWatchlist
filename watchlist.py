@@ -85,6 +85,17 @@ def loadsettings():
 loadsettings()
 
 
+def sortshowsbyord(lst: list):
+    def get_ord(show):
+        try:
+            return ord(show[1][0])
+        except IndexError:
+            return 0
+
+    lst.sort(key=get_ord, reverse=True)
+    return lst
+
+
 def sortshows(lst):
     dct = {}
     for n in lst:
@@ -93,13 +104,13 @@ def sortshows(lst):
             continue
         dct[n[5]] = [n]
     lt = []
-    slist = []
+    slist = []  # list of Weights used
     for n in dct:
         slist.append(int(n))
         dct[n].sort()
     slist.sort()
     for n in slist:
-        lt += dct[str(n)]
+        lt += sortshowsbyord(dct[str(n)])
     lt.reverse()
     return lt
 
