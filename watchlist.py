@@ -253,7 +253,8 @@ class openwin:
 
         topcol = [[butt(" + ", key="AddShow", border_width=0, tooltip="Add a show to the list"),
                    butt(" * ", key="preferences", border_width=0, tooltip="Preferences"),
-                   butt(" ^ ", key="toggleshowall", border_width=0, tooltip="Toggle showAll")]]
+                   butt(" ^ ", key="toggleshowall", border_width=0, tooltip="Toggle showAll"),
+                   butt(" ? ", key="searchbutton", border_width=0, tooltip="Search")]]
 
         layout = [
                   [sg.Col(topcol)],
@@ -346,7 +347,6 @@ class openwin:
 
                 writesavefile(shows)
             elif event[:7] == "season:":
-                print("bæh")
                 for s in shows:
                     if s[0] == event[7:]:
                         first_mouse = mouse.get_position()[1]
@@ -386,6 +386,14 @@ class openwin:
             elif event == "toggleshowall":
                 self.toggleshowall()
 
+            elif event == "searchbutton":
+                r = self.search()
+                if r == 0:
+                    writesavefile(shows)
+                    shouldrestart = True
+                    win.close()
+
+
             elif event == "AddShow":
                 data = showprop()
                 if data == 1:
@@ -411,6 +419,85 @@ class openwin:
         global showall
         showall = not showall
         self.restart()
+
+    def search(self):
+        delcol = [[butt("DEL", key=f"s_delete_1", mouseover_colors="#AA0000", border_width=0)],
+                  [butt("DEL", key=f"s_delete_2", mouseover_colors="#AA0000", border_width=0)],
+                  [butt("DEL", key=f"s_delete_3", mouseover_colors="#AA0000", border_width=0)]]
+
+        titcol = [[sg.Text(" "*60, key=f"s_title_1", enable_events=True, text_color=f"{txtcolor[0]}")],
+                  [sg.Text(" "*60, key=f"s_title_2", enable_events=True, text_color=f"{txtcolor[0]}")],
+                  [sg.Text(" "*60, key=f"s_title_3", enable_events=True, text_color=f"{txtcolor[0]}")]]
+
+        propcol = [[butt("*", key=f"s_properties_1", border_width=0)],
+                   [butt("*", key=f"s_properties_2", border_width=0)],
+                   [butt("*", key=f"s_properties_3", border_width=0)]]
+
+        layout = [[sg.T("Search:"), sg.In(key="search", enable_events=True)],
+                  [sg.Col(delcol), sg.Col(titcol), sg.Col(propcol)]]
+        swin = sg.Window("Search", layout=layout, finalize=True)
+
+        found = ["", "", ""]
+
+        while True:
+            e, v = swin.read()
+            if e == sg.WIN_CLOSED:
+                break
+            elif e == "search":
+                found = ["", "", ""]
+                for s in shows:
+                    if s[1][:len(v["search"])].lower() == v["search"].lower():
+                        if found[0] == "":
+                            found[0] = s
+                        elif found[1] == "":
+                            found[1] = s
+                        elif found[2] == "":
+                            found[2] = s
+                            break
+                try:
+                    for n in range(3):
+                        swin[f"s_title_{n+1}"].update(" ")
+                    for n in range(3):
+                        swin[f"s_title_{n+1}"].update(found[n][1])
+                except IndexError:
+                    pass
+            elif e[:8] == "s_delete":
+                k = int(e[-1]) - 1
+
+                if sg.popup_yes_no("Are you sure?") == "No":
+                    continue
+
+                delme = -1
+                for ind, n in enumerate(shows):
+                    if n[0] == found[k][0]:
+                        delme = ind
+                        break
+                if delme != -1:
+                    shows.pop(delme)
+                writesavefile(shows)
+                shouldrestart = True
+                swin.close()
+                self.restart()
+                return
+
+            elif e[:12] == "s_properties":
+                k = int(e[-1]) - 1
+
+                show = findfromid(found[k][0], shows)
+                data = showprop(popshowname=show[1], popep=show[2], popseas=show[3], poplink=show[4], popweight=show[5])
+                if data == 1:
+                    continue
+
+                for ind, tshow in enumerate(shows):
+                    if tshow[0] == show[0]:
+                        shows[ind][1] = data["popshowname"]
+                        shows[ind][2] = data["popep"]
+                        shows[ind][3] = data["popseas"]
+                        shows[ind][4] = data["poplink"]
+                        shows[ind][5] = data["popweight"]
+                        swin.close()
+                        self.restart()
+                        return
 
     def updatepreferences(self):
         global fontsize
