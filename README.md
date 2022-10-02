@@ -1,3 +1,3 @@
 # theWatchlist
-A program for keeping track of Series on the internet. Links to homepages, sorting (although manual), episode and season.
-Don't have too high hopes for this program. Afterall I've used only a single day on it.
+A program for keeping track of (Anime) Series on the internet. Links to their homepages, sorts them (although this is manual) and shows the episode and season you're on.
+Please, don't have too high hopes for this program of mine. Afterall, I've only used a single day on it.
