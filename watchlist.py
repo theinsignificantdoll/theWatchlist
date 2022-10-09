@@ -12,6 +12,7 @@ rightclickfontsize = 10
 savefile = "saved.csv"
 delimiter = "\\"
 fontsize = 15
+search_results = 3
 fonttype = "Helvetica"
 txtcolor = [sg.theme_text_color(), "#404040"]
 buttoncolor = txtcolor[0]
@@ -32,6 +33,7 @@ if not os.path.isfile(settingsfile):
         writer = csv.writer(f, delimiter=delimiter)
         writer.writerow([fontsize, fonttype, "-".join(txtcolor), buttoncolor])
         writer.writerow([*initialwinsize, *initialwinpos])
+        writer.writerow([search_results])
 
 
 def maxgreycolor():
@@ -59,6 +61,7 @@ def writesettings():
         writer = csv.writer(csvfile, delimiter=delimiter, quotechar="|")
         writer.writerow([fontsize, fonttype, "-".join(txtcolor), buttoncolor])
         writer.writerow([*initialwinsize, *initialwinpos])
+        writer.writerow([search_results])
 
 
 def loadsettings():
@@ -69,6 +72,7 @@ def loadsettings():
     global buttoncolor
     global initialwinpos
     global initialwinsize
+    global search_results
     with open(settingsfile, newline="") as csvfile:
         reader = csv.reader(csvfile, delimiter=delimiter, quotechar="|")
         row = reader.__next__()
@@ -80,6 +84,9 @@ def loadsettings():
         windata = reader.__next__()
         initialwinsize = (windata[0], windata[1])
         initialwinpos = (windata[2], windata[3])
+
+        searchdata = reader.__next__()
+        search_results = int(searchdata[0])
 
 
 loadsettings()
@@ -180,11 +187,12 @@ def showprop(poptitle="Show Editor", popshowname="", popep="0", popseas="1", pop
                               [sg.InputText(popweight, key="popweight")]
                           ])
                          ],
-                         [sg.Button("Save"), sg.Button("Cancel")]],
+                         [sg.Button("Save", bind_return_key=True), sg.Button("Cancel")]],
                         disable_close=True,
                         auto_size_buttons=True,
                         auto_size_text=True,
-                        default_element_size=(12, 1)).read(close=True)
+                        default_element_size=(12, 1),
+                        font=(fonttype, int(fontsize))).read(close=True)
 
     if button == "Cancel":
         return 1
@@ -231,20 +239,23 @@ class openwin:
         linkcolumn = []
         propcolumn = []
 
+        max_txt_color_index = len(txtcolor)-1
+
         for show in shows if showall else shows[:min(len(shows), showamount)]:  # uses the raw shows list if showall is
             #  True, otherwise shortening it to the -showamount- index.
             tshow = stringify(show)
+            color = txtcolor[min(int(tshow[6]), max_txt_color_index)]
 
             delcolumn.append([butt("DEL", key=f"delete:{tshow[0]}", mouseover_colors="#AA0000",
                                    border_width=0)])
             titcolumn.append([sg.Text(tshow[1], key=f"title:{tshow[0]}", enable_events=True,
-                                      text_color=f"{txtcolor[int(tshow[6])]}")])
+                                      text_color=f"{color}")])
             emincolumn.append([sg.Text(f"Ep:", key=f"Eminus{tshow[0]}", enable_events=True,
-                                       text_color=f"{txtcolor[int(tshow[6])]}")])
+                                       text_color=f"{color}")])
             ecolumn.append([sg.Text(f"{tshow[2]}", key=f"Eplus{tshow[0]}", enable_events=True, size=(4, 1),
-                                    text_color=f"{txtcolor[int(tshow[6])]}")])
+                                    text_color=f"{color}")])
             scolumn.append([sg.Text(f"S{tshow[3]}", size=(4, 1), key=f"season:{tshow[0]}",
-                                    text_color=f"{txtcolor[int(tshow[6])]}", enable_events=True)])
+                                    text_color=f"{color}", enable_events=True)])
             linkcolumn.append([butt("LINK", key=f"gotolink:{tshow[4]}", tooltip=tshow[4], border_width=0)])
             propcolumn.append([butt("*", key=f"properties{tshow[0]}", border_width=0)])
 
@@ -387,12 +398,7 @@ class openwin:
                 self.toggleshowall()
 
             elif event == "searchbutton":
-                r = self.search()
-                if r == 0:
-                    writesavefile(shows)
-                    shouldrestart = True
-                    win.close()
-
+                self.search(results=search_results)
 
             elif event == "AddShow":
                 data = showprop()
@@ -420,49 +426,43 @@ class openwin:
         showall = not showall
         self.restart()
 
-    def search(self):
-        delcol = [[butt("DEL", key=f"s_delete_1", mouseover_colors="#AA0000", border_width=0)],
-                  [butt("DEL", key=f"s_delete_2", mouseover_colors="#AA0000", border_width=0)],
-                  [butt("DEL", key=f"s_delete_3", mouseover_colors="#AA0000", border_width=0)]]
+    def search(self, results=3):
+        delcol = [butt("DEL", key=f"s_delete_{n}", mouseover_colors="#AA0000", border_width=0) for n in range(results)]
 
-        titcol = [[sg.Text(" "*60, key=f"s_title_1", enable_events=True, text_color=f"{txtcolor[0]}")],
-                  [sg.Text(" "*60, key=f"s_title_2", enable_events=True, text_color=f"{txtcolor[0]}")],
-                  [sg.Text(" "*60, key=f"s_title_3", enable_events=True, text_color=f"{txtcolor[0]}")]]
+        titcol = [sg.Text(shows[n][1], key=f"s_title_{n}", enable_events=True, text_color=f"{txtcolor[0]}", size=(37, 1)) for n in range(results)]
 
-        propcol = [[butt("*", key=f"s_properties_1", border_width=0)],
-                   [butt("*", key=f"s_properties_2", border_width=0)],
-                   [butt("*", key=f"s_properties_3", border_width=0)]]
+        propcol = [butt("*", key=f"s_properties_{n}", border_width=0) for n in range(results)]
 
-        layout = [[sg.T("Search:"), sg.In(key="search", enable_events=True)],
-                  [sg.Col(delcol), sg.Col(titcol), sg.Col(propcol)]]
-        swin = sg.Window("Search", layout=layout, finalize=True)
+        rescol = [[delcol[n], titcol[n], propcol[n]] for n in range(results)]
 
-        found = ["", "", ""]
+        layout = [[sg.T("Search:"), sg.In(key="search", enable_events=True, size=(40, 1))],
+                  [sg.Col(rescol)]]
+
+        swin = sg.Window("Search", layout=layout, finalize=True, font=(fonttype, int(fontsize)))
+
+        found = [""]*results
 
         while True:
             e, v = swin.read()
             if e == sg.WIN_CLOSED:
                 break
             elif e == "search":
-                found = ["", "", ""]
+                found = [""]*results
                 for s in shows:
-                    if s[1][:len(v["search"])].lower() == v["search"].lower():
-                        if found[0] == "":
-                            found[0] = s
-                        elif found[1] == "":
-                            found[1] = s
-                        elif found[2] == "":
-                            found[2] = s
-                            break
+                    if v["search"].lower() in s[1].lower():
+                        for ind, n in enumerate(found):
+                            if n == "":
+                                found[ind] = s
+                                break
                 try:
-                    for n in range(3):
-                        swin[f"s_title_{n+1}"].update(" ")
-                    for n in range(3):
-                        swin[f"s_title_{n+1}"].update(found[n][1])
+                    for n in range(results):
+                        swin[f"s_title_{n}"].update(" ")
+                    for n in range(results):
+                        swin[f"s_title_{n}"].update(found[n][1])
                 except IndexError:
                     pass
             elif e[:8] == "s_delete":
-                k = int(e[-1]) - 1
+                k = int(e[-1])
 
                 if sg.popup_yes_no("Are you sure?") == "No":
                     continue
@@ -475,13 +475,12 @@ class openwin:
                 if delme != -1:
                     shows.pop(delme)
                 writesavefile(shows)
-                shouldrestart = True
                 swin.close()
                 self.restart()
                 return
 
             elif e[:12] == "s_properties":
-                k = int(e[-1]) - 1
+                k = int(e[-1])
 
                 show = findfromid(found[k][0], shows)
                 data = showprop(popshowname=show[1], popep=show[2], popseas=show[3], poplink=show[4], popweight=show[5])
@@ -504,14 +503,17 @@ class openwin:
         global fonttype
         global txtcolor
         global buttoncolor
+        global search_results
         col1 = [[sg.T("Font size:")],
                 [sg.T("Font type:")],
                 [sg.T("Text Color:")],
-                [sg.T("Button Color")]]
+                [sg.T("Button Color")],
+                [sg.T("Search Results")]]
         col2 = [[sg.In(fontsize, key="fsize", tooltip="Any integer")],
                 [sg.In(fonttype, key="ftype", tooltip="Any font name, as one might use in word or libreOffice Writer")],
                 [sg.In("-".join(txtcolor), key="txtcolor", tooltip="Ex: '#ff0000-#404040' or '#ff0000-#404040-#878787'")],
-                [sg.In(buttoncolor, key="buttoncolor", tooltip="A single color, Ex: '#e0e0e0'")]]
+                [sg.In(buttoncolor, key="buttoncolor", tooltip="A single color, Ex: '#e0e0e0'")],
+                [sg.In(search_results, key="sresults", tooltip="The number of results shown when searching. Default:3")]]
         twin = sg.Window("Preferences", layout=[
             [sg.Col(col1), sg.Col(col2)],
             [sg.Button("Save")]], default_element_size=(16, 1), font=(fonttype, fontsize))
@@ -542,6 +544,8 @@ class openwin:
                 txtcolor = twin["txtcolor"].get().split("-")
                 maxgreycolor()
                 buttoncolor = twin["buttoncolor"].get()
+                search_results = int(twin["sresults"].get())
+
                 writesettings()
                 self.restart()
                 break
