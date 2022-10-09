@@ -57,6 +57,8 @@ def isvalidcolor(col):
 def writesettings():
     global initialwinsize
     global initialwinpos
+    if loadsettings(do_return=True) == [fontsize, fonttype, txtcolor, buttoncolor, initialwinsize, initialwinpos, search_results]:
+        return
     with open(settingsfile, "w", newline="") as csvfile:
         writer = csv.writer(csvfile, delimiter=delimiter, quotechar="|")
         writer.writerow([fontsize, fonttype, "-".join(txtcolor), buttoncolor])
@@ -64,7 +66,7 @@ def writesettings():
         writer.writerow([search_results])
 
 
-def loadsettings():
+def loadsettings(do_return=False):
     global fontsize
     global fonttype
     global txtcolor
@@ -73,20 +75,30 @@ def loadsettings():
     global initialwinpos
     global initialwinsize
     global search_results
-    with open(settingsfile, newline="") as csvfile:
+    with open(settingsfile, "r", newline="") as csvfile:
         reader = csv.reader(csvfile, delimiter=delimiter, quotechar="|")
         row = reader.__next__()
-        fontsize = row[0]
-        fonttype = row[1]
-        txtcolor = row[2].split("-")
-        buttoncolor = row[3]
+        tfontsize = row[0]
+        tfonttype = row[1]
+        ttxtcolor = row[2].split("-")
+        tbuttoncolor = row[3]
 
         windata = reader.__next__()
-        initialwinsize = (windata[0], windata[1])
-        initialwinpos = (windata[2], windata[3])
+        tinitialwinsize = (windata[0], windata[1])
+        tinitialwinpos = (windata[2], windata[3])
 
         searchdata = reader.__next__()
-        search_results = int(searchdata[0])
+        tsearch_results = int(searchdata[0])
+    if not do_return:
+        fontsize = tfontsize
+        fonttype = tfonttype
+        txtcolor = ttxtcolor
+        buttoncolor = tbuttoncolor
+        initialwinsize = tinitialwinsize
+        initialwinpos = tinitialwinpos
+        search_results = tsearch_results
+        return
+    return [tfontsize, tfonttype, ttxtcolor, tbuttoncolor, (int(tinitialwinsize[0]), int(tinitialwinsize[1])), (int(tinitialwinpos[0]), int(tinitialwinpos[1])), tsearch_results]
 
 
 loadsettings()
@@ -142,7 +154,7 @@ def stringify(lst):
 
 def readsavefile(svfile=savefile, deli=delimiter):
     tempshows = []
-    with open(svfile, newline="") as csvfile:
+    with open(svfile, "r", newline="") as csvfile:
         reader = csv.reader(csvfile, delimiter=deli, quotechar="|")
         for row in reader:
             tempshows.append([])          # ALL data is stored as strings, some merely represent other datatypes
@@ -152,11 +164,13 @@ def readsavefile(svfile=savefile, deli=delimiter):
             tempshows[-1].append(row[3])  # int    ; Season
             tempshows[-1].append(row[4])  # string ; Link to homepage
             tempshows[-1].append(row[5])  # int    ; Sorting Weight
-            tempshows[-1].append(row[6])  # bool   ; Is greyed (1 = True, 0 = False)
+            tempshows[-1].append(row[6])  # bool   ; Color index to use
     return tempshows
 
 
 def writesavefile(tshows, svfile=savefile, deli=delimiter):
+    if tshows == readsavefile():
+        return
     with open(svfile, "w", newline="") as csvfile:
         writer = csv.writer(csvfile, delimiter=deli, quotechar="|")
         for show in tshows:
