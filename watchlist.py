@@ -270,7 +270,7 @@ class openwin:
                                     text_color=f"{color}")])
             scolumn.append([sg.Text(f"S{tshow[3]}", size=(4, 1), key=f"season:{tshow[0]}",
                                     text_color=f"{color}", enable_events=True)])
-            linkcolumn.append([butt("LINK", key=f"gotolink:{tshow[4]}", tooltip=tshow[4], border_width=0)])
+            linkcolumn.append([butt("LINK", key=f"gotolink:{tshow[0]}", tooltip=tshow[4], border_width=0)])
             propcolumn.append([butt("*", key=f"properties{tshow[0]}", border_width=0)])
 
         showscol = [[sg.Col([[delcolumn[ind][0], titcolumn[ind][0]] for ind in range(len(titcolumn))]),
@@ -324,7 +324,12 @@ class openwin:
                 break
 
             elif event[:9] == "gotolink:" and len(event) > 9:
-                webbrowser.open(event[9:])
+                print(event)
+                s_id = event[9:]
+                for ind, n in enumerate(shows):
+                    if n[0] == s_id:
+                        webbrowser.open(n[4])
+                        break
 
             elif event[:7] == "delete:":
                 delme = -1
@@ -369,6 +374,7 @@ class openwin:
                         win[f"Eplus{tID}"].update(text_color=txtcolor[int(n[6])])
                         win[f"Eminus{tID}"].update(text_color=txtcolor[int(n[6])])
                         win[f"season:{tID}"].update(text_color=txtcolor[int(n[6])])
+                        break
 
                 writesavefile(shows)
             elif event[:7] == "season:":
@@ -385,6 +391,7 @@ class openwin:
                         print(s[3])
                         writesavefile(shows)
                         win["season:" + event[7:]](value=f"S{s[3]}")
+                        break
 
             elif event[:10] == "properties":
                 show = findfromid(event[10:], shows)
