@@ -7,8 +7,6 @@ import webbrowser
 
 sg.theme("DarkBrown4")
 
-
-rightclickfontsize = 10
 savefile = "saved.csv"
 delimiter = "\\"
 fontsize = 15
@@ -19,6 +17,8 @@ buttoncolor = txtcolor[0]
 settingsfile = "settings.csv"
 initialwinsize = (400, 200)
 initialwinpos = (50, 50)
+right_click_fontsize = 10
+right_click_selected_background = "#252525"
 
 showall = False
 showamount = 32
@@ -31,7 +31,8 @@ if not os.path.isfile(savefile):
 if not os.path.isfile(settingsfile):
     with open(settingsfile, "w", newline="") as f:
         writer = csv.writer(f, delimiter=delimiter)
-        writer.writerow([fontsize, fonttype, "-".join(txtcolor), buttoncolor])
+        writer.writerow([fontsize, fonttype, "-".join(txtcolor), buttoncolor, sg.theme_background_color(),
+                         right_click_selected_background, right_click_fontsize])
         writer.writerow([*initialwinsize, *initialwinpos])
         writer.writerow([search_results])
 
@@ -57,11 +58,12 @@ def isvalidcolor(col):
 def writesettings():
     global initialwinsize
     global initialwinpos
-    if loadsettings(do_return=True) == [fontsize, fonttype, txtcolor, buttoncolor, initialwinsize, initialwinpos, search_results]:
+    if loadsettings(do_return=True) == [fontsize, fonttype, txtcolor, buttoncolor, initialwinsize, initialwinpos, search_results, sg.theme_background_color(), right_click_selected_background, right_click_fontsize]:
         return
     with open(settingsfile, "w", newline="") as csvfile:
         writer = csv.writer(csvfile, delimiter=delimiter, quotechar="|")
-        writer.writerow([fontsize, fonttype, "-".join(txtcolor), buttoncolor])
+        writer.writerow([fontsize, fonttype, "-".join(txtcolor), buttoncolor, sg.theme_background_color(),
+                         right_click_selected_background, right_click_fontsize])
         writer.writerow([*initialwinsize, *initialwinpos])
         writer.writerow([search_results])
 
@@ -74,6 +76,8 @@ def loadsettings(do_return=False):
     global buttoncolor
     global initialwinpos
     global initialwinsize
+    global right_click_selected_background
+    global right_click_fontsize
     global search_results
     with open(settingsfile, "r", newline="") as csvfile:
         reader = csv.reader(csvfile, delimiter=delimiter, quotechar="|")
@@ -82,6 +86,9 @@ def loadsettings(do_return=False):
         tfonttype = row[1]
         ttxtcolor = row[2].split("-")
         tbuttoncolor = row[3]
+        tbackground_color = row[4]
+        tright_click_selected_background = row[5]
+        tright_click_fontsize = row[6]
 
         windata = reader.__next__()
         tinitialwinsize = (windata[0], windata[1])
@@ -94,11 +101,14 @@ def loadsettings(do_return=False):
         fonttype = tfonttype
         txtcolor = ttxtcolor
         buttoncolor = tbuttoncolor
+        sg.theme_background_color(tbackground_color)
+        right_click_selected_background = tright_click_selected_background
+        right_click_fontsize = tright_click_fontsize
         initialwinsize = tinitialwinsize
         initialwinpos = tinitialwinpos
         search_results = tsearch_results
         return
-    return [tfontsize, tfonttype, ttxtcolor, tbuttoncolor, (int(tinitialwinsize[0]), int(tinitialwinsize[1])), (int(tinitialwinpos[0]), int(tinitialwinpos[1])), tsearch_results]
+    return [tfontsize, tfonttype, ttxtcolor, tbuttoncolor, (int(tinitialwinsize[0]), int(tinitialwinsize[1])), (int(tinitialwinpos[0]), int(tinitialwinpos[1])), tsearch_results, tbackground_color, tright_click_selected_background, tright_click_fontsize]
 
 
 loadsettings()
@@ -221,11 +231,12 @@ def showprop(poptitle="Show Editor", popshowname="", popep="0", popseas="1", pop
 
 
 def butt(button_text="", key=None, tooltip=None, button_color=(False, None), border_width=None, size=(None, None),
-         mouseover_colors=sg.theme_background_color(), disabled=False,):
+         mouseover_colors=sg.theme_background_color(), disabled=False, right_click_menu=None):
     if not button_color[0]:
         button_color = (buttoncolor, button_color[1])
     return sg.Button(button_text=button_text, key=key, tooltip=tooltip, button_color=button_color,
-                     border_width=border_width, size=size, mouseover_colors=mouseover_colors, disabled=disabled)
+                     border_width=border_width, size=size, mouseover_colors=mouseover_colors, disabled=disabled,
+                     right_click_menu=right_click_menu)
 
 
 shows = readsavefile()
@@ -244,6 +255,9 @@ class openwin:
 
         sg.theme_text_color(txtcolor[0])
         sg.theme_element_text_color(buttoncolor)
+        sg.theme_element_background_color(sg.theme_background_color())
+        sg.theme_text_element_background_color(sg.theme_background_color())
+        sg.theme_button_color((buttoncolor, sg.theme_background_color()))
 
         delcolumn = []
         titcolumn = []
@@ -270,7 +284,8 @@ class openwin:
                                     text_color=f"{color}")])
             scolumn.append([sg.Text(f"S{tshow[3]}", size=(4, 1), key=f"season:{tshow[0]}",
                                     text_color=f"{color}", enable_events=True)])
-            linkcolumn.append([butt("LINK", key=f"gotolink:{tshow[0]}", tooltip=tshow[4], border_width=0)])
+            linkcolumn.append([butt("LINK", key=f"gotolink:{tshow[0]}", tooltip=tshow[4], border_width=0,
+                                    right_click_menu=["", [f"Open links:{color}"]])])
             propcolumn.append([butt("*", key=f"properties{tshow[0]}", border_width=0)])
 
         showscol = [[sg.Col([[delcolumn[ind][0], titcolumn[ind][0]] for ind in range(len(titcolumn))]),
@@ -290,7 +305,11 @@ class openwin:
                         size=initialwinsize, font=(fonttype, int(fontsize)),  border_depth=0, finalize=True,
                         location=initialwinpos, titlebar_background_color=sg.theme_background_color(), margins=(0, 0),
                         element_padding=(3, 1), use_custom_titlebar=False,
-                        titlebar_text_color=txtcolor[0], return_keyboard_events=True)
+                        titlebar_text_color=txtcolor[0], return_keyboard_events=True,
+                        right_click_menu_font=(fonttype, right_click_fontsize),
+                        right_click_menu_background_color=sg.theme_background_color(),
+                        right_click_menu_text_color=buttoncolor,
+                        right_click_menu_selected_colors=(buttoncolor, right_click_selected_background))
 
         for e in linkcolumn:
             e[0].set_cursor("hand2")
@@ -317,6 +336,9 @@ class openwin:
             initialwinsize = win.Size
             event, values = win.read(timeout=200)
 
+            #if event != "__TIMEOUT__":
+            #    print(event)
+
             if event == "__TIMEOUT__":
                 continue
             elif event == sg.WIN_CLOSED or self.shouldbreak or event == "Close":
@@ -328,7 +350,7 @@ class openwin:
                 s_id = event[9:]
                 for ind, n in enumerate(shows):
                     if n[0] == s_id:
-                        webbrowser.open(n[4])
+                        self.open_link(n)
                         break
 
             elif event[:7] == "delete:":
@@ -393,6 +415,13 @@ class openwin:
                         win["season:" + event[7:]](value=f"S{s[3]}")
                         break
 
+            elif event[:11] == "Open links:":
+                color = event[11:]
+                for show in shows:
+                    show_color = txtcolor[min(int(show[6]), max_txt_color_index)]
+                    if color == show_color:
+                        self.open_link(show)
+
             elif event[:10] == "properties":
                 show = findfromid(event[10:], shows)
                 data = showprop(popshowname=show[1], popep=show[2], popseas=show[3], poplink=show[4], popweight=show[5])
@@ -428,6 +457,9 @@ class openwin:
                 shows.append([str(gethighestid(shows)+1), data["popshowname"], data["popep"], data["popseas"], data["poplink"], data["popweight"], "0"])
                 self.restart()
                 break
+
+    def open_link(self, show):
+        webbrowser.open(show[4])
 
     def close(self):
         global initialwinsize
@@ -525,14 +557,20 @@ class openwin:
         global txtcolor
         global buttoncolor
         global search_results
+        global right_click_selected_background
+        global right_click_fontsize
         col1 = [[sg.T("Font size:")],
                 [sg.T("Font type:")],
-                [sg.T("Text Color:")],
+                [sg.T("Text color:")],
+                [sg.T("Menu background color:")],
+                [sg.T("Menu font size:")],
                 [sg.T("Button Color")],
                 [sg.T("Search Results")]]
         col2 = [[sg.In(fontsize, key="fsize", tooltip="Any integer")],
                 [sg.In(fonttype, key="ftype", tooltip="Any font name, as one might use in word or libreOffice Writer")],
                 [sg.In("-".join(txtcolor), key="txtcolor", tooltip="Ex: '#ff0000-#404040' or '#ff0000-#404040-#878787'")],
+                [sg.In(right_click_selected_background, k="menu_bg_color", tooltip="The background color of the right click menu")],
+                [sg.In(right_click_fontsize, k="menu_font_size", tooltip="The font size of the right click menu")],
                 [sg.In(buttoncolor, key="buttoncolor", tooltip="A single color, Ex: '#e0e0e0'")],
                 [sg.In(search_results, key="sresults", tooltip="The number of results shown when searching. Default:3")]]
         twin = sg.Window("Preferences", layout=[
@@ -549,6 +587,9 @@ class openwin:
                     if not isvalidcolor(twin["buttoncolor"].get()):
                         raise ValueError
 
+                    if not isvalidcolor(twin["menu_bg_color"].get()):
+                        raise ValueError
+
                     gotcolors = twin["txtcolor"].get().split("-")
                     if len(gotcolors) <= 0:
                         raise ValueError
@@ -563,6 +604,8 @@ class openwin:
                 fontsize = twin["fsize"].get()
                 fonttype = twin["ftype"].get()
                 txtcolor = twin["txtcolor"].get().split("-")
+                right_click_selected_background = twin["menu_bg_color"].get()
+                right_click_fontsize = int(twin["menu_font_size"].get())
                 maxgreycolor()
                 buttoncolor = twin["buttoncolor"].get()
                 search_results = int(twin["sresults"].get())
