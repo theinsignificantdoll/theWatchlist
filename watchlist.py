@@ -13,6 +13,7 @@ fontsize = 15
 search_results = 3
 fonttype = "Helvetica"
 txtcolor = [sg.theme_text_color(), "#404040"]
+sg.theme_slider_color(sg.theme_background_color())
 buttoncolor = txtcolor[0]
 settingsfile = "settings.csv"
 initialwinsize = (400, 200)
@@ -22,6 +23,7 @@ right_click_selected_background = "#252525"
 
 showall = False
 showamount = 32
+max_title_display_len = 0  # max number of characters displayed in a title. Modified by settings.csv. Infinite if 0
 
 
 if not os.path.isfile(savefile):
@@ -66,6 +68,7 @@ def writesettings():
                          right_click_selected_background, right_click_fontsize])
         writer.writerow([*initialwinsize, *initialwinpos])
         writer.writerow([search_results])
+        writer.writerow([showamount, max_title_display_len])
 
 
 def loadsettings(do_return=False):
@@ -79,7 +82,10 @@ def loadsettings(do_return=False):
     global right_click_selected_background
     global right_click_fontsize
     global search_results
+    global showamount
+    global max_title_display_len
     with open(settingsfile, "r", newline="") as csvfile:
+        # Values read from file and stored in temp variables. Hence the prefix "t"
         reader = csv.reader(csvfile, delimiter=delimiter, quotechar="|")
         row = reader.__next__()
         tfontsize = row[0]
@@ -96,6 +102,11 @@ def loadsettings(do_return=False):
 
         searchdata = reader.__next__()
         tsearch_results = int(searchdata[0])
+
+        displaydata = reader.__next__()
+        tshow_amount = int(displaydata[0])
+        tmax_title_len = int(displaydata[1])
+
     if not do_return:
         fontsize = tfontsize
         fonttype = tfonttype
@@ -107,8 +118,10 @@ def loadsettings(do_return=False):
         initialwinsize = tinitialwinsize
         initialwinpos = tinitialwinpos
         search_results = tsearch_results
+        showamount = tshow_amount
+        max_title_display_len = tmax_title_len
         return
-    return [tfontsize, tfonttype, ttxtcolor, tbuttoncolor, (int(tinitialwinsize[0]), int(tinitialwinsize[1])), (int(tinitialwinpos[0]), int(tinitialwinpos[1])), tsearch_results, tbackground_color, tright_click_selected_background, tright_click_fontsize]
+    return [tfontsize, tfonttype, ttxtcolor, tbuttoncolor, (int(tinitialwinsize[0]), int(tinitialwinsize[1])), (int(tinitialwinpos[0]), int(tinitialwinpos[1])), tsearch_results, tbackground_color, tright_click_selected_background, tright_click_fontsize, tshow_amount, tmax_title_len]
 
 
 loadsettings()
@@ -160,6 +173,12 @@ def stringify(lst):
     for i, item in enumerate(lst):
         lst[i] = str(item)
     return lst
+
+
+def limit_string_len(string, length):
+    if len(string) > length != 0:
+        return string[:length]
+    return string
 
 
 def readsavefile(svfile=savefile, deli=delimiter):
@@ -276,8 +295,8 @@ class openwin:
 
             delcolumn.append([butt("DEL", key=f"delete:{tshow[0]}", mouseover_colors="#AA0000",
                                    border_width=0)])
-            titcolumn.append([sg.Text(tshow[1], key=f"title:{tshow[0]}", enable_events=True,
-                                      text_color=f"{color}")])
+            titcolumn.append([sg.Text(limit_string_len(tshow[1], max_title_display_len), key=f"title:{tshow[0]}",
+                                      enable_events=True, text_color=f"{color}")])
             emincolumn.append([sg.Text(f"Ep:", key=f"Eminus{tshow[0]}", enable_events=True,
                                        text_color=f"{color}")])
             ecolumn.append([sg.Text(f"{tshow[2]}", key=f"Eplus{tshow[0]}", enable_events=True, size=(4, 1),
@@ -309,7 +328,8 @@ class openwin:
                         right_click_menu_font=(fonttype, right_click_fontsize),
                         right_click_menu_background_color=sg.theme_background_color(),
                         right_click_menu_text_color=buttoncolor,
-                        right_click_menu_selected_colors=(buttoncolor, right_click_selected_background))
+                        right_click_menu_selected_colors=(buttoncolor, right_click_selected_background),
+                        icon="GenIko.ico")
 
         for e in linkcolumn:
             e[0].set_cursor("hand2")
@@ -559,20 +579,26 @@ class openwin:
         global search_results
         global right_click_selected_background
         global right_click_fontsize
+        global max_title_display_len
+        global showamount
         col1 = [[sg.T("Font size:")],
                 [sg.T("Font type:")],
                 [sg.T("Text color:")],
                 [sg.T("Menu background color:")],
                 [sg.T("Menu font size:")],
                 [sg.T("Button Color")],
-                [sg.T("Search Results")]]
+                [sg.T("Search Results")],
+                [sg.T("Title Length")],
+                [sg.T("Show Cut-off")]]
         col2 = [[sg.In(fontsize, key="fsize", tooltip="Any integer")],
                 [sg.In(fonttype, key="ftype", tooltip="Any font name, as one might use in word or libreOffice Writer")],
                 [sg.In("-".join(txtcolor), key="txtcolor", tooltip="Ex: '#ff0000-#404040' or '#ff0000-#404040-#878787'")],
                 [sg.In(right_click_selected_background, k="menu_bg_color", tooltip="The background color of the right click menu")],
                 [sg.In(right_click_fontsize, k="menu_font_size", tooltip="The font size of the right click menu")],
                 [sg.In(buttoncolor, key="buttoncolor", tooltip="A single color, Ex: '#e0e0e0'")],
-                [sg.In(search_results, key="sresults", tooltip="The number of results shown when searching. Default:3")]]
+                [sg.In(search_results, key="sresults", tooltip="The number of results shown when searching. Default:3")],
+                [sg.In(max_title_display_len, key="title_length", tooltip="The amount of characters that should be displayed\nin titles. 0 to display all characters")],
+                [sg.In(showamount, key="showamount", tooltip="For performance reasons not all shows are displayed by default. This is the amount of shows on display.\nCan be toggled by the '^' button")]]
         twin = sg.Window("Preferences", layout=[
             [sg.Col(col1), sg.Col(col2)],
             [sg.Button("Save")]], default_element_size=(16, 1), font=(fonttype, fontsize))
@@ -609,6 +635,8 @@ class openwin:
                 maxgreycolor()
                 buttoncolor = twin["buttoncolor"].get()
                 search_results = int(twin["sresults"].get())
+                max_title_display_len = int(twin["title_length"].get())
+                showamount = int(twin["showamount"].get())
 
                 writesettings()
                 self.restart()
