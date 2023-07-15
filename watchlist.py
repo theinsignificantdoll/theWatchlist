@@ -8,22 +8,47 @@ import webbrowser
 sg.theme("DarkBrown4")
 
 savefile = "saved.csv"
+settingsfile = "settings.csv"
 delimiter = "\\"
+initialwinsize = (400, 200)
+initialwinpos = (50, 50)
+right_click_fontsize = 10
+right_click_selected_background = "#252525"
+showall = False
+
+# DEFAULT SETTINGS
 fontsize = 15
 search_results = 3
 fonttype = "Helvetica"
 txtcolor = [sg.theme_text_color(), "#404040"]
 sg.theme_slider_color(sg.theme_background_color())
 buttoncolor = txtcolor[0]
-settingsfile = "settings.csv"
-initialwinsize = (400, 200)
-initialwinpos = (50, 50)
-right_click_fontsize = 10
-right_click_selected_background = "#252525"
-
-showall = False
 showamount = 32
 max_title_display_len = 0  # max number of characters displayed in a title. Modified by settings.csv. Infinite if 0
+
+
+class Show:
+    def __init__(self, id, title, ep, season, link, weight, color):
+        self.id = id
+        self.title = title
+        self.ep = ep
+        self.season = season
+        self.link = link
+        self.weight = weight
+        self.color = color
+        self.backwards_list = (self.id, self.title, self.ep, self.season, self.link, self.weight, self.color)
+
+    def __getitem__(self, item):
+        return self.backwards_list[item]
+
+    def stringify(self):
+        self.id = str(self.id)
+        self.title = str(self.title)
+        self.ep = str(self.ep)
+        self.season = str(self.season)
+        self.link = str(self.link)
+        self.weight = str(self.weight)
+        self.color = str(self.color)
 
 
 if not os.path.isfile(savefile):
@@ -43,8 +68,8 @@ def maxgreycolor():
     global shows
     global txtcolor
     for s in shows:
-        if int(s[6]) >= len(txtcolor):
-            s[6] = str(len(txtcolor)-1)
+        if int(s.color) >= len(txtcolor):
+            s.color = str(len(txtcolor)-1)
 
 
 def isvalidcolor(col):
@@ -60,12 +85,15 @@ def isvalidcolor(col):
 def writesettings():
     global initialwinsize
     global initialwinpos
-    if loadsettings(do_return=True) == [fontsize, fonttype, txtcolor, buttoncolor, initialwinsize, initialwinpos, search_results, sg.theme_background_color(), right_click_selected_background, right_click_fontsize]:
+    if loadsettings(do_return=True) == [fontsize, fonttype, txtcolor, buttoncolor, initialwinsize, initialwinpos,
+                                        search_results, sg.theme_background_color(), right_click_selected_background,
+                                        right_click_fontsize, showamount, max_title_display_len,
+                                        sg.theme_input_background_color()]:
         return
     with open(settingsfile, "w", newline="") as csvfile:
         writer = csv.writer(csvfile, delimiter=delimiter, quotechar="|")
         writer.writerow([fontsize, fonttype, "-".join(txtcolor), buttoncolor, sg.theme_background_color(),
-                         right_click_selected_background, right_click_fontsize])
+                         right_click_selected_background, right_click_fontsize, sg.theme_input_background_color()])
         writer.writerow([*initialwinsize, *initialwinpos])
         writer.writerow([search_results])
         writer.writerow([showamount, max_title_display_len])
@@ -95,6 +123,7 @@ def loadsettings(do_return=False):
         tbackground_color = row[4]
         tright_click_selected_background = row[5]
         tright_click_fontsize = row[6]
+        tinput_background = row[7]
 
         windata = reader.__next__()
         tinitialwinsize = (windata[0], windata[1])
@@ -113,6 +142,7 @@ def loadsettings(do_return=False):
         txtcolor = ttxtcolor
         buttoncolor = tbuttoncolor
         sg.theme_background_color(tbackground_color)
+        sg.theme_input_background_color(tinput_background)
         right_click_selected_background = tright_click_selected_background
         right_click_fontsize = tright_click_fontsize
         initialwinsize = tinitialwinsize
@@ -121,7 +151,11 @@ def loadsettings(do_return=False):
         showamount = tshow_amount
         max_title_display_len = tmax_title_len
         return
-    return [tfontsize, tfonttype, ttxtcolor, tbuttoncolor, (int(tinitialwinsize[0]), int(tinitialwinsize[1])), (int(tinitialwinpos[0]), int(tinitialwinpos[1])), tsearch_results, tbackground_color, tright_click_selected_background, tright_click_fontsize, tshow_amount, tmax_title_len]
+
+    return [tfontsize, tfonttype, ttxtcolor, tbuttoncolor,
+            (int(tinitialwinsize[0]), int(tinitialwinsize[1])), (int(tinitialwinpos[0]), int(tinitialwinpos[1])),
+            tsearch_results, tbackground_color, tright_click_selected_background, tright_click_fontsize, tshow_amount,
+            tmax_title_len, tinput_background]
 
 
 loadsettings()
@@ -130,7 +164,7 @@ loadsettings()
 def sortshowsbyord(lst: list):
     def get_ord(show):
         try:
-            return ord(show[1][0])
+            return ord(show.title[0])
         except IndexError:
             return 0
 
@@ -141,15 +175,15 @@ def sortshowsbyord(lst: list):
 def sortshows(lst):
     dct = {}
     for n in lst:
-        if n[5] in dct:
-            dct[n[5]].append(n)
+        if n.weight in dct:
+            dct[n.weight].append(n)
             continue
-        dct[n[5]] = [n]
+        dct[n.weight] = [n]
     lt = []
     slist = []  # list of Weights used
     for n in dct:
         slist.append(int(n))
-        dct[n].sort()
+        dct[n].sort(key=lambda x: x.id)
     slist.sort()
     for n in slist:
         lt += sortshowsbyord(dct[str(n)])
@@ -160,12 +194,12 @@ def sortshows(lst):
 def gethighestid(lst):
     if len(lst) == 0:
         return -1
-    return max([int(l[0]) for l in lst])
+    return max([int(l.id) for l in lst])
 
 
 def findfromid(id, lst):
     for n in lst:
-        if n[0] == id:
+        if n.id == id:
             return n
 
 
@@ -175,10 +209,16 @@ def stringify(lst):
     return lst
 
 
-def limit_string_len(string, length):
+def limit_string_len(string: str, length: int):
     if len(string) > length != 0:
         return string[:length]
     return string
+
+
+def min_string_len(string: str, length: int):
+    if len(string) > length:
+        return string
+    return f"{' ' * (length - len(string))}{string}"
 
 
 def readsavefile(svfile=savefile, deli=delimiter):
@@ -186,14 +226,15 @@ def readsavefile(svfile=savefile, deli=delimiter):
     with open(svfile, "r", newline="") as csvfile:
         reader = csv.reader(csvfile, delimiter=deli, quotechar="|")
         for row in reader:
-            tempshows.append([])          # ALL data is stored as strings, some merely represent other datatypes
-            tempshows[-1].append(row[0])  # int    ; ID
-            tempshows[-1].append(row[1])  # string ; Name
-            tempshows[-1].append(row[2])  # int    ; Episode
-            tempshows[-1].append(row[3])  # int    ; Season
-            tempshows[-1].append(row[4])  # string ; Link to homepage
-            tempshows[-1].append(row[5])  # int    ; Sorting Weight
-            tempshows[-1].append(row[6])  # bool   ; Color index to use
+            tempshows.append(Show(
+                id=row[0],
+                title=row[1],
+                ep=row[2],
+                season=row[3],
+                link=row[4],
+                weight=row[5],
+                color=row[6],
+            ))
     return tempshows
 
 
@@ -262,6 +303,10 @@ shows = readsavefile()
 shouldrestart = True
 
 
+def open_link_from_show(show):
+    webbrowser.open(show.link)
+
+
 class openwin:
     def __init__(self):
         global shouldrestart
@@ -290,22 +335,24 @@ class openwin:
 
         for show in shows if showall else shows[:min(len(shows), showamount)]:  # uses the raw shows list if showall is
             #  True, otherwise shortening it to the -showamount- index.
-            tshow = stringify(show)
-            color = txtcolor[min(int(tshow[6]), max_txt_color_index)]
+            show.stringify()
+            color = txtcolor[min(int(show.color), max_txt_color_index)]
 
-            delcolumn.append([butt("DEL", key=f"delete:{tshow[0]}", mouseover_colors="#AA0000",
+            delcolumn.append([butt("DEL", key=f"delete:{show.id}", mouseover_colors="#AA0000",
                                    border_width=0)])
-            titcolumn.append([sg.Text(limit_string_len(tshow[1], max_title_display_len), key=f"title:{tshow[0]}",
-                                      enable_events=True, text_color=f"{color}")])
-            emincolumn.append([sg.Text(f"Ep:", key=f"Eminus{tshow[0]}", enable_events=True,
+            titcolumn.append([sg.Text(limit_string_len(show.title, max_title_display_len), key=f"title:{show.id}",
+                                      enable_events=True, text_color=f"{color}",
+                                      right_click_menu=["",
+                                                        [f"{m}::tit_color-{show.id}" for m in txtcolor]])])
+            emincolumn.append([sg.Text(f"Ep:", key=f"Eminus{show.id}", enable_events=True,
                                        text_color=f"{color}")])
-            ecolumn.append([sg.Text(f"{tshow[2]}", key=f"Eplus{tshow[0]}", enable_events=True, size=(4, 1),
+            ecolumn.append([sg.Text(f"{show.ep}", key=f"Eplus{show.id}", enable_events=True, size=(4, 1),
                                     text_color=f"{color}")])
-            scolumn.append([sg.Text(f"S{tshow[3]}", size=(4, 1), key=f"season:{tshow[0]}",
+            scolumn.append([sg.Text(f"S{show.season}", size=(4, 1), key=f"season:{show.id}",
                                     text_color=f"{color}", enable_events=True)])
-            linkcolumn.append([butt("LINK", key=f"gotolink:{tshow[0]}", tooltip=tshow[4], border_width=0,
+            linkcolumn.append([butt("LINK", key=f"gotolink:{show.id}", tooltip=show.link, border_width=0,
                                     right_click_menu=["", [f"Open links:{color}"]])])
-            propcolumn.append([butt("*", key=f"properties{tshow[0]}", border_width=0)])
+            propcolumn.append([butt("*", key=f"properties{show.id}", border_width=0)])
 
         showscol = [[sg.Col([[delcolumn[ind][0], titcolumn[ind][0]] for ind in range(len(titcolumn))]),
                      sg.Col([[emincolumn[ind][0], ecolumn[ind][0], scolumn[ind][0], linkcolumn[ind][0], propcolumn[ind][0]] for ind in range(len(titcolumn))])]]
@@ -369,8 +416,8 @@ class openwin:
                 print(event)
                 s_id = event[9:]
                 for ind, n in enumerate(shows):
-                    if n[0] == s_id:
-                        self.open_link(n)
+                    if n.id == s_id:
+                        open_link_from_show(n)
                         break
 
             elif event[:7] == "delete:":
@@ -380,7 +427,7 @@ class openwin:
                     continue
 
                 for ind, n in enumerate(shows):
-                    if n[0] == event[7:]:
+                    if n.id == event[7:]:
                         delme = ind
                         break
                 if delme != -1:
@@ -392,68 +439,68 @@ class openwin:
 
             elif event[:5] == "Eplus":
                 for s in shows:
-                    if s[0] == event[5:]:
-                        s[2] = str(int(s[2]) + 1)
+                    if s.id == event[5:]:
+                        s.ep = str(int(s.ep) + 1)
                         writesavefile(shows)
-                        win[event](value=s[2])
+                        win[event](value=s.ep)
                         break
             elif event[:6] == "Eminus":
                 for s in shows:
-                    if s[0] == event[6:]:
-                        s[2] = str(int(s[2]) - 1)
+                    if s.id == event[6:]:
+                        s.ep = str(int(s.ep) - 1)
                         writesavefile(shows)
-                        win["Eplus" + event[6:]](value=s[2])
+                        win["Eplus" + event[6:]](value=s.ep)
                         break
 
             elif event[:6] == "title:":
                 tID = event[6:]
                 for ind, n in enumerate(shows):
-                    if n[0] == tID:
-                        shows[ind][6] = str(int(shows[ind][6])+1)
-                        if int(shows[ind][6]) >= len(txtcolor):
-                            shows[ind][6] = 0
-                        win[event].update(text_color=txtcolor[int(n[6])])
-                        win[f"Eplus{tID}"].update(text_color=txtcolor[int(n[6])])
-                        win[f"Eminus{tID}"].update(text_color=txtcolor[int(n[6])])
-                        win[f"season:{tID}"].update(text_color=txtcolor[int(n[6])])
+                    if n.id == tID:
+                        shows[ind].color = str(int(shows[ind].color)+1)
+                        if int(shows[ind].color) >= len(txtcolor):
+                            shows[ind].color = 0
+                        win[event].update(text_color=txtcolor[int(n.color)])
+                        win[f"Eplus{tID}"].update(text_color=txtcolor[int(n.color)])
+                        win[f"Eminus{tID}"].update(text_color=txtcolor[int(n.color)])
+                        win[f"season:{tID}"].update(text_color=txtcolor[int(n.color)])
                         break
 
                 writesavefile(shows)
             elif event[:7] == "season:":
                 for s in shows:
-                    if s[0] == event[7:]:
+                    if s.id == event[7:]:
                         first_mouse = mouse.get_position()[1]
                         time.sleep(0.050)
                         second_mouse = mouse.get_position()[1]
-                        print(s[3])
+                        print(s.season)
                         if first_mouse < second_mouse:
-                            s[3] = str(int(s[3]) - 1)  # Increase season counter
+                            s.season = str(int(s.season) - 1)  # Increase season counter
                         elif first_mouse > second_mouse:
-                            s[3] = str(int(s[3]) + 1)  # Decrease season counter
-                        print(s[3])
+                            s.season = str(int(s.season) + 1)  # Decrease season counter
+                        print(s.season)
                         writesavefile(shows)
-                        win["season:" + event[7:]](value=f"S{s[3]}")
+                        win["season:" + event[7:]](value=f"S{s.season}")
                         break
 
             elif event[:11] == "Open links:":
                 color = event[11:]
                 for show in shows:
-                    show_color = txtcolor[min(int(show[6]), max_txt_color_index)]
+                    show_color = txtcolor[min(int(show.color), max_txt_color_index)]
                     if color == show_color:
-                        self.open_link(show)
+                        open_link_from_show(show)
 
             elif event[:10] == "properties":
                 show = findfromid(event[10:], shows)
-                data = showprop(popshowname=show[1], popep=show[2], popseas=show[3], poplink=show[4], popweight=show[5])
+                data = showprop(popshowname=show.title, popep=show.ep, popseas=show.season, poplink=show.link, popweight=show.weight)
                 if data == 1:
                     continue
                 for ind, tshow in enumerate(shows):
-                    if tshow[0] == show[0]:
-                        shows[ind][1] = data["popshowname"]
-                        shows[ind][2] = data["popep"]
-                        shows[ind][3] = data["popseas"]
-                        shows[ind][4] = data["poplink"]
-                        shows[ind][5] = data["popweight"]
+                    if tshow.id == show.id:
+                        shows[ind].title = data["popshowname"]
+                        shows[ind].ep = data["popep"]
+                        shows[ind].season = data["popseas"]
+                        shows[ind].link = data["poplink"]
+                        shows[ind].weight = data["popweight"]
                         self.restart()
                         return
 
@@ -478,8 +525,22 @@ class openwin:
                 self.restart()
                 break
 
-    def open_link(self, show):
-        webbrowser.open(show[4])
+            elif "::tit_color-" in event:
+                for ind, s in enumerate(event):
+                    if s == ":":
+                        col = event[:ind]
+                        break
+                for ind in range(0, -len(event), -1):
+                    if event[ind] == "-":
+                        id = event[ind+1:]
+                        break
+                col_index = txtcolor.index(col)
+                show = findfromid(id, shows)
+                show.color = col_index
+                win[f"title:{id}"].update(text_color=txtcolor[col_index])
+                win[f"Eminus{id}"].update(text_color=txtcolor[col_index])
+                win[f"Eplus{id}"].update(text_color=txtcolor[col_index])
+                win[f"season:{id}"].update(text_color=txtcolor[col_index])
 
     def close(self):
         global initialwinsize
@@ -502,11 +563,16 @@ class openwin:
     def search(self, results=3):
         delcol = [butt("DEL", key=f"s_delete_{n}", mouseover_colors="#AA0000", border_width=0) for n in range(results)]
 
-        titcol = [sg.Text(shows[n][1], key=f"s_title_{n}", enable_events=True, text_color=f"{txtcolor[0]}", size=(37, 1)) for n in range(results)]
+        titcol = [sg.Text(shows[n].title, key=f"s_title_{n}", enable_events=True,
+                          text_color=txtcolor[min(int(shows[n].color), len(txtcolor)-1)],
+                          size=(37, 1)) for n in range(results)]
+
+        index_col = [sg.Text(f"   {n+1}", key=f"s_index_{n}",
+                             text_color=txtcolor[min(int(shows[n].color), len(txtcolor)-1)]) for n in range(results)]
 
         propcol = [butt("*", key=f"s_properties_{n}", border_width=0) for n in range(results)]
 
-        rescol = [[delcol[n], titcol[n], propcol[n]] for n in range(results)]
+        rescol = [[delcol[n], titcol[n], index_col[n], propcol[n]] for n in range(results)]
 
         layout = [[sg.T("Search:"), sg.In(key="search", enable_events=True, size=(40, 1))],
                   [sg.Col(rescol)]]
@@ -520,18 +586,26 @@ class openwin:
             if e == sg.WIN_CLOSED:
                 break
             elif e == "search":
+                found_indices = [-1]*results
                 found = [""]*results
-                for s in shows:
-                    if v["search"].lower() in s[1].lower():
+                search_query = v["search"].lower()
+                for show_index, s in enumerate(shows):
+                    if search_query in s.title.lower():
                         for ind, n in enumerate(found):
                             if n == "":
                                 found[ind] = s
+                                found_indices[ind] = show_index
                                 break
                 try:
                     for n in range(results):
                         swin[f"s_title_{n}"].update(" ")
+                        swin[f"s_index_{n}"].update("    ")
                     for n in range(results):
-                        swin[f"s_title_{n}"].update(found[n][1])
+                        swin[f"s_title_{n}"].update(found[n].title)
+                        swin[f"s_index_{n}"].update(min_string_len(str(found_indices[n] + 1), 4))
+                        swin[f"s_title_{n}"].update(text_color=txtcolor[min(int(found[n].color), len(txtcolor) - 1)])
+                        swin[f"s_index_{n}"].update(text_color=txtcolor[min(int(found[n].color), len(txtcolor) - 1)])
+
                 except IndexError:
                     pass
             elif e[:8] == "s_delete":
@@ -542,7 +616,7 @@ class openwin:
 
                 delme = -1
                 for ind, n in enumerate(shows):
-                    if n[0] == found[k][0]:
+                    if n.id == found[k].id:
                         delme = ind
                         break
                 if delme != -1:
@@ -555,18 +629,18 @@ class openwin:
             elif e[:12] == "s_properties":
                 k = int(e[-1])
 
-                show = findfromid(found[k][0], shows)
-                data = showprop(popshowname=show[1], popep=show[2], popseas=show[3], poplink=show[4], popweight=show[5])
+                show = findfromid(found[k].id, shows)
+                data = showprop(popshowname=show[1], popep=show.ep, popseas=show.season, poplink=show.link, popweight=show.weight)
                 if data == 1:
                     continue
 
                 for ind, tshow in enumerate(shows):
-                    if tshow[0] == show[0]:
-                        shows[ind][1] = data["popshowname"]
-                        shows[ind][2] = data["popep"]
-                        shows[ind][3] = data["popseas"]
-                        shows[ind][4] = data["poplink"]
-                        shows[ind][5] = data["popweight"]
+                    if tshow.id == show.id:
+                        shows[ind].title = data["popshowname"]
+                        shows[ind].ep = data["popep"]
+                        shows[ind].season = data["popseas"]
+                        shows[ind].link = data["poplink"]
+                        shows[ind].weight = data["popweight"]
                         swin.close()
                         self.restart()
                         return
@@ -584,6 +658,7 @@ class openwin:
         col1 = [[sg.T("Font size:")],
                 [sg.T("Font type:")],
                 [sg.T("Text color:")],
+                [sg.T("Background color:")],
                 [sg.T("Menu background color:")],
                 [sg.T("Menu font size:")],
                 [sg.T("Button Color")],
@@ -593,14 +668,22 @@ class openwin:
         col2 = [[sg.In(fontsize, key="fsize", tooltip="Any integer")],
                 [sg.In(fonttype, key="ftype", tooltip="Any font name, as one might use in word or libreOffice Writer")],
                 [sg.In("-".join(txtcolor), key="txtcolor", tooltip="Ex: '#ff0000-#404040' or '#ff0000-#404040-#878787'")],
+                [sg.In(sg.theme_background_color(), k="bg_color", tooltip="The background color")],
                 [sg.In(right_click_selected_background, k="menu_bg_color", tooltip="The background color of the right click menu")],
                 [sg.In(right_click_fontsize, k="menu_font_size", tooltip="The font size of the right click menu")],
                 [sg.In(buttoncolor, key="buttoncolor", tooltip="A single color, Ex: '#e0e0e0'")],
                 [sg.In(search_results, key="sresults", tooltip="The number of results shown when searching. Default:3")],
                 [sg.In(max_title_display_len, key="title_length", tooltip="The amount of characters that should be displayed\nin titles. 0 to display all characters")],
                 [sg.In(showamount, key="showamount", tooltip="For performance reasons not all shows are displayed by default. This is the amount of shows on display.\nCan be toggled by the '^' button")]]
+        col3 = [[sg.T("Field Background Color:")],
+                ]
+        col4 = [[sg.In(sg.theme_input_background_color(), k="field_bg_color", tooltip="The background color of the input fields")],
+                ]
         twin = sg.Window("Preferences", layout=[
-            [sg.Col(col1), sg.Col(col2)],
+            [sg.Col(col1),
+             sg.Col(col2),
+             sg.Col(col3, expand_y=True, element_justification="n"),
+             sg.Col(col4, expand_y=True, element_justification="n")],
             [sg.Button("Save")]], default_element_size=(16, 1), font=(fonttype, fontsize))
 
         while True:
@@ -614,6 +697,12 @@ class openwin:
                         raise ValueError
 
                     if not isvalidcolor(twin["menu_bg_color"].get()):
+                        raise ValueError
+
+                    if not isvalidcolor(twin["bg_color"].get()):
+                        raise ValueError
+
+                    if not isvalidcolor(twin["field_bg_color"].get()):
                         raise ValueError
 
                     gotcolors = twin["txtcolor"].get().split("-")
@@ -630,6 +719,8 @@ class openwin:
                 fontsize = twin["fsize"].get()
                 fonttype = twin["ftype"].get()
                 txtcolor = twin["txtcolor"].get().split("-")
+                sg.theme_background_color(twin["bg_color"].get())
+                sg.theme_input_background_color(twin["field_bg_color"].get())
                 right_click_selected_background = twin["menu_bg_color"].get()
                 right_click_fontsize = int(twin["menu_font_size"].get())
                 maxgreycolor()
