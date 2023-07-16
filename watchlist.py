@@ -36,10 +36,11 @@ class Show:
         self.link = link
         self.weight = weight
         self.color = color
-        self.backwards_list = (self.id, self.title, self.ep, self.season, self.link, self.weight, self.color)
 
-    def __getitem__(self, item):
-        return self.backwards_list[item]
+    def __repr__(self):
+        return f"Show(id={self.id.__repr__()}, title={self.title.__repr__()}, ep={self.ep.__repr__()}," \
+               f" season={self.season.__repr__()}, link={self.link.__repr__()}, weight={self.weight.__repr__()}," \
+               f" color={self.color.__repr__()})"
 
     def stringify(self):
         self.id = str(self.id)
@@ -239,12 +240,13 @@ def readsavefile(svfile=savefile, deli=delimiter):
 
 
 def writesavefile(tshows, svfile=savefile, deli=delimiter):
+    print("saving")
     if tshows == readsavefile():
         return
     with open(svfile, "w", newline="") as csvfile:
         writer = csv.writer(csvfile, delimiter=deli, quotechar="|")
         for show in tshows:
-            writer.writerow([str(data) for data in show])
+            writer.writerow([show.id, show.title, show.ep, show.season, show.link, show.weight, show.color])
 
 
 def showprop(poptitle="Show Editor", popshowname="", popep="0", popseas="1", poplink="", popweight="0"):
@@ -351,7 +353,7 @@ class openwin:
             scolumn.append([sg.Text(f"S{show.season}", size=(4, 1), key=f"season:{show.id}",
                                     text_color=f"{color}", enable_events=True)])
             linkcolumn.append([butt("LINK", key=f"gotolink:{show.id}", tooltip=show.link, border_width=0,
-                                    right_click_menu=["", [f"Open links:{color}"]])])
+                                    right_click_menu=["", [f"Open all links with the same color::multi_links-{show.id}"]])])
             propcolumn.append([butt("*", key=f"properties{show.id}", border_width=0)])
 
         showscol = [[sg.Col([[delcolumn[ind][0], titcolumn[ind][0]] for ind in range(len(titcolumn))]),
@@ -482,13 +484,6 @@ class openwin:
                         win["season:" + event[7:]](value=f"S{s.season}")
                         break
 
-            elif event[:11] == "Open links:":
-                color = event[11:]
-                for show in shows:
-                    show_color = txtcolor[min(int(show.color), max_txt_color_index)]
-                    if color == show_color:
-                        open_link_from_show(show)
-
             elif event[:10] == "properties":
                 show = findfromid(event[10:], shows)
                 data = showprop(popshowname=show.title, popep=show.ep, popseas=show.season, poplink=show.link, popweight=show.weight)
@@ -521,9 +516,23 @@ class openwin:
                 data = showprop()
                 if data == 1:
                     continue
-                shows.append([str(gethighestid(shows)+1), data["popshowname"], data["popep"], data["popseas"], data["poplink"], data["popweight"], "0"])
+                shows.append(Show(str(gethighestid(shows)+1), data["popshowname"], data["popep"],
+                              data["popseas"], data["poplink"], data["popweight"], "0"))
                 self.restart()
                 break
+
+            elif "::multi_links-" in event:
+                for ind in range(0, -len(event), -1):
+                    if event[ind] == "-":
+                        id = event[ind+1:]
+                        break
+
+                ref_show = findfromid(id, shows)
+                print(ref_show)
+
+                for show in shows:
+                    if ref_show.color == show.color:
+                        open_link_from_show(show)
 
             elif "::tit_color-" in event:
                 for ind, s in enumerate(event):
