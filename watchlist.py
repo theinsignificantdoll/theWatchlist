@@ -374,7 +374,7 @@ class MainWin:
 
             propcolumn.append([butt("⛭", key=f"properties{show.id}", border_width=0)])
 
-            index_col.append([sg.Text(str(ind), key=f"index:{show.id}",
+            index_col.append([sg.Text(str(ind + 1), key=f"index:{show.id}",
                                       text_color=color, visible=indices_visible)])
 
         showscol = [[sg.Col([[delcolumn[ind][0], title_column[ind][0]] for ind in range(len(title_column))]),
