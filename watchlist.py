@@ -14,14 +14,6 @@ settingsfile = "settings.csv"
 delimiter = "\\"
 
 
-def max_grey_color():
-    global shows
-    global settings
-    for s in shows:
-        if int(s.color) >= len(settings.text_colors):
-            s.color = str(len(settings.text_colors) - 1)
-
-
 def is_valid_color(col):
     if len(col) == 7:
         if col[0] == "#":
@@ -576,7 +568,6 @@ class MainWin:
                 sg.theme_input_background_color(twin["field_bg_color"].get())
                 settings.right_click_selected_background = twin["menu_bg_color"].get()
                 settings.right_click_fontsize = int(twin["menu_font_size"].get())
-                max_grey_color()
                 settings.button_color = twin["buttoncolor"].get()
                 settings.search_results = int(twin["sresults"].get())
                 settings.max_title_display_len = int(twin["title_length"].get())
