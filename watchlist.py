@@ -5,7 +5,6 @@ from classes import Show, ShowsFileHandler, Settings
 import PySimpleGUI as sg
 import mouse
 import time
-import webbrowser
 
 sg.theme("DarkBrown4")
 
@@ -13,8 +12,17 @@ savefile = "saved.csv"
 settingsfile = "settings.csv"
 delimiter = "\\"
 
+# The amount of seconds in between a change being made to a show and the change being saved.
+delay_to_save_shows = 3
 
-def is_valid_color(col):
+
+def is_valid_color(col: str):
+    """
+    Checks whether or not a string is a hex color code
+
+    :param col: A string
+    :return: Returns True if the string col is a proper hex color code, such as "#FFFFFF"
+    """
     if len(col) == 7:
         if col[0] == "#":
             for n in col[1:]:
@@ -24,31 +32,87 @@ def is_valid_color(col):
     return False
 
 
-def get_highest_id(lst):
+def get_highest_id(lst: Union[ShowsFileHandler, List]):
+    """
+    Returns the highest id in a list of Shows
+
+    :param lst: A list or list equivalent of Show objects.
+    :type lst: ShowsFileHandler
+    :return: The highest id
+    """
     if len(lst) == 0:
         return -1
     return max([int(show.id) for show in lst])
 
 
-def find_from_id(num_id, lst):
+def find_from_id(num_id, lst: Union[ShowsFileHandler, List]):
+    """
+    Returns the Show with the given id
+
+    :param num_id: The id to search for
+    :type num_id: int
+    :param lst: A list or list equivalent of Show objects.
+    :type lst: ShowsFileHandler
+    :return: The Show with and id equivalent to num_id
+    :rtype: Show
+    """
     for n in lst:
         if n.id == num_id:
             return n
 
 
 def limit_string_len(string: str, length: int):
+    """
+    Shortens a string so that its length doesn't exceed some amount
+
+    :param string: The string to limit
+    :type string: str
+    :param length: The maximum length of the string
+    :type length: int
+    :return: A string with a maximum length of - length -
+    :rtype: str
+    """
     if len(string) > length != 0:
         return string[:length]
     return string
 
 
 def min_string_len(string: str, length: int):
+    """
+    Prefixes a string with a number of spaces to reach a certain length
+
+    :param string: The string to (possibly) prefix with spaces
+    :type string: str
+    :param length: The minimum length of the returned string
+    :type string: int
+    :return: A string with a minimum length
+    :rtype: str
+    """
     if len(string) > length:
         return string
     return f"{' ' * (length - len(string))}{string}"
 
 
 def show_properties(poptitle="Show Editor", popshowname="", popep="0", popseas="1", poplink="", popweight="0"):
+    """
+    Opens a small window with all the relevant information about a show allowing these to be changed by the user.
+    Then returning the new values - unless the button "Cancel" is pressed.
+
+    :param poptitle: title of the window
+    :type poptitle: str
+    :param popshowname: initital Title of the Show
+    :type popshowname: str
+    :param popep: initital Episode of the Show
+    :type popep: str
+    :param popseas: initital Season of the Show
+    :type popseas: str
+    :param poplink: initital Link of the Show
+    :type poplink: str
+    :param popweight: initital Weight of the Show
+    :type popweight: str
+    :return: A dictionary of the user submitted values or 1 if canceled.
+    :rtype: dict or int
+    """
     button, data = sg.Window(poptitle,
                              [
                                  [sg.Column([
@@ -93,15 +157,25 @@ def show_properties(poptitle="Show Editor", popshowname="", popep="0", popseas="
 
 def butt(button_text="", key=None, tooltip=None, butt_color=(False, None), border_width=None, size=(None, None),
          mouseover_colors=sg.theme_background_color(), disabled=False, right_click_menu=None):
+    """
+    A wrapper function for sg.Button with some different default values
+
+    :param button_text:
+    :param key:
+    :param tooltip:
+    :param butt_color:
+    :param border_width:
+    :param size:
+    :param mouseover_colors:
+    :param disabled:
+    :param right_click_menu:
+    :return: an sg.Button object
+    """
     if not butt_color[0]:
         butt_color = (settings.button_color, butt_color[1])
     return sg.Button(button_text=button_text, key=key, tooltip=tooltip, button_color=butt_color,
                      border_width=border_width, size=size, mouseover_colors=mouseover_colors, disabled=disabled,
                      right_click_menu=right_click_menu)
-
-
-def open_link_from_show(show):
-    webbrowser.open(show.link)
 
 
 class MainWin:
@@ -115,6 +189,7 @@ class MainWin:
         sg.theme_element_text_color(settings.button_color)
         sg.theme_element_background_color(sg.theme_background_color())
         sg.theme_text_element_background_color(sg.theme_background_color())
+        sg.theme_slider_color(sg.theme_background_color())
         sg.theme_button_color((settings.button_color, sg.theme_background_color()))
 
         delcolumn = []
@@ -127,7 +202,6 @@ class MainWin:
         index_col = []
 
         max_txt_color_index = len(settings.text_colors) - 1
-
         for ind, show in enumerate(shows if settings.show_all else shows[:min(len(shows), settings.show_amount)]):
             # Note that it will iterate the entire list show if showall is true and otherwise only
             # the first {show_amount} of shows
@@ -181,19 +255,20 @@ class MainWin:
         ]
 
         # noinspection PyTypeChecker
-        win = sg.Window(title="Watchlist", layout=layout, auto_size_text=True, auto_size_buttons=True, resizable=True,
-                        size=settings.initialwinsize, font=(settings.fonttype, int(settings.fontsize)),
-                        border_depth=0, finalize=True,
-                        location=settings.initialwinpos,
-                        titlebar_background_color=sg.theme_background_color(), margins=(0, 0),
-                        element_padding=(3, 1), use_custom_titlebar=False,
-                        titlebar_text_color=settings.text_colors[0], return_keyboard_events=True,
-                        right_click_menu_font=(settings.fonttype, settings.right_click_fontsize),
-                        right_click_menu_background_color=sg.theme_background_color(),
-                        right_click_menu_text_color=settings.button_color,
-                        right_click_menu_selected_colors=(settings.button_color,
-                                                          settings.right_click_selected_background),
-                        icon="GenIko.ico")
+        self.win = sg.Window(title="Watchlist", layout=layout, auto_size_text=True, auto_size_buttons=True,
+                             resizable=True,
+                             size=settings.initialwinsize, font=(settings.fonttype, int(settings.fontsize)),
+                             border_depth=0, finalize=True,
+                             location=settings.initialwinpos,
+                             titlebar_background_color=sg.theme_background_color(), margins=(0, 0),
+                             element_padding=(3, 1), use_custom_titlebar=False,
+                             titlebar_text_color=settings.text_colors[0], return_keyboard_events=True,
+                             right_click_menu_font=(settings.fonttype, settings.right_click_fontsize),
+                             right_click_menu_background_color=sg.theme_background_color(),
+                             right_click_menu_text_color=settings.button_color,
+                             right_click_menu_selected_colors=(settings.button_color,
+                                                               settings.right_click_selected_background),
+                             icon="GenIko.ico")
 
         for e in linkcolumn:
             e[0].set_cursor("hand2")
@@ -208,22 +283,26 @@ class MainWin:
         for e in propcolumn:
             e[0].set_cursor("plus")
 
-        win["AddShow"].block_focus()
-        win["AddShow"].set_cursor("plus")
-        win["preferences"].block_focus()
-        win["preferences"].set_cursor("plus")
+        self.win["AddShow"].block_focus()
+        self.win["AddShow"].set_cursor("plus")
+        self.win["preferences"].block_focus()
+        self.win["preferences"].set_cursor("plus")
 
-        self.win = win
+    def main_loop(self):
+        last_show_change = 0
 
         while not self.shouldbreak:
-            settings.initialwinpos = win.CurrentLocation()
-            settings.initialwinsize = win.Size
-            event, values = win.read(timeout=200)
+            settings.initialwinpos = self.win.CurrentLocation()
+            settings.initialwinsize = self.win.Size
+            event, values = self.win.read(timeout=200)
 
             # if event != "__TIMEOUT__":
             #    print(event)
 
             if event == "__TIMEOUT__":
+                if last_show_change != 0 and time.time() - last_show_change > delay_to_save_shows:
+                    shows.save()
+                    last_show_change = 0
                 continue
             elif event == sg.WIN_CLOSED or self.shouldbreak or event == "Close":
                 self.close()
@@ -233,7 +312,7 @@ class MainWin:
                 s_id = event[9:]
                 for ind, n in enumerate(shows):
                     if n.id == s_id:
-                        open_link_from_show(n)
+                        n.open_link()
                         break
 
             elif event[:7] == "delete:":
@@ -248,25 +327,23 @@ class MainWin:
                         break
                 if delme != -1:
                     shows.pop(delme)
-                shows.save()
-                should_restart = True
-                win.close()
+                self.restart()
                 break
 
             elif event[:5] == "Eplus":
                 for s in shows:
                     if s.id == event[5:]:
                         s.ep = str(int(s.ep) + 1)
-                        shows.save()
-                        win[event](value=s.ep)
+                        last_show_change = time.time()
+                        self.win[event](value=s.ep)
                         break
 
             elif event[:6] == "Eminus":
                 for s in shows:
                     if s.id == event[6:]:
                         s.ep = str(int(s.ep) - 1)
-                        shows.save()
-                        win["Eplus" + event[6:]](value=s.ep)
+                        last_show_change = time.time()
+                        self.win["Eplus" + event[6:]](value=s.ep)
                         break
 
             elif event[:6] == "title:":
@@ -276,14 +353,14 @@ class MainWin:
                         shows[ind].color = str(int(shows[ind].color) + 1)
                         if int(shows[ind].color) >= len(settings.text_colors):
                             shows[ind].color = 0
-                        win[event].update(text_color=settings.text_colors[int(n.color)])
-                        win[f"index:{show_id}"].update(text_color=settings.text_colors[int(n.color)])
-                        win[f"Eplus{show_id}"].update(text_color=settings.text_colors[int(n.color)])
-                        win[f"Eminus{show_id}"].update(text_color=settings.text_colors[int(n.color)])
-                        win[f"season:{show_id}"].update(text_color=settings.text_colors[int(n.color)])
+                        self.win[event].update(text_color=settings.text_colors[int(n.color)])
+                        self.win[f"index:{show_id}"].update(text_color=settings.text_colors[int(n.color)])
+                        self.win[f"Eplus{show_id}"].update(text_color=settings.text_colors[int(n.color)])
+                        self.win[f"Eminus{show_id}"].update(text_color=settings.text_colors[int(n.color)])
+                        self.win[f"season:{show_id}"].update(text_color=settings.text_colors[int(n.color)])
                         break
 
-                shows.save()
+                last_show_change = time.time()
             elif event[:7] == "season:":
                 for s in shows:
                     if s.id == event[7:]:
@@ -294,14 +371,14 @@ class MainWin:
                             s.season = str(int(s.season) - 1)  # Increase season counter
                         elif first_mouse > second_mouse:
                             s.season = str(int(s.season) + 1)  # Decrease season counter
-                        shows.save()
-                        win["season:" + event[7:]](value=f"S{s.season}")
+                        last_show_change = time.time()
+                        self.win["season:" + event[7:]](value=f"S{s.season}")
                         break
 
             elif event == "index_checkbox":
-                indices_visible = win["index_checkbox"].get()
+                indices_visible = self.win["index_checkbox"].get()
                 for show in shows if settings.show_all else shows[:min(len(shows), settings.show_amount)]:
-                    win[f"index:{show.id}"].update(visible=indices_visible)
+                    self.win[f"index:{show.id}"].update(visible=indices_visible)
 
             elif event[:10] == "properties":
                 show = find_from_id(event[10:], shows)
@@ -319,9 +396,9 @@ class MainWin:
                         self.restart()
                         return
 
-            elif event == "h":  # Move win to mouse
+            elif event == "h":  # Move self.win to mouse
                 mouse_pos = mouse.get_position()
-                win.move(*mouse_pos)
+                self.win.move(*mouse_pos)
 
             elif event == "preferences":
                 self.update_preferences()
@@ -352,7 +429,7 @@ class MainWin:
 
                     for show in shows:
                         if ref_show.color == show.color:
-                            open_link_from_show(show)
+                            show.open_link()
 
             elif "::tit_color-" in event:
                 col = ""
@@ -369,16 +446,14 @@ class MainWin:
                     col_index = settings.text_colors.index(col)
                     show = find_from_id(num_id, shows)
                     show.color = col_index
-                    win[f"index:{num_id}"].update(text_color=settings.text_colors[col_index])
-                    win[f"title:{num_id}"].update(text_color=settings.text_colors[col_index])
-                    win[f"Eminus{num_id}"].update(text_color=settings.text_colors[col_index])
-                    win[f"Eplus{num_id}"].update(text_color=settings.text_colors[col_index])
-                    win[f"season:{num_id}"].update(text_color=settings.text_colors[col_index])
+                    self.win[f"index:{num_id}"].update(text_color=settings.text_colors[col_index])
+                    self.win[f"title:{num_id}"].update(text_color=settings.text_colors[col_index])
+                    self.win[f"Eminus{num_id}"].update(text_color=settings.text_colors[col_index])
+                    self.win[f"Eplus{num_id}"].update(text_color=settings.text_colors[col_index])
+                    self.win[f"season:{num_id}"].update(text_color=settings.text_colors[col_index])
 
     def close(self):
         global settings
-        shows.save()
-        settings.save()
         self.shouldbreak = True
         self.win.close()
 
@@ -412,12 +487,12 @@ class MainWin:
         layout = [[sg.T("Search:"), sg.In(key="search", enable_events=True, size=(40, 1))],
                   [sg.Col(rescol)]]
 
-        swin = sg.Window("Search", layout=layout, finalize=True, font=(settings.fonttype, int(settings.fontsize)))
+        s_win = sg.Window("Search", layout=layout, finalize=True, font=(settings.fonttype, int(settings.fontsize)))
 
         found: Union[List[Show], List[str]] = [""] * results
 
         while True:
-            e, v = swin.read()
+            e, v = s_win.read()
             if e == sg.WIN_CLOSED:
                 break
             elif e == "search":
@@ -434,16 +509,16 @@ class MainWin:
                                 break
                 try:
                     for n in range(results):
-                        swin[f"s_title_{n}"].update(" ")
-                        swin[f"s_index_{n}"].update(" "*index_len)
+                        s_win[f"s_title_{n}"].update(" ")
+                        s_win[f"s_index_{n}"].update(" "*index_len)
                     for n in range(results):
                         if isinstance(found[n], Show):
-                            swin[f"s_title_{n}"].update(found[n].title)
-                            swin[f"s_index_{n}"].update(min_string_len(str(found_indices[n] + 1), index_len))
-                            swin[f"s_title_{n}"]\
+                            s_win[f"s_title_{n}"].update(found[n].title)
+                            s_win[f"s_index_{n}"].update(min_string_len(str(found_indices[n] + 1), index_len))
+                            s_win[f"s_title_{n}"]\
                                 .update(text_color=settings.text_colors[min(int(found[n].color),
                                                                             len(settings.text_colors) - 1)])
-                            swin[f"s_index_{n}"]\
+                            s_win[f"s_index_{n}"]\
                                 .update(text_color=settings.text_colors[min(int(found[n].color),
                                                                             len(settings.text_colors) - 1)])
                 except IndexError:
@@ -462,8 +537,7 @@ class MainWin:
                         break
                 if delme != -1:
                     shows.pop(delme)
-                shows.save()
-                swin.close()
+                s_win.close()
                 self.restart()
                 return
 
@@ -471,7 +545,7 @@ class MainWin:
                 k = int(e[-1])
 
                 show = find_from_id(found[k].id, shows)
-                data = show_properties(popshowname=show[1], popep=show.ep, popseas=show.season, poplink=show.link,
+                data = show_properties(popshowname=show.title, popep=show.ep, popseas=show.season, poplink=show.link,
                                        popweight=show.weight)
                 if data == 1:
                     continue
@@ -483,7 +557,7 @@ class MainWin:
                         shows[ind].season = data["popseas"]
                         shows[ind].link = data["poplink"]
                         shows[ind].weight = data["popweight"]
-                        swin.close()
+                        s_win.close()
                         self.restart()
                         return
 
@@ -523,7 +597,7 @@ class MainWin:
         col4 = [[sg.In(sg.theme_input_background_color(), k="field_bg_color",
                        tooltip="The background color of the input fields")],
                 ]
-        twin = sg.Window("Preferences", layout=[
+        pref_win = sg.Window("Preferences", layout=[
             [sg.Col(col1),
              sg.Col(col2),
              sg.Col(col3, expand_y=True, element_justification="n"),
@@ -532,25 +606,25 @@ class MainWin:
                          font=(settings.fonttype, settings.fontsize))
 
         while True:
-            e, v = twin.read()
+            e, v = pref_win.read()
             if e == sg.WIN_CLOSED:
                 break
             elif e == "Save":
                 try:
-                    int(twin["fsize"].get())
-                    if not is_valid_color(twin["buttoncolor"].get()):
+                    int(pref_win["fsize"].get())
+                    if not is_valid_color(pref_win["buttoncolor"].get()):
                         raise ValueError
 
-                    if not is_valid_color(twin["menu_bg_color"].get()):
+                    if not is_valid_color(pref_win["menu_bg_color"].get()):
                         raise ValueError
 
-                    if not is_valid_color(twin["bg_color"].get()):
+                    if not is_valid_color(pref_win["bg_color"].get()):
                         raise ValueError
 
-                    if not is_valid_color(twin["field_bg_color"].get()):
+                    if not is_valid_color(pref_win["field_bg_color"].get()):
                         raise ValueError
 
-                    gotcolors = twin["txtcolor"].get().split("-")
+                    gotcolors = pref_win["txtcolor"].get().split("-")
                     if len(gotcolors) <= 0:
                         raise ValueError
                     for col in gotcolors:
@@ -560,18 +634,19 @@ class MainWin:
                 except ValueError:
                     sg.popup_error("Unreadable value")
                     continue
-                twin.close()
-                settings.fontsize = twin["fsize"].get()
-                settings.fonttype = twin["ftype"].get()
-                settings.text_colors = twin["txtcolor"].get().split("-")
-                sg.theme_background_color(twin["bg_color"].get())
-                sg.theme_input_background_color(twin["field_bg_color"].get())
-                settings.right_click_selected_background = twin["menu_bg_color"].get()
-                settings.right_click_fontsize = int(twin["menu_font_size"].get())
-                settings.button_color = twin["buttoncolor"].get()
-                settings.search_results = int(twin["sresults"].get())
-                settings.max_title_display_len = int(twin["title_length"].get())
-                settings.show_amount = int(twin["showamount"].get())
+                pref_win.close()
+
+                settings.fontsize = pref_win["fsize"].get()
+                settings.fonttype = pref_win["ftype"].get()
+                settings.text_colors = pref_win["txtcolor"].get().split("-")
+                sg.theme_background_color(pref_win["bg_color"].get())
+                sg.theme_input_background_color(pref_win["field_bg_color"].get())
+                settings.right_click_selected_background = pref_win["menu_bg_color"].get()
+                settings.right_click_fontsize = int(pref_win["menu_font_size"].get())
+                settings.button_color = pref_win["buttoncolor"].get()
+                settings.search_results = int(pref_win["sresults"].get())
+                settings.max_title_display_len = int(pref_win["title_length"].get())
+                settings.show_amount = int(pref_win["showamount"].get())
 
                 if settings.save():
                     self.restart()
@@ -581,9 +656,14 @@ class MainWin:
 if __name__ == '__main__':
     settings = Settings(sg, savefile=settingsfile, delimiter=delimiter)
     shows = ShowsFileHandler(savefile=savefile, delimiter=delimiter)
-    should_restart = True
 
+    should_restart = True
     while should_restart:
         should_restart = False
+
         shows.do_sorting()
-        MainWin()
+        window = MainWin()
+        window.main_loop()
+
+        settings.save()
+        shows.save()
