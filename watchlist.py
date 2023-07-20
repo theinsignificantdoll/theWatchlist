@@ -32,35 +32,6 @@ def is_valid_color(col: str):
     return False
 
 
-def get_highest_id(lst: Union[ShowsFileHandler, List]):
-    """
-    Returns the highest id in a list of Shows
-
-    :param lst: A list or list equivalent of Show objects.
-    :type lst: ShowsFileHandler
-    :return: The highest id
-    """
-    if len(lst) == 0:
-        return -1
-    return max([int(show.id) for show in lst])
-
-
-def find_from_id(num_id, lst: Union[ShowsFileHandler, List]):
-    """
-    Returns the Show with the given id
-
-    :param num_id: The id to search for
-    :type num_id: int
-    :param lst: A list or list equivalent of Show objects.
-    :type lst: ShowsFileHandler
-    :return: The Show with and id equivalent to num_id
-    :rtype: Show
-    """
-    for n in lst:
-        if n.id == num_id:
-            return n
-
-
 def limit_string_len(string: str, length: int):
     """
     Shortens a string so that its length doesn't exceed some amount
@@ -80,6 +51,7 @@ def limit_string_len(string: str, length: int):
 def min_string_len(string: str, length: int):
     """
     Prefixes a string with a number of spaces to reach a certain length
+    (The function is used so that PySimpleGUI will have a known size, thus making alignment easier)
 
     :param string: The string to (possibly) prefix with spaces
     :type string: str
@@ -99,17 +71,11 @@ def show_properties(poptitle="Show Editor", popshowname="", popep="0", popseas="
     Then returning the new values - unless the button "Cancel" is pressed.
 
     :param poptitle: title of the window
-    :type poptitle: str
     :param popshowname: initital Title of the Show
-    :type popshowname: str
     :param popep: initital Episode of the Show
-    :type popep: str
     :param popseas: initital Season of the Show
-    :type popseas: str
     :param poplink: initital Link of the Show
-    :type poplink: str
     :param popweight: initital Weight of the Show
-    :type popweight: str
     :return: A dictionary of the user submitted values or 1 if canceled.
     :rtype: dict or int
     """
@@ -179,7 +145,13 @@ def butt(button_text="", key=None, tooltip=None, butt_color=(False, None), borde
 
 
 class MainWin:
-    def __init__(self):
+    def __init__(self, main_loop=False):
+        """
+        Initialises the main PySimpleGUI window
+
+        :param main_loop: Calls self.main_loop() if true
+        :type main_loop: bool
+        """
         global should_restart
 
         self.shouldbreak = False
@@ -202,7 +174,7 @@ class MainWin:
 
         max_txt_color_index = len(settings.text_colors) - 1
         for ind, show in enumerate(shows if settings.show_all else shows[:min(len(shows), settings.show_amount)]):
-            # Note that it will iterate the entire list show if showall is true and otherwise only
+            # Iterates the entirety of show if showall is true and otherwise only
             # the first {show_amount} of shows
             show.stringify()
             color = settings.text_colors[min(int(show.color), max_txt_color_index)]
@@ -286,6 +258,9 @@ class MainWin:
         self.win["AddShow"].set_cursor("plus")
         self.win["preferences"].block_focus()
         self.win["preferences"].set_cursor("plus")
+
+        if main_loop:
+            self.main_loop()
 
     def main_loop(self):
         last_show_change = 0
@@ -380,7 +355,7 @@ class MainWin:
                     self.win[f"index:{show.id}"].update(visible=indices_visible)
 
             elif event[:10] == "properties":
-                show = find_from_id(event[10:], shows)
+                show = shows.from_id(event[10:])
                 data = show_properties(popshowname=show.title, popep=show.ep, popseas=show.season, poplink=show.link,
                                        popweight=show.weight)
                 if data == 1:
@@ -412,7 +387,7 @@ class MainWin:
                 data = show_properties()
                 if data == 1:
                     continue
-                shows.append(Show(str(get_highest_id(shows) + 1), data["popshowname"], data["popep"],
+                shows.append(Show(str(shows.highest_id() + 1), data["popshowname"], data["popep"],
                                   data["popseas"], data["poplink"], data["popweight"], "0"))
                 self.restart()
                 break
@@ -424,7 +399,7 @@ class MainWin:
                         num_id = event[ind + 1:]
                         break
                 if num_id != -1:
-                    ref_show = find_from_id(num_id, shows)
+                    ref_show = shows.from_id(num_id)
 
                     for show in shows:
                         if ref_show.color == show.color:
@@ -443,7 +418,7 @@ class MainWin:
                         break
                 if col != "" and num_id != -1:
                     col_index = settings.text_colors.index(col)
-                    show = find_from_id(num_id, shows)
+                    show = shows.from_id(num_id)
                     show.color = col_index
                     self.win[f"index:{num_id}"].update(text_color=settings.text_colors[col_index])
                     self.win[f"title:{num_id}"].update(text_color=settings.text_colors[col_index])
@@ -484,12 +459,12 @@ class MainWin:
         layout = [[sg.T("Search:"), sg.In(key="search", enable_events=True, size=(40, 1))],
                   [sg.Col(rescol)]]
 
-        s_win = sg.Window("Search", layout=layout, finalize=True, font=(settings.fonttype, int(settings.fontsize)))
+        search_win = sg.Window("Search", layout=layout, finalize=True, font=(settings.fonttype, int(settings.fontsize)))
 
         found: Union[List[Show], List[str]] = [""] * results
 
         while True:
-            e, v = s_win.read()
+            e, v = search_win.read()
             if e == sg.WIN_CLOSED:
                 break
             elif e == "search":
@@ -506,16 +481,16 @@ class MainWin:
                                 break
                 try:
                     for n in range(results):
-                        s_win[f"s_title_{n}"].update(" ")
-                        s_win[f"s_index_{n}"].update(" "*index_len)
+                        search_win[f"s_title_{n}"].update(" ")
+                        search_win[f"s_index_{n}"].update(" "*index_len)
                     for n in range(results):
                         if isinstance(found[n], Show):
-                            s_win[f"s_title_{n}"].update(found[n].title)
-                            s_win[f"s_index_{n}"].update(min_string_len(str(found_indices[n] + 1), index_len))
-                            s_win[f"s_title_{n}"]\
+                            search_win[f"s_title_{n}"].update(found[n].title)
+                            search_win[f"s_index_{n}"].update(min_string_len(str(found_indices[n] + 1), index_len))
+                            search_win[f"s_title_{n}"]\
                                 .update(text_color=settings.text_colors[min(int(found[n].color),
                                                                             len(settings.text_colors) - 1)])
-                            s_win[f"s_index_{n}"]\
+                            search_win[f"s_index_{n}"]\
                                 .update(text_color=settings.text_colors[min(int(found[n].color),
                                                                             len(settings.text_colors) - 1)])
                 except IndexError:
@@ -534,14 +509,14 @@ class MainWin:
                         break
                 if delme != -1:
                     shows.pop(delme)
-                s_win.close()
+                search_win.close()
                 self.restart()
                 return
 
             elif e[:12] == "s_properties":
                 k = int(e[-1])
 
-                show = find_from_id(found[k].id, shows)
+                show = shows.from_id(found[k].id)
                 data = show_properties(popshowname=show.title, popep=show.ep, popseas=show.season, poplink=show.link,
                                        popweight=show.weight)
                 if data == 1:
@@ -554,7 +529,7 @@ class MainWin:
                         shows[ind].season = data["popseas"]
                         shows[ind].link = data["poplink"]
                         shows[ind].weight = data["popweight"]
-                        s_win.close()
+                        search_win.close()
                         self.restart()
                         return
 
@@ -658,8 +633,7 @@ if __name__ == '__main__':
         should_restart = False
 
         shows.do_sorting()
-        window = MainWin()
-        window.main_loop()
+        MainWin(main_loop=True)
 
         settings.save()
         shows.save()

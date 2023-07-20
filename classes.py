@@ -32,7 +32,7 @@ class Show:
         webbrowser.open(self.link)
 
 
-def sort_shows_alphabetically(lst: list, reverse=False):
+def sort_list_of_shows_alphabetically(lst: list[Show], reverse=False):
     def get_title(show):
         return show.title
 
@@ -41,6 +41,11 @@ def sort_shows_alphabetically(lst: list, reverse=False):
 
 
 class ShowsFileHandler:
+    """
+    Note: This class was made as a replacement to using a single list. Therefore, this class will in many ways act like
+    a list for the sake of backwards-compatibility.
+    The list in question is equivalent to the list self.shows
+    """
     def __init__(self, savefile="saved.csv", delimiter="\\"):
         self.savefile = savefile
         self.shows = []
@@ -90,6 +95,10 @@ class ShowsFileHandler:
         return len(self.shows)
 
     def do_sorting(self):
+        """
+        Sorts self.shows according firstly to their weights and secondarily according to their
+        titles alphabetically.
+        """
         dct = {}
         for n in self.shows:
             if n.weight in dct:
@@ -103,9 +112,33 @@ class ShowsFileHandler:
             dct[n].sort(key=lambda x: x.id)
         slist.sort()
         for n in slist:
-            lt += sort_shows_alphabetically(dct[str(n)], reverse=True)
+            lt += sort_list_of_shows_alphabetically(dct[str(n)], reverse=True)
         lt.reverse()
         self.shows = lt
+
+    def highest_id(self):
+        """
+        Finds the highest id held by a show in self.shows
+
+        :return: The highest id in self.shows
+        :rtype: int
+        """
+        if len(self.shows) == 0:
+            return -1
+        return max([int(show.id) for show in self.shows])
+
+    def from_id(self, target_id):
+        """
+        Finds the show with the target id and returns it
+
+        :param target_id: id of the show to be returned
+        :type target_id: Show
+        :return: The show with an id equivalent to target_id
+        :rtype: Show
+        """
+        for show in self.shows:
+            if show.id == target_id:
+                return show
 
     def save(self):
         with open(self.savefile, "w", newline="") as csvfile:
@@ -120,7 +153,10 @@ class Settings:
                  right_click_fontsize=10, input_background=None, initialwinsize=(400, 200),
                  initialwinpos=(50, 50), search_results=3, show_amount=32,
                  max_title_display_len=0, indices_visible=True, show_all=False):
+
         self.sg = sg
+        # Note that some settings are not stored as variables here, but are instead written and read directly from the
+        # PySimpleGUI module
 
         self.savefile = savefile
         self.delimiter = delimiter
@@ -145,11 +181,11 @@ class Settings:
         self.indices_visible = indices_visible
         self.show_all = show_all
 
+        self._currently_saved_to_disk_list = []  # is initially updated when the savefile is read
+
         self.ensure_file_exists()
 
         self.load()
-
-        self.initial_list = self.represent_as_list()
 
     def ensure_file_exists(self):
         if not os.path.isfile(self.savefile):
@@ -190,8 +226,19 @@ class Settings:
             self.indices_visible = state_data[0] == "True"
             self.show_all = state_data[1] == "True"
 
+        self._currently_saved_to_disk_list = self.represent_as_list()
+
     def save(self, force_write=False):
-        if not force_write and self.initial_list == self.represent_as_list():
+        """
+        Checks if settings have changed, subsequently saving if they have.
+        Returns True if something has been written to disk else False
+
+        :param force_write: Skips the of whether or not settings have been changed
+        :type force_write: bool
+        :return: True if something was written to the disk
+        :rtype: bool
+        """
+        if not force_write and self._currently_saved_to_disk_list == self.represent_as_list():
             return False
 
         with open(self.savefile, "w", newline="") as csvfile:
@@ -205,5 +252,5 @@ class Settings:
             writer.writerow([self.show_amount, self.max_title_display_len])
             writer.writerow([self.indices_visible, self.show_all])
 
-        self.initial_list = self.represent_as_list()
+        self._currently_saved_to_disk_list = self.represent_as_list()
         return True
