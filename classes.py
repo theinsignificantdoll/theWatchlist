@@ -1,6 +1,7 @@
 import csv
 import copy
 import os
+import webbrowser
 
 
 class Show:
@@ -27,12 +28,15 @@ class Show:
         self.weight = str(self.weight)
         self.color = str(self.color)
 
+    def open_link(self):
+        webbrowser.open(self.link)
 
-def sort_shows_alphabetically(lst: list):
+
+def sort_shows_alphabetically(lst: list, reverse=False):
     def get_title(show):
         return show.title
 
-    lst.sort(key=get_title, reverse=True)
+    lst.sort(key=get_title, reverse=reverse)
     return lst
 
 
@@ -40,7 +44,6 @@ class ShowsFileHandler:
     def __init__(self, savefile="saved.csv", delimiter="\\"):
         self.savefile = savefile
         self.shows = []
-        self.original_shows = []
         self.delimiter = delimiter
 
         self.ensure_file_exists()
@@ -66,7 +69,6 @@ class ShowsFileHandler:
                     weight=row[5],
                     color=row[6],
                 ))
-        self.original_shows = copy.deepcopy(self.shows)
         return self.shows
 
     def pop(self, __index):
@@ -101,14 +103,11 @@ class ShowsFileHandler:
             dct[n].sort(key=lambda x: x.id)
         slist.sort()
         for n in slist:
-            lt += sort_shows_alphabetically(dct[str(n)])
+            lt += sort_shows_alphabetically(dct[str(n)], reverse=True)
         lt.reverse()
         self.shows = lt
 
     def save(self):
-        if self.shows == self.original_shows:
-            return
-
         with open(self.savefile, "w", newline="") as csvfile:
             writer = csv.writer(csvfile, delimiter=self.delimiter, quotechar="|")
             for show in self.shows:
@@ -132,7 +131,6 @@ class Settings:
         self.button_color = button_color if button_color is not None else self.text_colors[0]
 
         self.sg.theme_background_color(background_color)
-        self.sg.theme_slider_color(self.sg.theme_background_color())
 
         self.right_click_selected_background = right_click_selected_background
         self.right_click_fontsize = right_click_fontsize
@@ -206,4 +204,6 @@ class Settings:
             writer.writerow([self.search_results])
             writer.writerow([self.show_amount, self.max_title_display_len])
             writer.writerow([self.indices_visible, self.show_all])
+
+        self.initial_list = self.represent_as_list()
         return True
