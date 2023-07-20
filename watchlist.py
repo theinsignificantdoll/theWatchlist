@@ -181,7 +181,6 @@ def butt(button_text="", key=None, tooltip=None, butt_color=(False, None), borde
 class MainWin:
     def __init__(self):
         global should_restart
-        global settings
 
         self.shouldbreak = False
 
@@ -224,7 +223,7 @@ class MainWin:
             ecolumn.append([sg.Text(f"{show.ep}", key=f"Eplus{show.id}", enable_events=True, size=(4, 1),
                                     text_color=f"{color}")])
 
-            scolumn.append([sg.Text(f"S{show.season}", size=(4, 1), key=f"season:{show.id}",
+            scolumn.append([sg.Text(f"S: {show.season}", size=(4, 1), key=f"season:{show.id}",
                                     text_color=f"{color}", enable_events=True)])
 
             linkcolumn.append([butt("LINK", key=f"gotolink:{show.id}", tooltip=show.link, border_width=0,
@@ -372,7 +371,7 @@ class MainWin:
                         elif first_mouse > second_mouse:
                             s.season = str(int(s.season) + 1)  # Decrease season counter
                         last_show_change = time.time()
-                        self.win["season:" + event[7:]](value=f"S{s.season}")
+                        self.win["season:" + event[7:]](value=f"S: {s.season}")
                         break
 
             elif event == "index_checkbox":
@@ -453,7 +452,6 @@ class MainWin:
                     self.win[f"season:{num_id}"].update(text_color=settings.text_colors[col_index])
 
     def close(self):
-        global settings
         self.shouldbreak = True
         self.win.close()
 
@@ -463,7 +461,6 @@ class MainWin:
         self.close()
 
     def toggle_show_all(self):
-        global settings
         settings.show_all = not settings.show_all
         self.restart()
 
@@ -562,7 +559,6 @@ class MainWin:
                         return
 
     def update_preferences(self):
-        global settings
         col1 = [[sg.T("Font size:")],
                 [sg.T("Font type:")],
                 [sg.T("Text color:")],
