@@ -71,12 +71,18 @@ def show_properties(poptitle="Show Editor", popshowname="", popep="0", popseas="
     Then returning the new values - unless the button "Cancel" is pressed.
 
     :param poptitle: title of the window
+    :type poptitle: str
     :param popshowname: initital Title of the Show
+    :type popshowname: str
     :param popep: initital Episode of the Show
+    :type popep: Union(str, int)
     :param popseas: initital Season of the Show
+    :type popseas: Union(str, int)
     :param poplink: initital Link of the Show
+    :type poplink: str
     :param popweight: initital Weight of the Show
-    :return: A dictionary of the user submitted values or 1 if canceled.
+    :type popweight: Union(str, int)
+    :return: A dictionary of the user submitted values or the integer 1 if canceled.
     :rtype: dict or int
     """
     button, data = sg.Window(poptitle,
@@ -167,6 +173,7 @@ class MainWin:
         title_column = []
         emincolumn = []
         ecolumn = []
+        smincolumn = []
         scolumn = []
         linkcolumn = []
         propcolumn = []
@@ -176,7 +183,6 @@ class MainWin:
         for ind, show in enumerate(shows if settings.show_all else shows[:min(len(shows), settings.show_amount)]):
             # Iterates the entirety of show if showall is true and otherwise only
             # the first {show_amount} of shows
-            show.stringify()
             color = settings.text_colors[min(int(show.color), max_txt_color_index)]
 
             delcolumn.append([butt("DEL", key=f"delete:{show.id}", mouseover_colors="#AA0000",
@@ -189,26 +195,30 @@ class MainWin:
                                                            [f"{m}::tit_color-{show.id}" for m in
                                                             settings.text_colors]])])
 
-            emincolumn.append([sg.Text(f"Ep:", key=f"Eminus{show.id}", enable_events=True,
+            emincolumn.append([sg.Text(f"Ep:", key=f"Eminus:{show.id}", enable_events=True,
                                        text_color=f"{color}")])
 
-            ecolumn.append([sg.Text(f"{show.ep}", key=f"Eplus{show.id}", enable_events=True, size=(4, 1),
+            ecolumn.append([sg.Text(f"{show.ep}", key=f"Eplus:{show.id}", enable_events=True, size=(4, 1),
                                     text_color=f"{color}")])
 
-            scolumn.append([sg.Text(f"S: {show.season}", size=(4, 1), key=f"season:{show.id}",
+            smincolumn.append([sg.Text(f"S:", key=f"Sminus:{show.id}", enable_events=True,
+                                       text_color=f"{color}")])
+
+            scolumn.append([sg.Text(f"{show.season}", size=(4, 1), key=f"Splus:{show.id}",
                                     text_color=f"{color}", enable_events=True)])
 
             linkcolumn.append([butt("LINK", key=f"gotolink:{show.id}", tooltip=show.link, border_width=0,
                                     right_click_menu=["",
                                                       [f"Open all links with the same color::multi_links-{show.id}"]])])
 
-            propcolumn.append([butt("⛭", key=f"properties{show.id}", border_width=0)])
+            propcolumn.append([butt("⛭", key=f"properties:{show.id}", border_width=0)])
 
             index_col.append([sg.Text(str(ind + 1), key=f"index:{show.id}",
                                       text_color=color, visible=settings.indices_visible)])
 
         showscol = [[sg.Col([[delcolumn[ind][0], title_column[ind][0]] for ind in range(len(title_column))]),
-                     sg.Col([[emincolumn[ind][0], ecolumn[ind][0], scolumn[ind][0], linkcolumn[ind][0],
+                     sg.Col([[emincolumn[ind][0], ecolumn[ind][0], smincolumn[ind][0], scolumn[ind][0],
+                              linkcolumn[ind][0],
                               propcolumn[ind][0], index_col[ind][0]] for ind in range(len(title_column))])]]
 
         topcol = [[butt(" + ", key="AddShow", border_width=0, tooltip="Add a show to the list"),
@@ -243,15 +253,8 @@ class MainWin:
 
         for e in linkcolumn:
             e[0].set_cursor("hand2")
-        for e in ecolumn:
-            e[0].set_cursor("plus")
-        for e in emincolumn:
-            e[0].set_cursor("plus")
-        for e in title_column:
-            e[0].set_cursor("plus")
-        for e in delcolumn:
-            e[0].set_cursor("plus")
-        for e in propcolumn:
+        # noinspection PyTypeChecker
+        for e in ecolumn + emincolumn + title_column + delcolumn + propcolumn:
             e[0].set_cursor("plus")
 
         self.win["AddShow"].block_focus()
@@ -282,80 +285,62 @@ class MainWin:
                 self.close()
                 break
 
-            elif event[:9] == "gotolink:" and len(event) > 9:
-                s_id = event[9:]
-                for ind, n in enumerate(shows):
-                    if n.id == s_id:
-                        n.open_link()
-                        break
+            elif event.startswith("gotolink:"):
+                shows.from_id(event.removeprefix("gotolink:")).open_link()
 
-            elif event[:7] == "delete:":
-                delme = -1
-
+            elif event.startswith("delete:"):
                 if sg.popup_yes_no("Are you sure?") == "No":
                     continue
 
-                for ind, n in enumerate(shows):
-                    if n.id == event[7:]:
-                        delme = ind
-                        break
-                if delme != -1:
-                    shows.pop(delme)
+                show = shows.from_id(event.removeprefix("delete:"))
+                shows.remove(show)
                 self.restart()
                 break
 
-            elif event[:5] == "Eplus":
-                for s in shows:
-                    if s.id == event[5:]:
-                        s.ep = str(int(s.ep) + 1)
-                        last_show_change = time.time()
-                        self.win[event](value=s.ep)
-                        break
-
-            elif event[:6] == "Eminus":
-                for s in shows:
-                    if s.id == event[6:]:
-                        s.ep = str(int(s.ep) - 1)
-                        last_show_change = time.time()
-                        self.win["Eplus" + event[6:]](value=s.ep)
-                        break
-
-            elif event[:6] == "title:":
-                show_id = event[6:]
-                for ind, n in enumerate(shows):
-                    if n.id == show_id:
-                        shows[ind].color = str(int(shows[ind].color) + 1)
-                        if int(shows[ind].color) >= len(settings.text_colors):
-                            shows[ind].color = 0
-                        self.win[event].update(text_color=settings.text_colors[int(n.color)])
-                        self.win[f"index:{show_id}"].update(text_color=settings.text_colors[int(n.color)])
-                        self.win[f"Eplus{show_id}"].update(text_color=settings.text_colors[int(n.color)])
-                        self.win[f"Eminus{show_id}"].update(text_color=settings.text_colors[int(n.color)])
-                        self.win[f"season:{show_id}"].update(text_color=settings.text_colors[int(n.color)])
-                        break
+            elif event.startswith("Eplus:"):
+                show = shows.from_id(event.removeprefix("Eplus:"))
+                show.ep = str(int(show.ep) + 1)
+                self.win[event](value=show.ep)
 
                 last_show_change = time.time()
-            elif event[:7] == "season:":
-                for s in shows:
-                    if s.id == event[7:]:
-                        first_mouse = mouse.get_position()[1]
-                        time.sleep(0.050)
-                        second_mouse = mouse.get_position()[1]
-                        if first_mouse < second_mouse:
-                            s.season = str(int(s.season) - 1)  # Increase season counter
-                        elif first_mouse > second_mouse:
-                            s.season = str(int(s.season) + 1)  # Decrease season counter
-                        last_show_change = time.time()
-                        self.win["season:" + event[7:]](value=f"S: {s.season}")
-                        break
+
+            elif event.startswith("Eminus:"):
+                show = shows.from_id(event.removeprefix("Eminus:"))
+                show.ep = str(int(show.ep) - 1)
+                self.win["Eplus:" + event[7:]](value=show.ep)
+
+                last_show_change = time.time()
+
+            elif event.startswith("title:"):
+                show_id = event.removeprefix("title:")
+                show = shows.from_id(show_id)
+                self.update_show_color(show, 0 if show.color + 1 >= len(settings.text_colors) else show.color + 1)
+
+                last_show_change = time.time()
+
+            elif event.startswith("Splus:"):
+                show_id = event.removeprefix("Splus:")
+                show = shows.from_id(show_id)
+                show.season = str(int(show.season) + 1)
+                self.win[event].update(value=show.season)
+
+                last_show_change = time.time()
+
+            elif event.startswith("Sminus:"):
+                show_id = event.removeprefix("Sminus:")
+                show = shows.from_id(show_id)
+                show.season = str(int(show.season) - 1)
+                self.win[f"Splus:{show_id}"].update(value=show.season)
+
+                last_show_change = time.time()
 
             elif event == "index_checkbox":
-                indices_visible = self.win["index_checkbox"].get()
+                settings.indices_visible = self.win["index_checkbox"].get()
                 for show in shows if settings.show_all else shows[:min(len(shows), settings.show_amount)]:
-                    self.win[f"index:{show.id}"].update(visible=indices_visible)
+                    self.win[f"index:{show.id}"].update(visible=settings.indices_visible)
 
-            elif event[:10] == "properties":
-                show = shows.from_id(event[10:])
+            elif event.startswith("properties:"):
+                show = shows.from_id(event.removeprefix("properties:"))
                 data = show_properties(popshowname=show.title, popep=show.ep, popseas=show.season, poplink=show.link,
                                        popweight=show.weight)
                 if data == 1:
@@ -363,10 +348,10 @@ class MainWin:
                 for ind, tshow in enumerate(shows):
                     if tshow.id == show.id:
                         shows[ind].title = data["popshowname"]
-                        shows[ind].ep = data["popep"]
-                        shows[ind].season = data["popseas"]
+                        shows[ind].ep = int(data["popep"])
+                        shows[ind].season = int(data["popseas"])
                         shows[ind].link = data["poplink"]
-                        shows[ind].weight = data["popweight"]
+                        shows[ind].weight = int(data["popweight"])
                         self.restart()
                         return
 
@@ -387,7 +372,7 @@ class MainWin:
                 data = show_properties()
                 if data == 1:
                     continue
-                shows.append(Show(str(shows.highest_id() + 1), data["popshowname"], data["popep"],
+                shows.append(Show(shows.highest_id() + 1, data["popshowname"], data["popep"],
                                   data["popseas"], data["poplink"], data["popweight"], "0"))
                 self.restart()
                 break
@@ -419,12 +404,17 @@ class MainWin:
                 if col != "" and num_id != -1:
                     col_index = settings.text_colors.index(col)
                     show = shows.from_id(num_id)
-                    show.color = col_index
-                    self.win[f"index:{num_id}"].update(text_color=settings.text_colors[col_index])
-                    self.win[f"title:{num_id}"].update(text_color=settings.text_colors[col_index])
-                    self.win[f"Eminus{num_id}"].update(text_color=settings.text_colors[col_index])
-                    self.win[f"Eplus{num_id}"].update(text_color=settings.text_colors[col_index])
-                    self.win[f"season:{num_id}"].update(text_color=settings.text_colors[col_index])
+                    self.update_show_color(show, col_index)
+
+    def update_show_color(self, show: Show, new_color_id: int):
+        show.color = new_color_id
+        color = settings.text_colors[new_color_id]
+        self.win[f"index:{show.id}"].update(text_color=color)
+        self.win[f"title:{show.id}"].update(text_color=color)
+        self.win[f"Eminus:{show.id}"].update(text_color=color)
+        self.win[f"Eplus:{show.id}"].update(text_color=color)
+        self.win[f"Splus:{show.id}"].update(text_color=color)
+        self.win[f"Sminus:{show.id}"].update(text_color=color)
 
     def close(self):
         self.shouldbreak = True
@@ -525,10 +515,10 @@ class MainWin:
                 for ind, tshow in enumerate(shows):
                     if tshow.id == show.id:
                         shows[ind].title = data["popshowname"]
-                        shows[ind].ep = data["popep"]
-                        shows[ind].season = data["popseas"]
+                        shows[ind].ep = int(data["popep"])
+                        shows[ind].season = int(data["popseas"])
                         shows[ind].link = data["poplink"]
-                        shows[ind].weight = data["popweight"]
+                        shows[ind].weight = int(data["popweight"])
                         search_win.close()
                         self.restart()
                         return

@@ -1,3 +1,4 @@
+from typing import Union
 import csv
 import copy
 import os
@@ -6,27 +7,34 @@ import webbrowser
 
 class Show:
     def __init__(self, num_id, title, ep, season, link, weight, color):
-        self.id = num_id
-        self.title = title
-        self.ep = ep
-        self.season = season
-        self.link = link
-        self.weight = weight
-        self.color = color
+        """
+        :param num_id:
+        :type num_id: Union(int, str)
+        :param title:
+        :type title: str
+        :param ep:
+        :type ep: Union(int, str)
+        :param season:
+        :type season: Union(int, str)
+        :param link:
+        :type link: str
+        :param weight:
+        :type weight: Union(int, str)
+        :param color:
+        :type color: Union(int, str)
+        """
+        self.id: int = int(num_id)
+        self.title: str = title
+        self.ep: int = int(ep)
+        self.season: int = int(season)
+        self.link: str = link
+        self.weight: int = int(weight)
+        self.color: int = int(color)
 
     def __repr__(self):
         return f"Show(num_id={self.id.__repr__()}, title={self.title.__repr__()}, ep={self.ep.__repr__()}," \
                f" season={self.season.__repr__()}, link={self.link.__repr__()}, weight={self.weight.__repr__()}," \
                f" color={self.color.__repr__()})"
-
-    def stringify(self):
-        self.id = str(self.id)
-        self.title = str(self.title)
-        self.ep = str(self.ep)
-        self.season = str(self.season)
-        self.link = str(self.link)
-        self.weight = str(self.weight)
-        self.color = str(self.color)
 
     def open_link(self):
         webbrowser.open(self.link)
@@ -82,6 +90,9 @@ class ShowsFileHandler:
     def append(self, __object):
         self.shows.append(__object)
 
+    def remove(self, __value):
+        self.shows.remove(__value)
+
     def __getitem__(self, item):
         return self.shows[item]
 
@@ -112,7 +123,7 @@ class ShowsFileHandler:
             dct[n].sort(key=lambda x: x.id)
         slist.sort()
         for n in slist:
-            lt += sort_list_of_shows_alphabetically(dct[str(n)], reverse=True)
+            lt += sort_list_of_shows_alphabetically(dct[n], reverse=True)
         lt.reverse()
         self.shows = lt
 
@@ -132,13 +143,15 @@ class ShowsFileHandler:
         Finds the show with the target id and returns it
 
         :param target_id: id of the show to be returned
-        :type target_id: Show
+        :type target_id: Union(str, int)
         :return: The show with an id equivalent to target_id
         :rtype: Show
         """
+        target_id = int(target_id)
         for show in self.shows:
             if show.id == target_id:
                 return show
+        raise KeyError
 
     def save(self):
         with open(self.savefile, "w", newline="") as csvfile:
