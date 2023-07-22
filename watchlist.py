@@ -48,23 +48,6 @@ def limit_string_len(string: str, length: int):
     return string
 
 
-def min_string_len(string: str, length: int):
-    """
-    Prefixes a string with a number of spaces to reach a certain length
-    (The function is used so that PySimpleGUI will have a known size, thus making alignment easier)
-
-    :param string: The string to (possibly) prefix with spaces
-    :type string: str
-    :param length: The minimum length of the returned string
-    :type string: int
-    :return: A string with a minimum length
-    :rtype: str
-    """
-    if len(string) > length:
-        return string
-    return f"{' ' * (length - len(string))}{string}"
-
-
 def show_properties(poptitle="Show Editor", popshowname="", popep="0", popseas="1", poplink="", popweight="0"):
     """
     Opens a small window with all the relevant information about a show allowing these to be changed by the user.
@@ -429,8 +412,8 @@ class MainWin:
         settings.show_all = not settings.show_all
         self.restart()
 
-    def search(self, results=3):
-        index_len = 4  # The number in the "index" column. Used for the sake of alignment
+    def search(self, results):
+        index_len = 4  # The minimum length of the Text element in the index column. Used for alignment
 
         delcol = [butt("DEL", key=f"s_delete_{n}", mouseover_colors="#AA0000", border_width=0) for n in range(results)]
 
@@ -476,7 +459,7 @@ class MainWin:
                     for n in range(results):
                         if isinstance(found[n], Show):
                             search_win[f"s_title_{n}"].update(found[n].title)
-                            search_win[f"s_index_{n}"].update(min_string_len(str(found_indices[n] + 1), index_len))
+                            search_win[f"s_index_{n}"].update(f"{found_indices[n] + 1: >{index_len}}")
                             search_win[f"s_title_{n}"]\
                                 .update(text_color=settings.text_colors[min(int(found[n].color),
                                                                             len(settings.text_colors) - 1)])
