@@ -1,0 +1,18 @@
+# TODOLIST
+
+22. July 2023
+It can currently be slightly difficult to see which elements are on the same row.
+  In order to fix this, some kind of visual aid should be added.
+
+  I attempted to make the background color of a row change when the cursor hovers over,
+  however i found this to be problematic for two reasons. First of all, the
+  elements that make up a row are not contained within a single element. This makes it difficult,
+  if not impossible, to change the entire background color of a row ugly spots inbetween elements.
+  Moreover, I also noticed that the compute power needed to implement this highlight quite significant.
+
+22. July 2023
+When the program updates the savefiles have to be updated manually. This should be fixed - mostly if anyone else ever starts using this program.
+
+22. July 2023
+I sometimes find it slightly difficult to distinguish between the titles of shows. Something should be done.
+  idk what, though. I'm not a graphic designer.
