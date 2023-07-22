@@ -237,13 +237,12 @@ class MainWin:
         for e in linkcolumn:
             e[0].set_cursor("hand2")
         # noinspection PyTypeChecker
-        for e in ecolumn + emincolumn + title_column + delcolumn + propcolumn:
+        for e in ecolumn + emincolumn + scolumn + smincolumn + title_column + delcolumn + propcolumn:
             e[0].set_cursor("plus")
 
-        self.win["AddShow"].block_focus()
-        self.win["AddShow"].set_cursor("plus")
-        self.win["preferences"].block_focus()
-        self.win["preferences"].set_cursor("plus")
+        for key in ("AddShow", "preferences", "toggleshowall", "searchbutton", "index_checkbox"):
+            self.win[key].block_focus()
+            self.win[key].set_cursor("plus")
 
         if main_loop:
             self.main_loop()
