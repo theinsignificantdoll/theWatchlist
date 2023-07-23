@@ -204,11 +204,11 @@ class MainWin:
                               linkcolumn[ind][0],
                               propcolumn[ind][0], index_col[ind][0]] for ind in range(len(title_column))])]]
 
-        topcol = [[butt(" + ", key="AddShow", border_width=0, tooltip="Add a show to the list"),
+        topcol = [[butt(" + ", key="add_show", border_width=0, tooltip="Add a show to the list"),
                    butt(" ⛭ ", key="preferences", border_width=0, tooltip="Preferences"),
-                   butt(" ⮝ " if settings.show_all else " ⮟ ", key="toggleshowall", border_width=0,
+                   butt(" ⮝ " if settings.show_all else " ⮟ ", key="show_all", border_width=0,
                         tooltip="Show less (faster)" if settings.show_all else "Show more (slower)"),
-                   butt(" 🔍 ", key="searchbutton", border_width=0, tooltip="Search"),
+                   butt(" 🔍 ", key="search_button", border_width=0, tooltip="Search"),
                    sg.Checkbox(" ", key="index_checkbox", text_color=settings.button_color,
                                tooltip="Enables or disables the showing of indices",
                                default=settings.indices_visible, enable_events=True)]]
@@ -240,7 +240,7 @@ class MainWin:
         for e in ecolumn + emincolumn + scolumn + smincolumn + title_column + delcolumn + propcolumn:
             e[0].set_cursor("plus")
 
-        for key in ("AddShow", "preferences", "toggleshowall", "searchbutton", "index_checkbox"):
+        for key in ("add_show", "preferences", "show_all", "search_button", "index_checkbox"):
             self.win[key].block_focus()
             self.win[key].set_cursor("plus")
 
@@ -344,13 +344,13 @@ class MainWin:
             elif event == "preferences":
                 self.update_preferences()
 
-            elif event == "toggleshowall":
+            elif event == "show_all":
                 self.toggle_show_all()
 
-            elif event == "searchbutton":
+            elif event == "search_button":
                 self.search(results=settings.search_results)
 
-            elif event == "AddShow":
+            elif event == "add_show":
                 data = show_properties()
                 if data == 1:
                     continue

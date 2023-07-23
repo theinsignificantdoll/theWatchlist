@@ -214,30 +214,44 @@ class Settings:
         with open(self.savefile, "r", newline="") as csvfile:
             reader = csv.reader(csvfile, delimiter=self.delimiter, quotechar="|")
             row = reader.__next__()
-            self.fontsize = row[0]
-            self.fonttype = row[1]
-            self.text_colors = row[2].split("-")
-            self.button_color = row[3]
-            self.sg.theme_background_color(row[4])
-            self.sg.theme_slider_color(self.sg.theme_background_color())
-            self.right_click_selected_background = row[5]
-            self.right_click_fontsize = int(row[6])
-            self.sg.theme_input_background_color(row[7])
+            try:
+                self.fontsize = row[0]
+                self.fonttype = row[1]
+                self.text_colors = row[2].split("-")
+                self.button_color = row[3]
+                self.sg.theme_background_color(row[4])
+                self.right_click_selected_background = row[5]
+                self.right_click_fontsize = int(row[6])
+                self.sg.theme_input_background_color(row[7])
+            except IndexError:
+                pass
 
             windata = reader.__next__()
-            self.initialwinsize = (int(windata[0]), int(windata[1]))
-            self.initialwinpos = (int(windata[2]), int(windata[3]))
+            try:
+                self.initialwinsize = (int(windata[0]), int(windata[1]))
+                self.initialwinpos = (int(windata[2]), int(windata[3]))
+            except IndexError:
+                pass
 
             searchdata = reader.__next__()
-            self.search_results = int(searchdata[0])
+            try:
+                self.search_results = int(searchdata[0])
+            except IndexError:
+                pass
 
             displaydata = reader.__next__()
-            self.show_amount = int(displaydata[0])
-            self.max_title_display_len = int(displaydata[1])
+            try:
+                self.show_amount = int(displaydata[0])
+                self.max_title_display_len = int(displaydata[1])
+            except IndexError:
+                pass
 
             state_data = reader.__next__()
-            self.indices_visible = state_data[0] == "True"
-            self.show_all = state_data[1] == "True"
+            try:
+                self.indices_visible = state_data[0] == "True"
+                self.show_all = state_data[1] == "True"
+            except IndexError:
+                pass
 
         self._currently_saved_to_disk_list = self.represent_as_list()
 

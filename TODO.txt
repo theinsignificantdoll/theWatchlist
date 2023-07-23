@@ -12,6 +12,7 @@ It can currently be slightly difficult to see which elements are on the same row
 
 22. July 2023
 When the program updates the savefiles have to be updated manually. This should be fixed - mostly if anyone else ever starts using this program.
+  The settings.csv file no longer requires manual updating. saved.csv still does.
 
 22. July 2023
 I sometimes find it slightly difficult to distinguish between the titles of shows. Something should be done.
