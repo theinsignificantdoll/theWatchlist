@@ -16,3 +16,9 @@ When the program updates the savefiles have to be updated manually. This should 
 22. July 2023
 I sometimes find it slightly difficult to distinguish between the titles of shows. Something should be done.
   idk what, though. I'm not a graphic designer.
+
+23. July 2023
+It'd be great if I, which is to say me, didn't have to manually check for new episodes every day.
+  It might be reasonable to assign each show a weekday - i.e. the day upon which a new episode is published.
+  An alternative to that, might be a webscraper or API something something. Whatever the case may be, each service
+  will require its own new-episode-checker.
