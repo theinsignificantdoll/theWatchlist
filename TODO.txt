@@ -8,7 +8,7 @@ It can currently be slightly difficult to see which elements are on the same row
   however i found this to be problematic for two reasons. First of all, the
   elements that make up a row are not contained within a single element. This makes it difficult,
   if not impossible, to change the entire background color of a row ugly spots inbetween elements.
-  Moreover, I also noticed that the compute power needed to implement this highlight quite significant.
+  Moreover, I also noticed that the compute power needed to implement this highlight was quite significant.
 
 22. July 2023
 When the program updates the savefiles have to be updated manually. This should be fixed - mostly if anyone else ever starts using this program.
