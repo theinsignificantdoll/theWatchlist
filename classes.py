@@ -6,7 +6,8 @@ import webbrowser
 
 class Show:
     def __init__(self, num_id: Union[str, int], title: str, ep: Union[str, int], season: Union[str, int],
-                 link: str, weight: Union[str, int], color: Union[str, int]):
+                 link: str, weight: Union[str, int], color: Union[str, int],
+                 ep_season_relevant: Union[str, bool] = None):
         self.id: int = int(num_id)
         self.title: str = title
         self.ep: int = int(ep)
@@ -14,11 +15,16 @@ class Show:
         self.link: str = link
         self.weight: int = int(weight)
         self.color: int = int(color)
+        if ep_season_relevant is None:
+            self.ep_season_relevant = True
+        else:
+            self.ep_season_relevant = ep_season_relevant if isinstance(ep_season_relevant, bool)\
+                else ep_season_relevant == "True"
 
     def __repr__(self):
         return f"Show(num_id={self.id.__repr__()}, title={self.title.__repr__()}, ep={self.ep.__repr__()}," \
                f" season={self.season.__repr__()}, link={self.link.__repr__()}, weight={self.weight.__repr__()}," \
-               f" color={self.color.__repr__()})"
+               f" color={self.color.__repr__()}, ep_season_relevant={self.ep_season_relevant.__repr__()})"
 
     def open_link(self):
         webbrowser.open(self.link)
@@ -65,8 +71,16 @@ class ShowsFileHandler:
                     link=row[4],
                     weight=row[5],
                     color=row[6],
+                    ep_season_relevant=row[7] if len(row) > 7 else None,
                 ))
         return self.shows
+
+    def save(self):
+        with open(self.savefile, "w", newline="") as csvfile:
+            writer = csv.writer(csvfile, delimiter=self.delimiter, quotechar="|")
+            for show in self.shows:
+                writer.writerow([show.id, show.title, show.ep, show.season, show.link, show.weight, show.color,
+                                 show.ep_season_relevant])
 
     def pop(self, __index):
         return self.shows.pop(__index)
@@ -136,11 +150,6 @@ class ShowsFileHandler:
                 return show
         raise KeyError
 
-    def save(self):
-        with open(self.savefile, "w", newline="") as csvfile:
-            writer = csv.writer(csvfile, delimiter=self.delimiter, quotechar="|")
-            for show in self.shows:
-                writer.writerow([show.id, show.title, show.ep, show.season, show.link, show.weight, show.color])
 
 
 class Settings:

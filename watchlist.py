@@ -49,26 +49,25 @@ def limit_string_len(string: str, length: int, use_ellipsis: bool = False):
     return string
 
 
-def show_properties(poptitle="Show Editor", popshowname="", popep="0", popseas="1", poplink="", popweight="0"):
+def show_properties(poptitle: str = "Show Editor", popshowname: str = "", popep: Union[int, str] = "0",
+                    popseas: Union[int, str] = "1", poplink: str = "", popweight: Union[int, str] = "0",
+                    popep_season_relevant: Union[bool, str] = "True"):
     """
     Opens a small window with all the relevant information about a show allowing these to be changed by the user.
     Then returning the new values - unless the button "Cancel" is pressed.
 
     :param poptitle: title of the window
-    :type poptitle: str
     :param popshowname: initital Title of the Show
-    :type popshowname: str
     :param popep: initital Episode of the Show
-    :type popep: Union(str, int)
     :param popseas: initital Season of the Show
-    :type popseas: Union(str, int)
     :param poplink: initital Link of the Show
-    :type poplink: str
     :param popweight: initital Weight of the Show
-    :type popweight: Union(str, int)
+    :param popep_season_relevant: initial ep_season_relevancy of the show
     :return: A dictionary of the user submitted values or the integer 1 if canceled.
-    :rtype: dict or int
+    :rtype: Union[dict, int]
     """
+    if isinstance(popep_season_relevant, str):
+        popep_season_relevant = popep_season_relevant == "True"
     button, data = sg.Window(poptitle,
                              [
                                  [sg.Column([
@@ -90,6 +89,10 @@ def show_properties(poptitle="Show Editor", popshowname="", popep="0", popseas="
                                      sg.Column([
                                          [sg.T("Weight")],
                                          [sg.InputText(popweight, key="popweight")]
+                                     ]),
+                                     sg.Column([
+                                         [sg.T("Show Details")],
+                                         [sg.Checkbox("", default=popep_season_relevant, key="popep_season_relevant")]
                                      ])
                                  ],
                                  [sg.Button("Save", bind_return_key=True), sg.Button("Cancel")]],
@@ -180,26 +183,45 @@ class MainWin:
                                                            [f"{m}::tit_color-{show.id}" for m in
                                                             settings.text_colors]])])
 
-            emincolumn.append([sg.Text(f"Ep:", key=f"Eminus:{show.id}", enable_events=True,
+            emincolumn.append([sg.Text(f"Ep:" if show.ep_season_relevant else "",
+                                       size=(3, 1),
+                                       key=f"Eminus:{show.id}",
+                                       enable_events=True if show.ep_season_relevant else False,
                                        text_color=f"{color}")])
 
-            ecolumn.append([sg.Text(f"{show.ep}", key=f"Eplus:{show.id}", enable_events=True, size=(4, 1),
+            ecolumn.append([sg.Text(f"{show.ep}" if show.ep_season_relevant else "",
+                                    key=f"Eplus:{show.id}",
+                                    enable_events=True if show.ep_season_relevant else False,
+                                    size=(4, 1),
                                     text_color=f"{color}")])
 
-            smincolumn.append([sg.Text(f"S:", key=f"Sminus:{show.id}", enable_events=True,
+            smincolumn.append([sg.Text(f"S:" if show.ep_season_relevant else "",
+                                       size=(2, 1),
+                                       key=f"Sminus:{show.id}",
+                                       enable_events=True if show.ep_season_relevant else False,
                                        text_color=f"{color}")])
 
-            scolumn.append([sg.Text(f"{show.season}", size=(4, 1), key=f"Splus:{show.id}",
-                                    text_color=f"{color}", enable_events=True)])
+            scolumn.append([sg.Text(f"{show.season}" if show.ep_season_relevant else "",
+                                    size=(4, 1),
+                                    key=f"Splus:{show.id}",
+                                    text_color=f"{color}",
+                                    enable_events=True if show.ep_season_relevant else False)])
 
-            linkcolumn.append([butt("LINK", key=f"gotolink:{show.id}", tooltip=show.link, border_width=0,
+            linkcolumn.append([butt("LINK",
+                                    key=f"gotolink:{show.id}",
+                                    tooltip=show.link,
+                                    border_width=0,
                                     right_click_menu=["",
                                                       [f"Open all links with the same color::multi_links-{show.id}"]])])
 
-            propcolumn.append([butt("⛭", key=f"properties:{show.id}", border_width=0)])
+            propcolumn.append([butt("⛭",
+                                    key=f"properties:{show.id}",
+                                    border_width=0)])
 
-            index_col.append([sg.Text(str(ind + 1), key=f"index:{show.id}",
-                                      text_color=color, visible=settings.indices_visible)])
+            index_col.append([sg.Text(str(ind + 1),
+                                      key=f"index:{show.id}",
+                                      text_color=color,
+                                      visible=settings.indices_visible)])
 
         showscol = [[sg.Col([[delcolumn[ind][0], title_column[ind][0]] for ind in range(len(title_column))]),
                      sg.Col([[emincolumn[ind][0], ecolumn[ind][0], smincolumn[ind][0], scolumn[ind][0],
@@ -240,6 +262,11 @@ class MainWin:
             e[0].set_cursor("hand2")
         # noinspection PyTypeChecker
         for e in ecolumn + emincolumn + scolumn + smincolumn + title_column + delcolumn + propcolumn:
+            try:
+                if e[0].get() == "":
+                    continue
+            except AttributeError:
+                pass
             e[0].set_cursor("plus")
 
         for key in ("add_show", "preferences", "show_all", "search_button", "index_checkbox"):
@@ -326,7 +353,7 @@ class MainWin:
             elif event.startswith("properties:"):
                 show = shows.from_id(event.removeprefix("properties:"))
                 data = show_properties(popshowname=show.title, popep=show.ep, popseas=show.season, poplink=show.link,
-                                       popweight=show.weight)
+                                       popweight=show.weight, popep_season_relevant=show.ep_season_relevant)
                 if data == 1:
                     continue
                 for ind, tshow in enumerate(shows):
@@ -336,6 +363,7 @@ class MainWin:
                         shows[ind].season = int(data["popseas"])
                         shows[ind].link = data["poplink"]
                         shows[ind].weight = int(data["popweight"])
+                        shows[ind].ep_season_relevant = data["popep_season_relevant"]
                         self.restart()
                         return
 
@@ -357,7 +385,8 @@ class MainWin:
                 if data == 1:
                     continue
                 shows.append(Show(shows.highest_id() + 1, data["popshowname"], data["popep"],
-                                  data["popseas"], data["poplink"], data["popweight"], "0"))
+                                  data["popseas"], data["poplink"], data["popweight"], 0,
+                                  data["popep_season_relevant"]))
                 self.restart()
                 break
 
@@ -435,7 +464,7 @@ class MainWin:
 
         search_win = sg.Window("Search", layout=layout, finalize=True, font=(settings.fonttype, int(settings.fontsize)))
 
-        found: Union[List[Show], List[str]] = [""] * results
+        found: Union[List[Show], List[str]] = [shows[ind] for ind in range(results)]
 
         while True:
             e, v = search_win.read()
@@ -489,10 +518,9 @@ class MainWin:
 
             elif e[:12] == "s_properties":
                 k = int(e[-1])
-
                 show = shows.from_id(found[k].id)
                 data = show_properties(popshowname=show.title, popep=show.ep, popseas=show.season, poplink=show.link,
-                                       popweight=show.weight)
+                                       popweight=show.weight, popep_season_relevant=show.ep_season_relevant)
                 if data == 1:
                     continue
 
@@ -503,6 +531,7 @@ class MainWin:
                         shows[ind].season = int(data["popseas"])
                         shows[ind].link = data["poplink"]
                         shows[ind].weight = int(data["popweight"])
+                        shows[ind].ep_season_relevant = data["popep_season_relevant"]
                         search_win.close()
                         self.restart()
                         return
