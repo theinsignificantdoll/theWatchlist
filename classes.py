@@ -1,28 +1,12 @@
 from typing import Union
 import csv
-import copy
 import os
 import webbrowser
 
 
 class Show:
-    def __init__(self, num_id, title, ep, season, link, weight, color):
-        """
-        :param num_id:
-        :type num_id: Union(int, str)
-        :param title:
-        :type title: str
-        :param ep:
-        :type ep: Union(int, str)
-        :param season:
-        :type season: Union(int, str)
-        :param link:
-        :type link: str
-        :param weight:
-        :type weight: Union(int, str)
-        :param color:
-        :type color: Union(int, str)
-        """
+    def __init__(self, num_id: Union[str, int], title: str, ep: Union[str, int], season: Union[str, int],
+                 link: str, weight: Union[str, int], color: Union[str, int]):
         self.id: int = int(num_id)
         self.title: str = title
         self.ep: int = int(ep)
@@ -50,7 +34,7 @@ def sort_list_of_shows_alphabetically(lst: list[Show], reverse=False):
 
 class ShowsFileHandler:
     """
-    Note: This class was made as a replacement to using a single list. Therefore, this class will in many ways act like
+    Note: This class was made as a replacement to using a single list. Therefore this class acts like
     a list for the sake of backwards-compatibility.
     The list in question is equivalent to the list self.shows
     """
@@ -138,12 +122,11 @@ class ShowsFileHandler:
             return -1
         return max([int(show.id) for show in self.shows])
 
-    def from_id(self, target_id):
+    def from_id(self, target_id: Union[str, int]):
         """
         Finds the show with the target id and returns it
 
         :param target_id: id of the show to be returned
-        :type target_id: Union(str, int)
         :return: The show with an id equivalent to target_id
         :rtype: Show
         """
@@ -161,15 +144,22 @@ class ShowsFileHandler:
 
 
 class Settings:
+    """
+    When adding new settings remember to update the following methods:
+        .save
+        .load
+        .__init__
+        .represent_as_list
+    """
     def __init__(self, sg, savefile="settings.csv", delimiter="\\", fontsize=15, fonttype="Helvetica", text_colors=None,
                  button_color=None, background_color=None, right_click_selected_background="#252525",
                  right_click_fontsize=10, input_background=None, initialwinsize=(400, 200),
                  initialwinpos=(50, 50), search_results=3, show_amount=32,
-                 max_title_display_len=0, indices_visible=True, show_all=False):
+                 max_title_display_len=0, indices_visible=True, show_all=False, shorten_with_ellipsis=True):
 
         self.sg = sg
-        # Note that some settings are not stored as variables here, but are instead written and read directly from the
-        # PySimpleGUI module
+        # Note that some settings are not stored as attributes of this class, but are instead
+        # written and read directly from the PySimpleGUI module
 
         self.savefile = savefile
         self.delimiter = delimiter
@@ -193,8 +183,9 @@ class Settings:
         self.max_title_display_len = max_title_display_len
         self.indices_visible = indices_visible
         self.show_all = show_all
+        self.shorten_with_ellpisis = shorten_with_ellipsis
 
-        self._currently_saved_to_disk_list = []  # is initially updated when the savefile is read
+        self._currently_saved_to_disk_list = []  # is initially updated when the savefile is loaded
 
         self.ensure_file_exists()
 
@@ -208,11 +199,15 @@ class Settings:
         return [self.fontsize, self.fonttype, self.text_colors, self.button_color, self.sg.theme_background_color(),
                 self.right_click_selected_background, self.right_click_fontsize,
                 self.sg.theme_input_background_color(), self.initialwinsize, self.initialwinpos, self.search_results,
-                self.show_amount, self.max_title_display_len, self.indices_visible, self.show_all]
+                self.show_amount, self.max_title_display_len, self.indices_visible, self.show_all,
+                self.shorten_with_ellpisis]
 
     def load(self):
         with open(self.savefile, "r", newline="") as csvfile:
             reader = csv.reader(csvfile, delimiter=self.delimiter, quotechar="|")
+
+            missing_data = False
+
             row = reader.__next__()
             try:
                 self.fontsize = row[0]
@@ -224,35 +219,39 @@ class Settings:
                 self.right_click_fontsize = int(row[6])
                 self.sg.theme_input_background_color(row[7])
             except IndexError:
-                pass
+                missing_data = True
 
             windata = reader.__next__()
             try:
                 self.initialwinsize = (int(windata[0]), int(windata[1]))
                 self.initialwinpos = (int(windata[2]), int(windata[3]))
             except IndexError:
-                pass
+                missing_data = True
 
             searchdata = reader.__next__()
             try:
                 self.search_results = int(searchdata[0])
             except IndexError:
-                pass
+                missing_data = True
 
             displaydata = reader.__next__()
             try:
                 self.show_amount = int(displaydata[0])
                 self.max_title_display_len = int(displaydata[1])
             except IndexError:
-                pass
+                missing_data = True
 
             state_data = reader.__next__()
             try:
                 self.indices_visible = state_data[0] == "True"
                 self.show_all = state_data[1] == "True"
+                self.shorten_with_ellpisis = state_data[2] == "True"
             except IndexError:
-                pass
+                missing_data = True
 
+        if missing_data:
+            self.save(force_write=True)
+            return
         self._currently_saved_to_disk_list = self.represent_as_list()
 
     def save(self, force_write=False):
@@ -277,7 +276,7 @@ class Settings:
             writer.writerow([*self.initialwinsize, *self.initialwinpos])
             writer.writerow([self.search_results])
             writer.writerow([self.show_amount, self.max_title_display_len])
-            writer.writerow([self.indices_visible, self.show_all])
+            writer.writerow([self.indices_visible, self.show_all, self.shorten_with_ellpisis])
 
         self._currently_saved_to_disk_list = self.represent_as_list()
         return True

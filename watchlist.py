@@ -32,18 +32,19 @@ def is_valid_color(col: str):
     return False
 
 
-def limit_string_len(string: str, length: int):
+def limit_string_len(string: str, length: int, use_ellipsis: bool = False):
     """
-    Shortens a string so that its length doesn't exceed some amount
+    Shortens a string so that its length doesn't exceed some integer. If the maximum length is 0, nothing is shortened.
 
     :param string: The string to limit
-    :type string: str
     :param length: The maximum length of the string
-    :type length: int
+    :param use_ellipsis: Whether or not the last three characters should be ... if the string has been shortened
     :return: A string with a maximum length of - length -
     :rtype: str
     """
     if len(string) > length != 0:
+        if use_ellipsis:
+            return f"{string[:length - 3].rstrip(' ')}..."
         return string[:length]
     return string
 
@@ -171,7 +172,8 @@ class MainWin:
             delcolumn.append([butt("DEL", key=f"delete:{show.id}", mouseover_colors="#AA0000",
                                    border_width=0)])
 
-            title_column.append([sg.Text(limit_string_len(show.title, settings.max_title_display_len),
+            title_column.append([sg.Text(limit_string_len(show.title, settings.max_title_display_len,
+                                                          use_ellipsis=settings.shorten_with_ellpisis),
                                          key=f"title:{show.id}",
                                          enable_events=True, text_color=f"{color}",
                                          right_click_menu=["",
@@ -536,10 +538,12 @@ class MainWin:
                        tooltip="For performance reasons not all shows are displayed by default. This is the amount"
                                " of shows on display.\nCan be toggled by the '^' button")]]
         col3 = [[sg.T("Field Background Color:")],
-                ]
+                [sg.T("Shorten With Ellipsis:")]]
         col4 = [[sg.In(sg.theme_input_background_color(), k="field_bg_color",
                        tooltip="The background color of the input fields")],
-                ]
+                [sg.Checkbox(default=settings.shorten_with_ellpisis, k="shorten_with_ellipsis", text="",
+                             text_color=settings.button_color, tooltip='Whether or not to end shortened titles'
+                                                                       ' with "..."')]]
         pref_win = sg.Window("Preferences", layout=[
             [sg.Col(col1),
              sg.Col(col2),
@@ -590,6 +594,7 @@ class MainWin:
                 settings.search_results = int(pref_win["sresults"].get())
                 settings.max_title_display_len = int(pref_win["title_length"].get())
                 settings.show_amount = int(pref_win["showamount"].get())
+                settings.shorten_with_ellpisis = pref_win["shorten_with_ellipsis"].get()
 
                 if settings.save():
                     self.restart()
