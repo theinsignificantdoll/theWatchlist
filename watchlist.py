@@ -54,7 +54,7 @@ def show_properties(poptitle: str = "Show Editor", popshowname: str = "", popep:
                     popep_season_relevant: Union[bool, str] = "True"):
     """
     Opens a small window with all the relevant information about a show allowing these to be changed by the user.
-    Then returning the new values - unless the button "Cancel" is pressed.
+    Then returning the new values - unless the button "Cancel" is pressed. In which case an empty dict is returned.
 
     :param poptitle: title of the window
     :param popshowname: initital Title of the Show
@@ -64,7 +64,7 @@ def show_properties(poptitle: str = "Show Editor", popshowname: str = "", popep:
     :param popweight: initital Weight of the Show
     :param popep_season_relevant: initial ep_season_relevancy of the show
     :return: A dictionary of the user submitted values or the integer 1 if canceled.
-    :rtype: Union[dict, int]
+    :rtype: dict
     """
     if isinstance(popep_season_relevant, str):
         popep_season_relevant = popep_season_relevant == "True"
@@ -103,14 +103,14 @@ def show_properties(poptitle: str = "Show Editor", popshowname: str = "", popep:
                              font=(settings.fonttype, int(settings.fontsize))).read(close=True)
 
     if button == "Cancel":
-        return 1
+        return {}
     try:
         data["popep"] = str(int(data["popep"]))
         data["popseas"] = str(int(data["popseas"]))
         data["popweight"] = str(int(data["popweight"]))
     except ValueError:
         sg.popup_error(title="Couldn't convert to integer")
-        return 1
+        return {}
     return data
 
 
@@ -354,7 +354,7 @@ class MainWin:
                 show = shows.from_id(event.removeprefix("properties:"))
                 data = show_properties(popshowname=show.title, popep=show.ep, popseas=show.season, poplink=show.link,
                                        popweight=show.weight, popep_season_relevant=show.ep_season_relevant)
-                if data == 1:
+                if not data:
                     continue
                 for ind, tshow in enumerate(shows):
                     if tshow.id == show.id:
@@ -382,7 +382,7 @@ class MainWin:
 
             elif event == "add_show":
                 data = show_properties()
-                if data == 1:
+                if not data:
                     continue
                 shows.append(Show(shows.highest_id() + 1, data["popshowname"], data["popep"],
                                   data["popseas"], data["poplink"], data["popweight"], 0,
@@ -521,7 +521,7 @@ class MainWin:
                 show = shows.from_id(found[k].id)
                 data = show_properties(popshowname=show.title, popep=show.ep, popseas=show.season, poplink=show.link,
                                        popweight=show.weight, popep_season_relevant=show.ep_season_relevant)
-                if data == 1:
+                if not data:
                     continue
 
                 for ind, tshow in enumerate(shows):
