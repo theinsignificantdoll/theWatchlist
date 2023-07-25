@@ -499,8 +499,8 @@ class MainWin:
                 except IndexError:
                     pass
 
-            elif e[:8] == "s_delete":
-                k = int(e[-1])
+            elif e.startswith("s_delete_"):
+                k = int(e.removeprefix("s_delete_"))
 
                 if sg.popup_yes_no("Are you sure?") == "No":
                     continue
@@ -516,8 +516,8 @@ class MainWin:
                 self.restart()
                 return
 
-            elif e[:12] == "s_properties":
-                k = int(e[-1])
+            elif e.startswith("s_properties_"):
+                k = int(e.removeprefix("s_properties_"))
                 show = shows.from_id(found[k].id)
                 data = show_properties(popshowname=show.title, popep=show.ep, popseas=show.season, poplink=show.link,
                                        popweight=show.weight, popep_season_relevant=show.ep_season_relevant)
