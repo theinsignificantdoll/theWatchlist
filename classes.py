@@ -91,7 +91,16 @@ class ShowsFileHandler:
     def remove(self, __value):
         self.shows.remove(__value)
 
-    def __getitem__(self, item):
+    def get_index(self, __object: Show):
+        self.shows.index(__object)
+
+    def from_index(self, __index: Union[str, int]):
+        """
+        Accepts strings
+        """
+        return self.shows[int(__index)]
+
+    def __getitem__(self, item: Union[str, int]):
         return self.shows[item]
 
     def __setitem__(self, key, value):

@@ -176,12 +176,12 @@ class MainWin:
             # the first {show_amount} of shows
             color = settings.text_colors[min(int(show.color), max_txt_color_index)]
 
-            delcolumn.append([butt("DEL", key=f"delete:{show.id}", mouseover_colors="#AA0000",
+            delcolumn.append([butt("DEL", key=f"delete:{ind}", mouseover_colors="#AA0000",
                                    border_width=0)])
 
             title_column.append([sg.Text(limit_string_len(show.title, settings.max_title_display_len,
                                                           use_ellipsis=settings.shorten_with_ellpisis),
-                                         key=f"title:{show.id}",
+                                         key=f"title:{ind}",
                                          enable_events=True, text_color=f"{color}",
                                          right_click_menu=["",
                                                            [f"{m}::tit_color-{show.id}" for m in
@@ -189,41 +189,41 @@ class MainWin:
 
             emincolumn.append([sg.Text(f"Ep:" if show.ep_season_relevant else "",
                                        size=(3, 1),
-                                       key=f"Eminus:{show.id}",
+                                       key=f"Eminus:{ind}",
                                        enable_events=True if show.ep_season_relevant else False,
                                        text_color=f"{color}")])
 
             ecolumn.append([sg.Text(f"{show.ep}" if show.ep_season_relevant else "",
-                                    key=f"Eplus:{show.id}",
+                                    key=f"Eplus:{ind}",
                                     enable_events=True if show.ep_season_relevant else False,
                                     size=(4, 1),
                                     text_color=f"{color}")])
 
             smincolumn.append([sg.Text(f"S:" if show.ep_season_relevant else "",
                                        size=(2, 1),
-                                       key=f"Sminus:{show.id}",
+                                       key=f"Sminus:{ind}",
                                        enable_events=True if show.ep_season_relevant else False,
                                        text_color=f"{color}")])
 
             scolumn.append([sg.Text(f"{show.season}" if show.ep_season_relevant else "",
                                     size=(4, 1),
-                                    key=f"Splus:{show.id}",
+                                    key=f"Splus:{ind}",
                                     text_color=f"{color}",
                                     enable_events=True if show.ep_season_relevant else False)])
 
             linkcolumn.append([butt("LINK",
-                                    key=f"gotolink:{show.id}",
+                                    key=f"gotolink:{ind}",
                                     tooltip=show.link,
                                     border_width=0,
                                     right_click_menu=["",
                                                       [f"Open all links with the same color::multi_links-{show.id}"]])])
 
             propcolumn.append([butt("⛭",
-                                    key=f"properties:{show.id}",
+                                    key=f"properties:{ind}",
                                     border_width=0)])
 
             index_col.append([sg.Text(str(ind + 1),
-                                      key=f"index:{show.id}",
+                                      key=f"index:{ind}",
                                       text_color=color,
                                       visible=settings.indices_visible)])
 
@@ -301,61 +301,61 @@ class MainWin:
                 break
 
             elif event.startswith("gotolink:"):
-                shows.from_id(event.removeprefix("gotolink:")).open_link()
+                shows.from_index(int(event.removeprefix("gotolink:"))).open_link()
 
             elif event.startswith("delete:"):
                 if sg.popup_yes_no("Are you sure?") == "No":
                     continue
 
-                show = shows.from_id(event.removeprefix("delete:"))
+                show = shows.from_index(event.removeprefix("delete:"))
                 shows.remove(show)
                 self.restart()
                 break
 
             elif event.startswith("Eplus:"):
-                show = shows.from_id(event.removeprefix("Eplus:"))
-                show.ep = str(int(show.ep) + 1)
+                show = shows.from_index(event.removeprefix("Eplus:"))
+                show.ep = int(show.ep) + 1
                 self.win[event](value=show.ep)
 
                 last_show_change = time.time()
 
             elif event.startswith("Eminus:"):
-                show = shows.from_id(event.removeprefix("Eminus:"))
-                show.ep = str(int(show.ep) - 1)
-                self.win["Eplus:" + event[7:]](value=show.ep)
+                show_index = event.removeprefix("Eminus:")
+                show = shows.from_index(show_index)
+                show.ep = int(show.ep) - 1
+                self.win[f"Eplus:{show_index}"](value=show.ep)
 
                 last_show_change = time.time()
 
             elif event.startswith("title:"):
-                show_id = event.removeprefix("title:")
-                show = shows.from_id(show_id)
+                show = shows.from_index(event.removeprefix("title:"))
                 self.update_show_color(show, 0 if show.color + 1 >= len(settings.text_colors) else show.color + 1)
 
                 last_show_change = time.time()
 
             elif event.startswith("Splus:"):
-                show_id = event.removeprefix("Splus:")
-                show = shows.from_id(show_id)
+                show = shows.from_index(event.removeprefix("Splus:"))
                 show.season = str(int(show.season) + 1)
                 self.win[event].update(value=show.season)
 
                 last_show_change = time.time()
 
             elif event.startswith("Sminus:"):
-                show_id = event.removeprefix("Sminus:")
-                show = shows.from_id(show_id)
+                show_index = event.removeprefix("Sminus:")
+                show = shows.from_index(show_index)
                 show.season = str(int(show.season) - 1)
-                self.win[f"Splus:{show_id}"].update(value=show.season)
+                self.win[f"Splus:{show_index}"].update(value=show.season)
 
                 last_show_change = time.time()
 
             elif event == "index_checkbox":
                 settings.indices_visible = self.win["index_checkbox"].get()
-                for show in shows if settings.show_all else shows[:min(len(shows), settings.show_amount)]:
-                    self.win[f"index:{show.id}"].update(visible=settings.indices_visible)
+                for show_index in range(len(shows)) if settings.show_all else range(min(len(shows),
+                                                                                        settings.show_amount)):
+                    self.win[f"index:{show_index}"].update(visible=settings.indices_visible)
 
             elif event.startswith("properties:"):
-                show = shows.from_id(event.removeprefix("properties:"))
+                show = shows.from_index(event.removeprefix("properties:"))
                 did_something = show_properties(show=show)
                 if not did_something:
                     continue
@@ -415,13 +415,14 @@ class MainWin:
 
     def update_show_color(self, show: Show, new_color_id: int):
         show.color = new_color_id
+        show_index = shows.get_index(show)
         color = settings.text_colors[new_color_id]
-        self.win[f"index:{show.id}"].update(text_color=color)
-        self.win[f"title:{show.id}"].update(text_color=color)
-        self.win[f"Eminus:{show.id}"].update(text_color=color)
-        self.win[f"Eplus:{show.id}"].update(text_color=color)
-        self.win[f"Splus:{show.id}"].update(text_color=color)
-        self.win[f"Sminus:{show.id}"].update(text_color=color)
+        self.win[f"index:{show_index}"].update(text_color=color)
+        self.win[f"title:{show_index}"].update(text_color=color)
+        self.win[f"Eminus:{show_index}"].update(text_color=color)
+        self.win[f"Eplus:{show_index}"].update(text_color=color)
+        self.win[f"Splus:{show_index}"].update(text_color=color)
+        self.win[f"Sminus:{show_index}"].update(text_color=color)
 
     def close(self):
         self.shouldbreak = True

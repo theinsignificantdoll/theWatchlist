@@ -23,3 +23,5 @@ It'd be great if the user, which is to say me, didn't have to manually check for
 26. July 2023
 The program often has to restart in order to display changes. This could be changed if the keys of PySimpleGUI elements
   were their indices instead of id of the show displayed there. The show displayed could then be changed.
+
+  UPDATE: PySimpleGUI keys are now set by index.
