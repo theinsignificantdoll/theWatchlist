@@ -417,7 +417,7 @@ class MainWin:
                     self.update_show_color(show, col_index)
 
     def sort_shows_and_display(self):
-        if settings.show_all or settings.show_amount > self.number_of_displayed_shows:
+        if settings.show_all or settings.show_amount > self.number_of_displayed_shows >= len(shows):
             self.restart()
             return
 
