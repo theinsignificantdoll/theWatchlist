@@ -100,7 +100,7 @@ class ShowsFileHandler:
         """
         return self.shows[int(__index)]
 
-    def __getitem__(self, item: Union[str, int]):
+    def __getitem__(self, item):
         return self.shows[item]
 
     def __setitem__(self, key, value):
