@@ -185,7 +185,7 @@ class MainWin:
                                          key=f"title:{ind}",
                                          enable_events=True, text_color=f"{color}",
                                          right_click_menu=["",
-                                                           [f"{m}::tit_color-{show.id}" for m in
+                                                           [f"{m}::tit_color-{ind}" for m in
                                                             settings.text_colors]])])
 
             emincolumn.append([sg.Text(f"Ep:" if show.ep_season_relevant else "",
@@ -217,7 +217,7 @@ class MainWin:
                                     tooltip=show.link,
                                     border_width=0,
                                     right_click_menu=["",
-                                                      [f"Open all links with the same color::multi_links-{show.id}"]])])
+                                                      [f"Open all links with the same color::multi_links-{ind}"]])])
 
             propcolumn.append([butt("⛭",
                                     key=f"properties:{ind}",
@@ -388,33 +388,31 @@ class MainWin:
                 self.sort_shows_and_display()
 
             elif "::multi_links-" in event:
-                num_id = -1
+                show_index = -1
                 for ind in range(0, -len(event), -1):
                     if event[ind] == "-":
-                        num_id = event[ind + 1:]
+                        show_index = event[ind + 1:]
                         break
-                if num_id != -1:
-                    ref_show = shows.from_id(num_id)
+                ref_show = shows.from_index(show_index)
 
-                    for show in shows:
-                        if ref_show.color == show.color:
-                            show.open_link()
+                for show in shows:
+                    if ref_show.color == show.color:
+                        show.open_link()
 
             elif "::tit_color-" in event:
                 col = ""
-                num_id = -1
+                show_index = -1
                 for ind, s in enumerate(event):
                     if s == ":":
                         col = event[:ind]
                         break
                 for ind in range(0, -len(event), -1):
                     if event[ind] == "-":
-                        num_id = event[ind + 1:]
+                        show_index = event[ind + 1:]
                         break
-                if col != "" and num_id != -1:
-                    col_index = settings.text_colors.index(col)
-                    show = shows.from_id(num_id)
-                    self.update_show_color(show, col_index)
+                col_index = settings.text_colors.index(col)
+                show = shows.from_index(show_index)
+                self.update_show_color(show, col_index, show_index)
 
     def sort_shows_and_display(self):
         if settings.show_all or settings.show_amount > self.number_of_displayed_shows >= len(shows):
