@@ -22,9 +22,9 @@ class Show:
                 else ep_season_relevant == "True"
 
     def __repr__(self):
-        return f"Show(num_id={self.id.__repr__()}, title={self.title.__repr__()}, ep={self.ep.__repr__()}," \
-               f" season={self.season.__repr__()}, link={self.link.__repr__()}, weight={self.weight.__repr__()}," \
-               f" color={self.color.__repr__()}, ep_season_relevant={self.ep_season_relevant.__repr__()})"
+        return f"Show(num_id={self.id}, title={self.title.__repr__()}, ep={self.ep}," \
+               f" season={self.season}, link={self.link.__repr__()}, weight={self.weight}," \
+               f" color={self.color}, ep_season_relevant={self.ep_season_relevant})"
 
     def open_link(self):
         webbrowser.open(self.link)
@@ -149,7 +149,6 @@ class ShowsFileHandler:
             if show.id == target_id:
                 return show
         raise KeyError
-
 
 
 class Settings:

@@ -12,20 +12,20 @@ savefile = "saved.csv"
 settingsfile = "settings.csv"
 delimiter = "\\"
 
-# The amount of seconds in between a change being made to a show and the change being saved.
+# The number of seconds in between a change being made to a show and the change being saved. Accepts floats
 delay_to_save_shows = 3
 
 
-def is_valid_color(col: str):
+def is_valid_color(color: str):
     """
     Checks whether or not a string is a hex color code
 
-    :param col: A string
+    :param color: A string
     :return: Returns True if the string col is a proper hex color code, such as "#FFFFFF"
     """
-    if len(col) == 7:
-        if col[0] == "#":
-            for n in col[1:]:
+    if len(color) == 7:
+        if color[0] == "#":
+            for n in color[1:]:
                 if (48 <= ord(n) <= 57) or (65 <= ord(n) <= 70) or (97 <= ord(n) <= 102):
                     return True
                 return False
