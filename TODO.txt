@@ -10,12 +10,6 @@ It can currently be slightly difficult to see which elements are on the same row
   if not impossible, to change the entire background color of a row ugly spots inbetween elements.
   Moreover, I also noticed that the compute power needed to implement this highlight was quite significant.
 
-22. July 2023 DONE
-When the program updates the savefiles have to be updated manually. This should be fixed - mostly if anyone else ever starts using this program.
-  The settings.csv file no longer requires manual updating. saved.csv still does.
-  UPDATE: since there aren't any older versions being used, the ability for the program to read old saved.csv files need only go back to now.
-  That also means, that this todo has been taken care of. Therefore, it should be deleted during the next update to the TODO file.
-
 22. July 2023
 I sometimes find it slightly difficult to distinguish between the titles of shows. Something should be done.
   idk what, though. I'm not a graphic designer.
@@ -25,3 +19,7 @@ It'd be great if the user, which is to say me, didn't have to manually check for
   It might be reasonable to assign each show a weekday - i.e. the day upon which a new episode is published.
   An alternative to that, might be a webscraper or API something something. Whatever the case may be, each service
   will require its own new-episode-checker.
+
+26. July 2023
+The program often has to restart in order to display changes. This could be changed if the keys of PySimpleGUI elements
+  were their indices instead of id of the show displayed there. The show displayed could then be changed.
