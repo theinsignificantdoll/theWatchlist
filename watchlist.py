@@ -49,50 +49,45 @@ def limit_string_len(string: str, length: int, use_ellipsis: bool = False):
     return string
 
 
-def show_properties(poptitle: str = "Show Editor", popshowname: str = "", popep: Union[int, str] = "0",
-                    popseas: Union[int, str] = "1", poplink: str = "", popweight: Union[int, str] = "0",
-                    popep_season_relevant: Union[bool, str] = "True"):
+def show_properties(title: str = "Show Editor", show: Show = None):
     """
     Opens a small window with all the relevant information about a show allowing these to be changed by the user.
-    Then returning the new values - unless the button "Cancel" is pressed. In which case an empty dict is returned.
+    Then returning the show, if save was pressed and False if Cancel was pressed.
+    If no show is None, then the function returns a dummy show with all the appropriate values and an id of -1.
 
-    :param poptitle: title of the window
-    :param popshowname: initital Title of the Show
-    :param popep: initital Episode of the Show
-    :param popseas: initital Season of the Show
-    :param poplink: initital Link of the Show
-    :param popweight: initital Weight of the Show
-    :param popep_season_relevant: initial ep_season_relevancy of the show
-    :return: A dictionary of the user submitted values or the integer 1 if canceled.
-    :rtype: dict
+    :param title: Title of the window
+    :param show: If given, then all values will be changed in this show.
+    :return: True if something has been changed and False if nothing has been changed.
+    :rtype: Union[bool, Show]
     """
-    if isinstance(popep_season_relevant, str):
-        popep_season_relevant = popep_season_relevant == "True"
-    button, data = sg.Window(poptitle,
+    if show is None:  # make a dummy show.
+        show = Show(-1, "", 0, 1, "", 0, 0, True)
+    button, data = sg.Window(title,
                              [
                                  [sg.Column([
                                      [sg.T("Title")],
-                                     [sg.InputText(popshowname, key="popshowname")]
+                                     [sg.InputText(show.title, key="show_title")]
                                  ]),
                                      sg.Column([
                                          [sg.T("Episode")],
-                                         [sg.InputText(popep, key="popep", size=(8, 1))]
+                                         [sg.InputText(show.ep, key="show_ep", size=(8, 1))]
                                      ]),
                                      sg.Column([
                                          [sg.T("Season")],
-                                         [sg.InputText(popseas, key="popseas", size=(8, 1))]
+                                         [sg.InputText(show.season, key="show_season", size=(8, 1))]
                                      ]),
                                      sg.Column([
                                          [sg.T("Link")],
-                                         [sg.InputText(poplink, key="poplink", size=(15, 1))]
+                                         [sg.InputText(show.link, key="show_link", size=(15, 1))]
                                      ]),
                                      sg.Column([
                                          [sg.T("Weight")],
-                                         [sg.InputText(popweight, key="popweight")]
+                                         [sg.InputText(show.weight, key="show_weight")]
                                      ]),
                                      sg.Column([
                                          [sg.T("Show Details")],
-                                         [sg.Checkbox("", default=popep_season_relevant, key="popep_season_relevant")]
+                                         [sg.Checkbox("", default=show.ep_season_relevant,
+                                                      key="show_ep_season_relevant")]
                                      ])
                                  ],
                                  [sg.Button("Save", bind_return_key=True), sg.Button("Cancel")]],
@@ -103,15 +98,24 @@ def show_properties(poptitle: str = "Show Editor", popshowname: str = "", popep:
                              font=(settings.fonttype, int(settings.fontsize))).read(close=True)
 
     if button == "Cancel":
-        return {}
+        return False
     try:
-        data["popep"] = str(int(data["popep"]))
-        data["popseas"] = str(int(data["popseas"]))
-        data["popweight"] = str(int(data["popweight"]))
+        # Check whether or not the user given values are valid BEFORE making any changes to the show.
+        data["show_ep"] = int(data["show_ep"])
+        data["show_season"] = int(data["show_season"])
+        data["show_weight"] = int(data["show_weight"])
     except ValueError:
         sg.popup_error(title="Couldn't convert to integer")
-        return {}
-    return data
+        return False
+
+    show.title = data["show_title"]
+    show.ep = data["show_ep"]
+    show.season = data["show_season"]
+    show.link = data["show_link"]
+    show.weight = data["show_weight"]
+    show.ep_season_relevant = data["show_ep_season_relevant"]
+
+    return show
 
 
 def butt(button_text="", key=None, tooltip=None, butt_color=(False, None), border_width=None, size=(None, None),
@@ -352,20 +356,11 @@ class MainWin:
 
             elif event.startswith("properties:"):
                 show = shows.from_id(event.removeprefix("properties:"))
-                data = show_properties(popshowname=show.title, popep=show.ep, popseas=show.season, poplink=show.link,
-                                       popweight=show.weight, popep_season_relevant=show.ep_season_relevant)
-                if not data:
+                did_something = show_properties(show=show)
+                if not did_something:
                     continue
-                for ind, tshow in enumerate(shows):
-                    if tshow.id == show.id:
-                        shows[ind].title = data["popshowname"]
-                        shows[ind].ep = int(data["popep"])
-                        shows[ind].season = int(data["popseas"])
-                        shows[ind].link = data["poplink"]
-                        shows[ind].weight = int(data["popweight"])
-                        shows[ind].ep_season_relevant = data["popep_season_relevant"]
-                        self.restart()
-                        return
+                self.restart()
+                return
 
             elif event == "h":  # Move self.win to mouse
                 mouse_pos = mouse.get_position()
@@ -381,12 +376,11 @@ class MainWin:
                 self.search(results=settings.search_results)
 
             elif event == "add_show":
-                data = show_properties()
-                if not data:
+                show = show_properties()
+                if not show:
                     continue
-                shows.append(Show(shows.highest_id() + 1, data["popshowname"], data["popep"],
-                                  data["popseas"], data["poplink"], data["popweight"], 0,
-                                  data["popep_season_relevant"]))
+                show.id = shows.highest_id() + 1
+                shows.append(show)
                 self.restart()
                 break
 
@@ -519,22 +513,12 @@ class MainWin:
             elif e.startswith("s_properties_"):
                 k = int(e.removeprefix("s_properties_"))
                 show = shows.from_id(found[k].id)
-                data = show_properties(popshowname=show.title, popep=show.ep, popseas=show.season, poplink=show.link,
-                                       popweight=show.weight, popep_season_relevant=show.ep_season_relevant)
-                if not data:
+                did_something = show_properties(show=show)
+                if not did_something:
                     continue
-
-                for ind, tshow in enumerate(shows):
-                    if tshow.id == show.id:
-                        shows[ind].title = data["popshowname"]
-                        shows[ind].ep = int(data["popep"])
-                        shows[ind].season = int(data["popseas"])
-                        shows[ind].link = data["poplink"]
-                        shows[ind].weight = int(data["popweight"])
-                        shows[ind].ep_season_relevant = data["popep_season_relevant"]
-                        search_win.close()
-                        self.restart()
-                        return
+                search_win.close()
+                self.restart()
+                return
 
     def update_preferences(self):
         col1 = [[sg.T("Font size:")],
