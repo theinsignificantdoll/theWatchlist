@@ -470,7 +470,7 @@ class MainWin:
                           text_color=settings.text_colors[min(int(shows[n].color), len(settings.text_colors) - 1)],
                           size=(37, 1)) for n in range(results)]
 
-        index_col = [sg.Text(f"{' ' * (index_len - 1)}{n + 1}", key=f"s_index_{n}",
+        index_col = [sg.Text(f"{n + 1: >{index_len}}", key=f"s_index_{n}",
                              text_color=settings.text_colors[min(int(shows[n].color), len(settings.text_colors) - 1)])
                      for n in range(results)]
 
