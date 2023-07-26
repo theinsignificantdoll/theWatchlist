@@ -25,3 +25,5 @@ The program often has to restart in order to display changes. This could be chan
   were their indices instead of id of the show displayed there. The show displayed could then be changed.
 
   UPDATE: PySimpleGUI keys are now set by index.
+  UPDATE: The window no longer restarts when the order of shows changes. It might also be possible to use the
+  extend_layout method to make restarts unnecessary even when new elements are added. but idk.

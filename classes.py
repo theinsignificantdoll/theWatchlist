@@ -92,7 +92,7 @@ class ShowsFileHandler:
         self.shows.remove(__value)
 
     def get_index(self, __object: Show):
-        self.shows.index(__object)
+        return self.shows.index(__object)
 
     def from_index(self, __index: Union[str, int]):
         """

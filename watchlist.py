@@ -152,6 +152,7 @@ class MainWin:
         global should_restart
 
         self.shouldbreak = False
+        self.number_of_displayed_shows = 0
 
         sg.theme_text_color(settings.text_colors[0])
         sg.theme_element_text_color(settings.button_color)
@@ -226,6 +227,8 @@ class MainWin:
                                       key=f"index:{ind}",
                                       text_color=color,
                                       visible=settings.indices_visible)])
+
+            self.number_of_displayed_shows = ind + 1
 
         showscol = [[sg.Col([[delcolumn[ind][0], title_column[ind][0]] for ind in range(len(title_column))]),
                      sg.Col([[emincolumn[ind][0], ecolumn[ind][0], smincolumn[ind][0], scolumn[ind][0],
@@ -309,8 +312,7 @@ class MainWin:
 
                 show = shows.from_index(event.removeprefix("delete:"))
                 shows.remove(show)
-                self.restart()
-                break
+                self.sort_shows_and_display()
 
             elif event.startswith("Eplus:"):
                 show = shows.from_index(event.removeprefix("Eplus:"))
@@ -328,8 +330,11 @@ class MainWin:
                 last_show_change = time.time()
 
             elif event.startswith("title:"):
-                show = shows.from_index(event.removeprefix("title:"))
-                self.update_show_color(show, 0 if show.color + 1 >= len(settings.text_colors) else show.color + 1)
+                show_index = event.removeprefix("title:")
+                show = shows.from_index(show_index)
+                self.update_show_color(show,
+                                       0 if show.color + 1 >= len(settings.text_colors) else show.color + 1,
+                                       show_index=show_index)
 
                 last_show_change = time.time()
 
@@ -359,8 +364,7 @@ class MainWin:
                 did_something = show_properties(show=show)
                 if not did_something:
                     continue
-                self.restart()
-                return
+                self.sort_shows_and_display()
 
             elif event == "h":  # Move self.win to mouse
                 mouse_pos = mouse.get_position()
@@ -381,8 +385,7 @@ class MainWin:
                     continue
                 show.id = shows.highest_id() + 1
                 shows.append(show)
-                self.restart()
-                break
+                self.sort_shows_and_display()
 
             elif "::multi_links-" in event:
                 num_id = -1
@@ -413,9 +416,32 @@ class MainWin:
                     show = shows.from_id(num_id)
                     self.update_show_color(show, col_index)
 
-    def update_show_color(self, show: Show, new_color_id: int):
+    def sort_shows_and_display(self):
+        if settings.show_all or settings.show_amount > self.number_of_displayed_shows:
+            self.restart()
+            return
+
+        shows.do_sorting()
+
+        for ind, show in enumerate(shows if settings.show_all else shows[:min(len(shows), settings.show_amount)]):
+            color = settings.text_colors[show.color]
+            self.win[f"title:{ind}"].update(value=limit_string_len(show.title, settings.max_title_display_len,
+                                                                   use_ellipsis=settings.shorten_with_ellpisis),
+                                            text_color=color)
+            self.win[f"Eminus:{ind}"].update(value="Ep:" if show.ep_season_relevant else "",
+                                             text_color=color)
+            self.win[f"Eplus:{ind}"].update(value=show.ep if show.ep_season_relevant else "",
+                                            text_color=color)
+            self.win[f"Sminus:{ind}"].update(value="S:" if show.ep_season_relevant else "",
+                                             text_color=color)
+            self.win[f"Splus:{ind}"].update(value=show.season if show.ep_season_relevant else "",
+                                            text_color=color)
+            self.win[f"index:{ind}"].update(text_color=color)
+
+    def update_show_color(self, show: Show, new_color_id: int, show_index=None):
         show.color = new_color_id
-        show_index = shows.get_index(show)
+        if show_index is None:
+            show_index = shows.get_index(show)
         color = settings.text_colors[new_color_id]
         self.win[f"index:{show_index}"].update(text_color=color)
         self.win[f"title:{show_index}"].update(text_color=color)
@@ -508,7 +534,7 @@ class MainWin:
                 if delme != -1:
                     shows.pop(delme)
                 search_win.close()
-                self.restart()
+                self.sort_shows_and_display()
                 return
 
             elif e.startswith("s_properties_"):
@@ -518,7 +544,7 @@ class MainWin:
                 if not did_something:
                     continue
                 search_win.close()
-                self.restart()
+                self.sort_shows_and_display()
                 return
 
     def update_preferences(self):
