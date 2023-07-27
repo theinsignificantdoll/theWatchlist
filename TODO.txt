@@ -14,14 +14,12 @@ It can currently be slightly difficult to see which elements are on the same row
 I sometimes find it slightly difficult to distinguish between the titles of shows. Something should be done.
   idk what, though. I'm not a graphic designer.
 
-23. July 2023
-It'd be great if the user, which is to say me, didn't have to manually check for new episodes every day.
-  It might be reasonable to assign each show a weekday - i.e. the day upon which a new episode is published.
-  An alternative to that, might be a webscraper or API something something. Whatever the case may be, each service
-  will require its own new-episode-checker.
-
-  I've decided to add a an extra show parameter. The parameter will hold information about a weekday and a time of day.
-  These should then be showable and hideable with a checkbox, much the same way as indices are.
-  todo: make that.
-  UPDATE: DONE
-  Remove next change of TODO file
+27. July 2023
+  Given the recent addition of release info to shows, it could become annoying for the user (me) to get rid of shows
+  once they've been watched. Till now, this has been possible to do, by simply changing the color of the show and
+  changing its weight. However, now, one must also press the "ongoing" checkbox within properties. Moreover, it would
+  be theoretically optimal to also purge the release info of the show. But, doing all of that is a lot of work
+  and I, the user, am very lazy.
+  TODO: add a button that will allow the user to quickly purge release info, set ongoing to False and assign
+   a new weight value to the show.
+  DONE - REMOVE NEXT UPDATE TO FILE

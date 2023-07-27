@@ -49,7 +49,7 @@ def limit_string_len(string: str, length: int, use_ellipsis: bool = False):
     return string
 
 
-def show_properties(title: str = "Show Editor", show: Show = None):
+def show_properties(title: str = "Show Editor", show: Show = None, show_purge: bool = False):
     """
     Opens a small window with all the relevant information about a show allowing these to be changed by the user.
     Then returning the show, if save was pressed and False if Cancel was pressed.
@@ -57,6 +57,7 @@ def show_properties(title: str = "Show Editor", show: Show = None):
 
     :param title: Title of the window
     :param show: If given, then all values will be changed in this show.
+    :param show_purge: Whether or not to show the Purge Weight input field
     :return: True if something has been changed and False if nothing has been changed.
     :rtype: Union[bool, Show]
     """
@@ -100,7 +101,16 @@ def show_properties(title: str = "Show Editor", show: Show = None):
                                          [sg.T("Ongoing")],
                                          [sg.Checkbox("", default=show.ongoing,
                                                       key="show_ongoing")]
-                                     ])
+                                     ]),
+                                     sg.Push(),
+                                     sg.Column([
+                                         [sg.T("Purge Weight")],
+                                         [sg.InputText(key="purge_weight",
+                                                       tooltip="If a weight is written in this field, then ongoing\n"
+                                                               "WILL be set to False and Release Info will be cleared\n"
+                                                               "As such this field is useful for quickly discarding\n"
+                                                               "shows, once they have been finished.")]
+                                     ]) if show_purge else sg.T()
                                  ],
                                  [sg.Button("Save", bind_return_key=True), sg.Button("Cancel")]],
                              disable_close=True,
@@ -111,6 +121,14 @@ def show_properties(title: str = "Show Editor", show: Show = None):
 
     if button == "Cancel":
         return False
+
+    purge_weight = False
+    if "purge_weight" in data and data["purge_weight"]:
+        try:
+            purge_weight = int(data["purge_weight"])
+        except TypeError:
+            sg.popup_error(title="Purge not an integer")
+
     try:
         # Check whether or not the user given values are valid BEFORE making any changes to the show.
         data["show_ep"] = int(data["show_ep"])
@@ -124,10 +142,16 @@ def show_properties(title: str = "Show Editor", show: Show = None):
     show.ep = data["show_ep"]
     show.season = data["show_season"]
     show.link = data["show_link"]
-    show.weight = data["show_weight"]
     show.ep_season_relevant = data["show_ep_season_relevant"]
-    show.release_info = data["show_release_info"]
-    show.ongoing = data["show_ongoing"]
+
+    if purge_weight is False:
+        show.release_info = data["show_release_info"]
+        show.ongoing = data["show_ongoing"]
+        show.weight = data["show_weight"]
+    else:
+        show.release_info = ""
+        show.ongoing = False
+        show.weight = purge_weight
 
     return show
 
@@ -333,7 +357,7 @@ class MainWin:
 
             elif event.startswith("properties:"):
                 show = shows.from_index(event.removeprefix("properties:"))
-                did_something = show_properties(show=show)
+                did_something = show_properties(show=show, show_purge=True)
                 if not did_something:
                     continue
                 self.sort_shows_and_display()
@@ -525,7 +549,7 @@ class MainWin:
             elif e.startswith("s_properties_"):
                 k = int(e.removeprefix("s_properties_"))
                 show = shows.from_id(found[k].id)
-                did_something = show_properties(show=show)
+                did_something = show_properties(show=show, show_purge=True)
                 if not did_something:
                     continue
                 search_win.close()
