@@ -62,7 +62,7 @@ def show_properties(title: str = "Show Editor", show: Show = None, show_purge: b
     :rtype: Union[bool, Show]
     """
     if show is None:  # make a dummy show.
-        show = Show(-1, "", 0, 1, "", 0, 0, True)
+        show = Show(-1, "", 0, 1, "", 0, 0, True, ongoing=True)
     button, data = sg.Window(title,
                              [
                                  [sg.Column([
