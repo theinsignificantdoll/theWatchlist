@@ -226,8 +226,12 @@ class MainWin:
             settings.initialwinsize = self.win.Size
             event, values = self.win.read(timeout=200)
 
+            # The methods called within the if-statement below are intended to update the scrollable area of the
+            # .show_col column. However, it seems that this might be a bit inconsistent - i won't look further into
+            # right now. BUT if there are problems, they probably stem from here.
             if self.shows_col_contents_changed:
                 self.shows_col_contents_changed = False
+                self.win.visibility_changed()
                 self.shows_col.contents_changed()
 
             # if event != "__TIMEOUT__":
@@ -672,12 +676,13 @@ class MainWin:
 
     def shorten_by_one_row(self):
         """
-        Doesn't actually removes a row of elements. Instead, it makes them invisible.
+        Doesn't actually remove a row of elements. Instead, it makes them invisible.
         """
         index = self.number_of_displayed_shows - 1
         self.change_visibility_of_row(index, False)
         self.number_of_displayed_shows -= 1
         self.number_of_invisible_rows += 1
+        print(self.number_of_displayed_shows, len(self.title_elements), self.number_of_invisible_rows)
 
     def change_visibility_of_row(self, index, visibility):
         self.win[f"delete:{index}"].update(visible=visibility)
@@ -701,18 +706,21 @@ class MainWin:
             self.change_visibility_of_row(index, True)
             self.number_of_invisible_rows -= 1
             return
-        self.win.extend_layout(self.shows_col, [[self.delete_element(index),
-                                                 self.title_element(index),
-                                                 self.ep_minus_element(index),
-                                                 self.ep_plus_element(index),
-                                                 self.season_minus_element(index),
-                                                 self.season_plus_element(index),
-                                                 self.link_element(index),
-                                                 self.properties_element(index),
-                                                 self.index_element(index)]])
+        else:
+            self.win.extend_layout(self.shows_col, [[self.delete_element(index),
+                                                     self.title_element(index),
+                                                     self.ep_minus_element(index),
+                                                     self.ep_plus_element(index),
+                                                     self.season_minus_element(index),
+                                                     self.season_plus_element(index),
+                                                     self.link_element(index),
+                                                     self.properties_element(index),
+                                                     self.index_element(index)]])
         self.shows_col_contents_changed = True  # This causes self.shows_col.contents_changed() to be called
         # immediately after self.win.read(). Why this needs to be the case, I cannot fathom. (BUT IT WORKS!)
         self.number_of_displayed_shows += 1
+
+        print(self.number_of_displayed_shows, len(self.title_elements), self.number_of_invisible_rows)
 
 
 if __name__ == '__main__':

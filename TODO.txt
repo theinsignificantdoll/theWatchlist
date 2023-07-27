@@ -37,3 +37,8 @@ The program often has to restart in order to display changes. This could be chan
 
   DONE: It works as it should, i think...
         This To-do should be removed during the next update to this file.
+
+        That ", i think..." carries a lot of weight right now. It seems that there might be some consistency issues
+        with updating the scrollable area of the .shows_col column. With that said, i'll leave it be for now and
+        come back to it if it becomes a problem. That also means that this To-do will not yet be deleted, but
+        instead left for a bit.
