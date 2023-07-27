@@ -704,7 +704,6 @@ class MainWin:
         if self.number_of_invisible_rows > 0:
             self.change_visibility_of_row(index, True)
             self.number_of_invisible_rows -= 1
-            return
         else:
             self.win.extend_layout(self.shows_col, [[self.delete_element(index),
                                                      self.title_element(index),
