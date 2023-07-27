@@ -7,7 +7,7 @@ import webbrowser
 class Show:
     def __init__(self, num_id: Union[str, int], title: str, ep: Union[str, int], season: Union[str, int],
                  link: str, weight: Union[str, int], color: Union[str, int],
-                 ep_season_relevant: Union[str, bool] = None):
+                 ep_season_relevant: Union[str, bool] = None, release_info: str = "", ongoing: Union[str, bool] = None):
         self.id: int = int(num_id)
         self.title: str = title
         self.ep: int = int(ep)
@@ -15,16 +15,22 @@ class Show:
         self.link: str = link
         self.weight: int = int(weight)
         self.color: int = int(color)
+        self.release_info: str = release_info
         if ep_season_relevant is None:
             self.ep_season_relevant = True
         else:
             self.ep_season_relevant = ep_season_relevant if isinstance(ep_season_relevant, bool)\
                 else ep_season_relevant == "True"
+        if ongoing is None:
+            self.ongoing = False
+        else:
+            self.ongoing = ongoing if isinstance(ongoing, bool) else ongoing == "True"
 
     def __repr__(self):
         return f"Show(num_id={self.id}, title={self.title.__repr__()}, ep={self.ep}," \
                f" season={self.season}, link={self.link.__repr__()}, weight={self.weight}," \
-               f" color={self.color}, ep_season_relevant={self.ep_season_relevant})"
+               f" color={self.color}, ep_season_relevant={self.ep_season_relevant}," \
+               f" release_info={self.release_info.__repr__()}, ongoing={self.ongoing})"
 
     def open_link(self):
         webbrowser.open(self.link)
@@ -72,6 +78,8 @@ class ShowsFileHandler:
                     weight=row[5],
                     color=row[6],
                     ep_season_relevant=row[7] if len(row) > 7 else None,
+                    release_info=row[8] if len(row) > 8 else "",
+                    ongoing=row[9] if len(row) > 9 else None,
                 ))
         return self.shows
 
@@ -80,7 +88,7 @@ class ShowsFileHandler:
             writer = csv.writer(csvfile, delimiter=self.delimiter, quotechar="|")
             for show in self.shows:
                 writer.writerow([show.id, show.title, show.ep, show.season, show.link, show.weight, show.color,
-                                 show.ep_season_relevant])
+                                 show.ep_season_relevant, show.release_info, show.ongoing])
 
     def pop(self, __index):
         return self.shows.pop(__index)
@@ -172,7 +180,8 @@ class Settings:
                  button_color=None, background_color=None, right_click_selected_background="#252525",
                  right_click_fontsize=10, input_background=None, initialwinsize=(400, 200),
                  initialwinpos=(50, 50), search_results=3, show_amount=32,
-                 max_title_display_len=0, indices_visible=True, show_all=False, shorten_with_ellipsis=True):
+                 max_title_display_len=0, indices_visible=True, show_all=False, shorten_with_ellipsis=True,
+                 releases_visible=True):
 
         self.sg = sg
         # Note that some settings are not stored as attributes of this class, but are instead
@@ -201,6 +210,7 @@ class Settings:
         self.indices_visible = indices_visible
         self.show_all = show_all
         self.shorten_with_ellpisis = shorten_with_ellipsis
+        self.releases_visible = releases_visible
 
         self._currently_saved_to_disk_list = []  # is initially updated when the savefile is loaded
 
@@ -217,7 +227,7 @@ class Settings:
                 self.right_click_selected_background, self.right_click_fontsize,
                 self.sg.theme_input_background_color(), self.initialwinsize, self.initialwinpos, self.search_results,
                 self.show_amount, self.max_title_display_len, self.indices_visible, self.show_all,
-                self.shorten_with_ellpisis]
+                self.shorten_with_ellpisis, self.releases_visible]
 
     def load(self):
         with open(self.savefile, "r", newline="") as csvfile:
@@ -263,6 +273,7 @@ class Settings:
                 self.indices_visible = state_data[0] == "True"
                 self.show_all = state_data[1] == "True"
                 self.shorten_with_ellpisis = state_data[2] == "True"
+                self.releases_visible = state_data[3] == "True"
             except IndexError:
                 missing_data = True
 
@@ -293,7 +304,7 @@ class Settings:
             writer.writerow([*self.initialwinsize, *self.initialwinpos])
             writer.writerow([self.search_results])
             writer.writerow([self.show_amount, self.max_title_display_len])
-            writer.writerow([self.indices_visible, self.show_all, self.shorten_with_ellpisis])
+            writer.writerow([self.indices_visible, self.show_all, self.shorten_with_ellpisis, self.releases_visible])
 
         self._currently_saved_to_disk_list = self.represent_as_list()
         return True

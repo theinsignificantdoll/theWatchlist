@@ -67,7 +67,7 @@ def show_properties(title: str = "Show Editor", show: Show = None):
                                  [sg.Column([
                                      [sg.T("Title")],
                                      [sg.InputText(show.title, key="show_title")]
-                                 ]),
+                                     ]),
                                      sg.Column([
                                          [sg.T("Episode")],
                                          [sg.InputText(show.ep, key="show_ep", size=(8, 1))]
@@ -88,6 +88,18 @@ def show_properties(title: str = "Show Editor", show: Show = None):
                                          [sg.T("Show Details")],
                                          [sg.Checkbox("", default=show.ep_season_relevant,
                                                       key="show_ep_season_relevant")]
+                                     ])
+                                  ],
+                                 [sg.HSep()],
+                                 [sg.Column([
+                                     [sg.T("Release Info")],
+                                     [sg.InputText(show.release_info, key="show_release_info",
+                                                   tooltip="Expected format example: 'MON-20:00'")]
+                                 ]),
+                                     sg.Column([
+                                         [sg.T("Ongoing")],
+                                         [sg.Checkbox("", default=show.ongoing,
+                                                      key="show_ongoing")]
                                      ])
                                  ],
                                  [sg.Button("Save", bind_return_key=True), sg.Button("Cancel")]],
@@ -114,6 +126,8 @@ def show_properties(title: str = "Show Editor", show: Show = None):
     show.link = data["show_link"]
     show.weight = data["show_weight"]
     show.ep_season_relevant = data["show_ep_season_relevant"]
+    show.release_info = data["show_release_info"]
+    show.ongoing = data["show_ongoing"]
 
     return show
 
@@ -160,6 +174,7 @@ class MainWin:
         self.link_elements = []
         self.properties_elements = []
         self.index_elements = []
+        self.release_elements = []
 
         self.number_of_displayed_shows = len(shows) if settings.show_all else min(len(shows), settings.show_amount)
 
@@ -171,7 +186,8 @@ class MainWin:
                                   self.season_plus_element(ind),
                                   self.link_element(ind),
                                   self.properties_element(ind),
-                                  self.index_element(ind)] for ind in range(self.number_of_displayed_shows)],
+                                  self.index_element(ind),
+                                  self.release_element(ind)] for ind in range(self.number_of_displayed_shows)],
                                 vertical_scroll_only=True,
                                 scrollable=True,
                                 expand_x=True,
@@ -186,7 +202,11 @@ class MainWin:
                    butt(" 🔍 ", key="search_button", border_width=0, tooltip="Search"),
                    sg.Checkbox(" ", key="index_checkbox", text_color=settings.button_color,
                                tooltip="Enables or disables the showing of indices",
-                               default=settings.indices_visible, enable_events=True)]]
+                               default=settings.indices_visible, enable_events=True),
+                   sg.Checkbox(" ", key="release_checkbox", text_color=settings.button_color,
+                               tooltip="Enables or disables the showing of release info",
+                               default=settings.releases_visible, enable_events=True)
+                   ]]
 
         layout = [
             [sg.Col(topcol)],
@@ -306,6 +326,11 @@ class MainWin:
                 for show_index in range(self.number_of_displayed_shows):
                     self.win[f"index:{show_index}"].update(visible=settings.indices_visible)
 
+            elif event == "release_checkbox":
+                settings.releases_visible = self.win["release_checkbox"].get()
+                for show_index in range(self.number_of_displayed_shows):
+                    self.win[f"release:{show_index}"].update(visible=settings.releases_visible)
+
             elif event.startswith("properties:"):
                 show = shows.from_index(event.removeprefix("properties:"))
                 did_something = show_properties(show=show)
@@ -394,6 +419,8 @@ class MainWin:
             self.win[f"Splus:{ind}"].update(value=show.season if show.ep_season_relevant else "",
                                             text_color=color)
             self.win[f"index:{ind}"].update(text_color=color)
+            self.win[f"release:{ind}"].update(value=show.release_info if show.ongoing else "",
+                                              text_color=color)
             self.set_cursors(ind)
 
     def update_show_color(self, show: Show, new_color_id: int, show_index=None):
@@ -657,6 +684,12 @@ class MainWin:
                                            key=f"index:{index}",
                                            visible=settings.indices_visible))
         return self.index_elements[-1]
+
+    def release_element(self, index):
+        self.release_elements.append(sg.Text(size=(9, 1),
+                                             key=f"release:{index}",
+                                             visible=settings.releases_visible))
+        return self.release_elements[-1]
 
     def set_cursors(self, index):
         self.delete_elements[index].set_cursor("plus")

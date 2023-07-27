@@ -20,25 +20,8 @@ It'd be great if the user, which is to say me, didn't have to manually check for
   An alternative to that, might be a webscraper or API something something. Whatever the case may be, each service
   will require its own new-episode-checker.
 
-26. July 2023
-The program often has to restart in order to display changes. This could be changed if the keys of PySimpleGUI elements
-  were their indices instead of id of the show displayed there. The show displayed could then be changed.
-
-  UPDATE: PySimpleGUI keys are now set by index.
-  UPDATE: The window no longer restarts when the order of shows changes. It might also be possible to use the
-  extend_layout method to make restarts unnecessary even when new elements are added. but idk.
-
-  UPDATE: A function to extend the layout has been added. This function does indeed extend the layout
-  with the appropriate elements. However, it is not possible to scroll all the way, to actually see them.
-
-  UPDATE: The fix to the aforementioned problem was quite weird, but it seems to be working fine now.
-
-  UPDATE: It works. (When more rows are needed, they will be added WITHOUT restarting). Time to work on removing rows.
-
-  DONE: It works as it should, i think...
-        This To-do should be removed during the next update to this file.
-
-        That ", i think..." carries a lot of weight right now. It seems that there might be some consistency issues
-        with updating the scrollable area of the .shows_col column. With that said, i'll leave it be for now and
-        come back to it if it becomes a problem. That also means that this To-do will not yet be deleted, but
-        instead left for a bit.
+  I've decided to add a an extra show parameter. The parameter will hold information about a weekday and a time of day.
+  These should then be showable and hideable with a checkbox, much the same way as indices are.
+  todo: make that.
+  UPDATE: DONE
+  Remove next change of TODO file
