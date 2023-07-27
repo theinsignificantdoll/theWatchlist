@@ -30,3 +30,7 @@ The program often has to restart in order to display changes. This could be chan
 
   UPDATE: A function to extend the layout has been added. This function does indeed extend the layout
   with the appropriate elements. However, it is not possible to scroll all the way, to actually see them.
+
+  UPDATE: The fix to the aforementioned problem was quite weird, but it seems to be working fine now.
+
+  UPDATE: It works. (When more rows are needed, they will be added WITHOUT restarting). Time to work on removing rows.

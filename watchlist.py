@@ -185,6 +185,7 @@ class MainWin:
                                 scrollable=True,
                                 expand_x=True,
                                 expand_y=True)
+        self.shows_col_contents_changed = False
 
         topcol = [[butt(" + ", key="add_show", border_width=0, tooltip="Add a show to the list"),
                    butt(" ⛭ ", key="preferences", border_width=0, tooltip="Preferences"),
@@ -245,6 +246,10 @@ class MainWin:
             settings.initialwinpos = self.win.CurrentLocation()
             settings.initialwinsize = self.win.Size
             event, values = self.win.read(timeout=200)
+
+            if self.shows_col_contents_changed:
+                self.shows_col_contents_changed = False
+                self.shows_col.contents_changed()
 
             # if event != "__TIMEOUT__":
             #    print(event)
@@ -373,10 +378,22 @@ class MainWin:
                 show = shows.from_index(show_index)
                 self.update_show_color(show, col_index, show_index)
 
+    @staticmethod
+    def num_of_shows_to_display():
+        """
+        Returns how many shows should currently be displayed
+        """
+        if settings.show_all:
+            return len(shows)
+        return min(settings.show_amount, len(shows))
+
     def sort_shows_and_display(self):
-        if settings.show_all or settings.show_amount > self.number_of_displayed_shows >= len(shows):
+        to_display = self.num_of_shows_to_display()
+        if to_display < self.number_of_displayed_shows:
             self.restart()
             return
+        if to_display > self.number_of_displayed_shows:
+            self.extend_by_x_rows(to_display - self.number_of_displayed_shows)
 
         shows.do_sorting()
 
@@ -658,8 +675,11 @@ class MainWin:
                                            visible=settings.indices_visible))
         return self.index_elements[-1]
 
+    def extend_by_x_rows(self, x):
+        for _ in range(x):
+            self.extend_by_one_row()
+
     def extend_by_one_row(self):
-        # Something is wrong with this function. As of now, it shouldn't be used.
         index = self.number_of_displayed_shows
         self.win.extend_layout(self.shows_col, [[self.delete_element(index),
                                                  self.title_element(index),
@@ -670,7 +690,8 @@ class MainWin:
                                                  self.link_element(index),
                                                  self.properties_element(index),
                                                  self.index_element(index)]])
-        self.shows_col.contents_changed()
+        self.shows_col_contents_changed = True  # This causes self.shows_col.contents_changed() to be called
+        # immediately after self.win.read(). Why this needs to be the case, I cannot fathom. (BUT IT WORKS!)
         self.number_of_displayed_shows += 1
 
 
