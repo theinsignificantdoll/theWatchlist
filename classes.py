@@ -276,7 +276,7 @@ class Settings:
         Checks if settings have changed, subsequently saving if they have.
         Returns True if something has been written to disk else False
 
-        :param force_write: Skips the of whether or not settings have been changed
+        :param force_write: Skips the check of whether or not settings have been changed
         :type force_write: bool
         :return: True if something was written to the disk
         :rtype: bool

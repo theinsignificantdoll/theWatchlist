@@ -123,16 +123,7 @@ def butt(button_text="", key=None, tooltip=None, butt_color=(False, None), borde
     """
     A wrapper function for sg.Button with some different default values
 
-    :param button_text:
-    :param key:
-    :param tooltip:
-    :param butt_color:
-    :param border_width:
-    :param size:
-    :param mouseover_colors:
-    :param disabled:
-    :param right_click_menu:
-    :return: an sg.Button object
+    :rtype: sg.Button
     """
     if not butt_color[0]:
         butt_color = (settings.button_color, butt_color[1])
