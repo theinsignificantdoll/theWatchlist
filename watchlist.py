@@ -663,7 +663,7 @@ class MainWin:
         self.title_elements[index].set_cursor("plus")
         relevant = shows.from_index(index).ep_season_relevant
 
-        self.ep_minus_elements[index].set_cursor("based_arrow_down" if relevant else "arrow")
+        self.ep_minus_elements[index].set_cursor("sb_down_arrow" if relevant else "arrow")
         self.ep_plus_elements[index].set_cursor("based_arrow_up" if relevant else "arrow")
         self.season_minus_elements[index].set_cursor("based_arrow_down" if relevant else "arrow")
         self.season_plus_elements[index].set_cursor("based_arrow_up" if relevant else "arrow")
@@ -682,7 +682,6 @@ class MainWin:
         self.change_visibility_of_row(index, False)
         self.number_of_displayed_shows -= 1
         self.number_of_invisible_rows += 1
-        print(self.number_of_displayed_shows, len(self.title_elements), self.number_of_invisible_rows)
 
     def change_visibility_of_row(self, index, visibility):
         self.win[f"delete:{index}"].update(visible=visibility)
@@ -719,8 +718,6 @@ class MainWin:
         self.shows_col_contents_changed = True  # This causes self.shows_col.contents_changed() to be called
         # immediately after self.win.read(). Why this needs to be the case, I cannot fathom. (BUT IT WORKS!)
         self.number_of_displayed_shows += 1
-
-        print(self.number_of_displayed_shows, len(self.title_elements), self.number_of_invisible_rows)
 
 
 if __name__ == '__main__':
