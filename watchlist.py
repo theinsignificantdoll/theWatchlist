@@ -186,6 +186,7 @@ class MainWin:
                                 expand_x=True,
                                 expand_y=True)
         self.shows_col_contents_changed = False
+        self.number_of_invisible_rows = 0
 
         topcol = [[butt(" + ", key="add_show", border_width=0, tooltip="Add a show to the list"),
                    butt(" ⛭ ", key="preferences", border_width=0, tooltip="Preferences"),
@@ -218,19 +219,6 @@ class MainWin:
                              icon="GenIko.ico")
 
         self.sort_shows_and_display()
-
-        for e in self.link_elements:
-            e.set_cursor("hand2")
-        # noinspection PyTypeChecker
-        for e in self.ep_plus_elements + self.ep_minus_elements + self.season_plus_elements \
-                + self.season_minus_elements + self.title_elements + self.delete_elements \
-                + self.properties_elements:
-            try:
-                if e.get() == "":
-                    continue
-            except AttributeError:
-                pass
-            e.set_cursor("plus")
 
         for key in ("add_show", "preferences", "show_all", "search_button", "index_checkbox"):
             self.win[key].block_focus()
@@ -390,8 +378,7 @@ class MainWin:
     def sort_shows_and_display(self):
         to_display = self.num_of_shows_to_display()
         if to_display < self.number_of_displayed_shows:
-            self.restart()
-            return
+            self.shorten_by_x_rows(self.number_of_displayed_shows - to_display)
         if to_display > self.number_of_displayed_shows:
             self.extend_by_x_rows(to_display - self.number_of_displayed_shows)
 
@@ -412,6 +399,7 @@ class MainWin:
             self.win[f"Splus:{ind}"].update(value=show.season if show.ep_season_relevant else "",
                                             text_color=color)
             self.win[f"index:{ind}"].update(text_color=color)
+            self.set_cursors(ind)
 
     def update_show_color(self, show: Show, new_color_id: int, show_index=None):
         show.color = new_color_id
@@ -675,12 +663,53 @@ class MainWin:
                                            visible=settings.indices_visible))
         return self.index_elements[-1]
 
+    def set_cursors(self, index):
+        self.delete_elements[index].set_cursor("plus")
+        self.title_elements[index].set_cursor("plus")
+        relevant = shows.from_index(index).ep_season_relevant
+
+        self.ep_minus_elements[index].set_cursor("based_arrow_down" if relevant else "arrow")
+        self.ep_plus_elements[index].set_cursor("based_arrow_up" if relevant else "arrow")
+        self.season_minus_elements[index].set_cursor("based_arrow_down" if relevant else "arrow")
+        self.season_plus_elements[index].set_cursor("based_arrow_up" if relevant else "arrow")
+        self.properties_elements[index].set_cursor("plus")
+        self.link_elements[index].set_cursor("hand2")
+
+    def shorten_by_x_rows(self, x):
+        for _ in range(x):
+            self.shorten_by_one_row()
+
+    def shorten_by_one_row(self):
+        """
+        Doesn't actually removes a row of elements. Instead, it makes them invisible.
+        """
+        index = self.number_of_displayed_shows - 1
+        self.change_visibility_of_row(index, False)
+        self.number_of_displayed_shows -= 1
+        self.number_of_invisible_rows += 1
+
+    def change_visibility_of_row(self, index, visibility):
+        self.win[f"delete:{index}"].update(visible=visibility)
+        self.win[f"title:{index}"].update(visible=visibility)
+        self.win[f"Eminus:{index}"].update(visible=visibility)
+        self.win[f"Eplus:{index}"].update(visible=visibility)
+        self.win[f"Sminus:{index}"].update(visible=visibility)
+        self.win[f"Splus:{index}"].update(visible=visibility)
+        self.win[f"gotolink:{index}"].update(visible=visibility)
+        self.win[f"properties:{index}"].update(visible=visibility)
+        self.win[f"index:{index}"].update(visible=visibility)
+        self.shows_col_contents_changed = True
+
     def extend_by_x_rows(self, x):
         for _ in range(x):
             self.extend_by_one_row()
 
     def extend_by_one_row(self):
         index = self.number_of_displayed_shows
+        if self.number_of_invisible_rows > 0:
+            self.change_visibility_of_row(index, True)
+            self.number_of_invisible_rows -= 1
+            return
         self.win.extend_layout(self.shows_col, [[self.delete_element(index),
                                                  self.title_element(index),
                                                  self.ep_minus_element(index),

@@ -34,3 +34,6 @@ The program often has to restart in order to display changes. This could be chan
   UPDATE: The fix to the aforementioned problem was quite weird, but it seems to be working fine now.
 
   UPDATE: It works. (When more rows are needed, they will be added WITHOUT restarting). Time to work on removing rows.
+
+  DONE: It works as it should, i think...
+        This To-do should be removed during the next update to this file.
