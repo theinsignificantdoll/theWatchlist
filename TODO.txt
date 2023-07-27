@@ -27,3 +27,6 @@ The program often has to restart in order to display changes. This could be chan
   UPDATE: PySimpleGUI keys are now set by index.
   UPDATE: The window no longer restarts when the order of shows changes. It might also be possible to use the
   extend_layout method to make restarts unnecessary even when new elements are added. but idk.
+
+  UPDATE: A function to extend the layout has been added. This function does indeed extend the layout
+  with the appropriate elements. However, it is not possible to scroll all the way, to actually see them.

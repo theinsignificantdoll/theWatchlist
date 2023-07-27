@@ -152,7 +152,6 @@ class MainWin:
         global should_restart
 
         self.shouldbreak = False
-        self.number_of_displayed_shows = 0
 
         sg.theme_text_color(settings.text_colors[0])
         sg.theme_element_text_color(settings.button_color)
@@ -161,65 +160,31 @@ class MainWin:
         sg.theme_slider_color(sg.theme_background_color())
         sg.theme_button_color((settings.button_color, sg.theme_background_color()))
 
-        delcolumn = []
-        title_column = []
-        emincolumn = []
-        ecolumn = []
-        smincolumn = []
-        scolumn = []
-        linkcolumn = []
-        propcolumn = []
-        index_col = []
+        self.delete_elements = []
+        self.title_elements = []
+        self.ep_minus_elements = []
+        self.ep_plus_elements = []
+        self.season_minus_elements = []
+        self.season_plus_elements = []
+        self.link_elements = []
+        self.properties_elements = []
+        self.index_elements = []
 
-        for ind in range(len(shows) if settings.show_all else min(len(shows), settings.show_amount)):
-            # Iterates the entirety of show if showall is true and otherwise only
-            # the first {show_amount} of shows
-            delcolumn.append([butt("DEL", key=f"delete:{ind}", mouseover_colors="#AA0000",
-                                   border_width=0)])
+        self.number_of_displayed_shows = len(shows) if settings.show_all else min(len(shows), settings.show_amount)
 
-            title_column.append([sg.Text(key=f"title:{ind}",
-                                         size=(settings.max_title_display_len, 1),
-                                         enable_events=True,
-                                         right_click_menu=["",
-                                                           [f"{m}::tit_color-{ind}" for m in
-                                                            settings.text_colors]])])
-
-            emincolumn.append([sg.Text(size=(3, 1),
-                                       enable_events=True,
-                                       key=f"Eminus:{ind}")])
-
-            ecolumn.append([sg.Text(key=f"Eplus:{ind}",
-                                    enable_events=True,
-                                    size=(4, 1))])
-
-            smincolumn.append([sg.Text(size=(2, 1),
-                                       enable_events=True,
-                                       key=f"Sminus:{ind}")])
-
-            scolumn.append([sg.Text(size=(4, 1),
-                                    enable_events=True,
-                                    key=f"Splus:{ind}")])
-
-            linkcolumn.append([butt("LINK",
-                                    key=f"gotolink:{ind}",
-                                    border_width=0,
-                                    right_click_menu=["",
-                                                      [f"Open all links with the same color::multi_links-{ind}"]])])
-
-            propcolumn.append([butt("⛭",
-                                    key=f"properties:{ind}",
-                                    border_width=0)])
-
-            index_col.append([sg.Text(str(ind + 1),
-                                      key=f"index:{ind}",
-                                      visible=settings.indices_visible)])
-
-            self.number_of_displayed_shows = ind + 1
-
-        showscol = [[sg.Col([[delcolumn[ind][0], title_column[ind][0]] for ind in range(len(title_column))]),
-                     sg.Col([[emincolumn[ind][0], ecolumn[ind][0], smincolumn[ind][0], scolumn[ind][0],
-                              linkcolumn[ind][0],
-                              propcolumn[ind][0], index_col[ind][0]] for ind in range(len(title_column))])]]
+        self.shows_col = sg.Col([[self.delete_element(ind),
+                                  self.title_element(ind),
+                                  self.ep_minus_element(ind),
+                                  self.ep_plus_element(ind),
+                                  self.season_minus_element(ind),
+                                  self.season_plus_element(ind),
+                                  self.link_element(ind),
+                                  self.properties_element(ind),
+                                  self.index_element(ind)] for ind in range(self.number_of_displayed_shows)],
+                                vertical_scroll_only=True,
+                                scrollable=True,
+                                expand_x=True,
+                                expand_y=True)
 
         topcol = [[butt(" + ", key="add_show", border_width=0, tooltip="Add a show to the list"),
                    butt(" ⛭ ", key="preferences", border_width=0, tooltip="Preferences"),
@@ -232,7 +197,7 @@ class MainWin:
 
         layout = [
             [sg.Col(topcol)],
-            [sg.Column(showscol, vertical_scroll_only=True, scrollable=True, expand_x=True, expand_y=True)],
+            [self.shows_col],
         ]
 
         # noinspection PyTypeChecker
@@ -253,16 +218,18 @@ class MainWin:
 
         self.sort_shows_and_display()
 
-        for e in linkcolumn:
-            e[0].set_cursor("hand2")
+        for e in self.link_elements:
+            e.set_cursor("hand2")
         # noinspection PyTypeChecker
-        for e in ecolumn + emincolumn + scolumn + smincolumn + title_column + delcolumn + propcolumn:
+        for e in self.ep_plus_elements + self.ep_minus_elements + self.season_plus_elements \
+                + self.season_minus_elements + self.title_elements + self.delete_elements \
+                + self.properties_elements:
             try:
-                if e[0].get() == "":
+                if e.get() == "":
                     continue
             except AttributeError:
                 pass
-            e[0].set_cursor("plus")
+            e.set_cursor("plus")
 
         for key in ("add_show", "preferences", "show_all", "search_button", "index_checkbox"):
             self.win[key].block_focus()
@@ -348,8 +315,7 @@ class MainWin:
 
             elif event == "index_checkbox":
                 settings.indices_visible = self.win["index_checkbox"].get()
-                for show_index in range(len(shows)) if settings.show_all else range(min(len(shows),
-                                                                                        settings.show_amount)):
+                for show_index in range(self.number_of_displayed_shows):
                     self.win[f"index:{show_index}"].update(visible=settings.indices_visible)
 
             elif event.startswith("properties:"):
@@ -414,7 +380,8 @@ class MainWin:
 
         shows.do_sorting()
 
-        for ind, show in enumerate(shows if settings.show_all else shows[:min(len(shows), settings.show_amount)]):
+        for ind, show in enumerate(shows if settings.show_all else shows[:min(len(shows),
+                                                                              self.number_of_displayed_shows)]):
             color = settings.text_colors[show.color]
             self.win[f"title:{ind}"].update(value=limit_string_len(show.title, settings.max_title_display_len,
                                                                    use_ellipsis=settings.shorten_with_ellpisis),
@@ -497,15 +464,15 @@ class MainWin:
                 try:
                     for n in range(results):
                         search_win[f"s_title_{n}"].update(" ")
-                        search_win[f"s_index_{n}"].update(" "*index_len)
+                        search_win[f"s_index_{n}"].update(" " * index_len)
                     for n in range(results):
                         if isinstance(found[n], Show):
                             search_win[f"s_title_{n}"].update(found[n].title)
                             search_win[f"s_index_{n}"].update(f"{found_indices[n] + 1: >{index_len}}")
-                            search_win[f"s_title_{n}"]\
+                            search_win[f"s_title_{n}"] \
                                 .update(text_color=settings.text_colors[min(int(found[n].color),
                                                                             len(settings.text_colors) - 1)])
-                            search_win[f"s_index_{n}"]\
+                            search_win[f"s_index_{n}"] \
                                 .update(text_color=settings.text_colors[min(int(found[n].color),
                                                                             len(settings.text_colors) - 1)])
                 except IndexError:
@@ -581,7 +548,7 @@ class MainWin:
              sg.Col(col3, expand_y=True, element_justification="n"),
              sg.Col(col4, expand_y=True, element_justification="n")],
             [sg.Button("Save", bind_return_key=True)]], default_element_size=(16, 1),
-                         font=(settings.fonttype, settings.fontsize))
+                             font=(settings.fonttype, settings.fontsize))
 
         while True:
             e, v = pref_win.read()
@@ -631,6 +598,81 @@ class MainWin:
                     self.restart()
                 break
 
+    def delete_element(self, index):
+        self.delete_elements.append(butt("DEL",
+                                         key=f"delete:{index}",
+                                         mouseover_colors="#AA0000",
+                                         border_width=0))
+        return self.delete_elements[-1]
+
+    def title_element(self, index):
+        self.title_elements.append(sg.Text(key=f"title:{index}",
+                                           size=(settings.max_title_display_len, 1),
+                                           enable_events=True,
+                                           right_click_menu=["",
+                                                             [f"{m}::tit_color-{index}" for m in
+                                                              settings.text_colors]]))
+        return self.title_elements[-1]
+
+    def ep_minus_element(self, index):
+        self.ep_minus_elements.append(sg.Text(size=(3, 1),
+                                              enable_events=True,
+                                              key=f"Eminus:{index}"))
+        return self.ep_minus_elements[-1]
+
+    def ep_plus_element(self, index):
+        self.ep_plus_elements.append(sg.Text(key=f"Eplus:{index}",
+                                             enable_events=True,
+                                             size=(4, 1)))
+        return self.ep_plus_elements[-1]
+
+    def season_minus_element(self, index):
+        self.season_minus_elements.append(sg.Text(size=(2, 1),
+                                                  enable_events=True,
+                                                  key=f"Sminus:{index}"))
+        return self.season_minus_elements[-1]
+
+    def season_plus_element(self, index):
+        self.season_plus_elements.append(sg.Text(size=(4, 1),
+                                                 enable_events=True,
+                                                 key=f"Splus:{index}"))
+        return self.season_plus_elements[-1]
+
+    def link_element(self, index):
+        self.link_elements.append(butt("LINK",
+                                       key=f"gotolink:{index}",
+                                       border_width=0,
+                                       right_click_menu=["",
+                                                         [f"Open all links with the same color::multi_links-{index}"]]))
+        return self.link_elements[-1]
+
+    def properties_element(self, index):
+        self.properties_elements.append(butt("⛭",
+                                             key=f"properties:{index}",
+                                             border_width=0))
+        return self.properties_elements[-1]
+
+    def index_element(self, index):
+        self.index_elements.append(sg.Text(str(index + 1),
+                                           key=f"index:{index}",
+                                           visible=settings.indices_visible))
+        return self.index_elements[-1]
+
+    def extend_by_one_row(self):
+        # Something is wrong with this function. As of now, it shouldn't be used.
+        index = self.number_of_displayed_shows
+        self.win.extend_layout(self.shows_col, [[self.delete_element(index),
+                                                 self.title_element(index),
+                                                 self.ep_minus_element(index),
+                                                 self.ep_plus_element(index),
+                                                 self.season_minus_element(index),
+                                                 self.season_plus_element(index),
+                                                 self.link_element(index),
+                                                 self.properties_element(index),
+                                                 self.index_element(index)]])
+        self.shows_col.contents_changed()
+        self.number_of_displayed_shows += 1
+
 
 if __name__ == '__main__':
     settings = Settings(sg, savefile=settingsfile, delimiter=delimiter)
@@ -640,7 +682,6 @@ if __name__ == '__main__':
     while should_restart:
         should_restart = False
 
-        shows.do_sorting()
         MainWin(main_loop=True)
 
         settings.save()
