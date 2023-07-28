@@ -192,7 +192,6 @@ def get_release_string(initial_release_string=""):
     if parsed:
         weekday, hour, minute = parsed
     else:
-        weekday = 0
         hour = 0
         minute = 0
     layout = [
@@ -542,10 +541,10 @@ class MainWin:
             self.last_release_update = time.time()
             for _index, _show in enumerate(shows[:self.number_of_displayed_shows]):
                 self.win[f"release:{_index}"].update(visible=settings.releases_visible
-                                                             and _show.check_release(settings.release_grace_period))
+                                                     and _show.check_release(settings.release_grace_period))
             return
         self.win[f"release:{index}"].update(visible=settings.releases_visible
-                                                    and show.check_release(settings.release_grace_period))
+                                            and show.check_release(settings.release_grace_period))
 
     def update_show_color(self, show: Show, new_color_id: int, show_index=None):
         show.color = new_color_id
