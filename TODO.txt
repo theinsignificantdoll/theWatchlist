@@ -16,9 +16,7 @@ I sometimes find it slightly difficult to distinguish between the titles of show
 
 28. July 2023
 TODO: Figure out how to use color picker windows for the text color setting.
+ UPDATE: DONE? yeah. Albeit, the only option is to append to the list, but that's fine.
 
 28. July 2023
-Guide TODOs
-TODO: Add tab about release DONE
-TODO: Add tab about search DONE
-TODO: Add tab about Show Editor DONE
+Guide TODOs (None currently, but i'll leave this here until i am certain that i haven't forgotten somethin)

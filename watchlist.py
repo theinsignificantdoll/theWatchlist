@@ -1,11 +1,12 @@
 from typing import List, Union
 from classes import Show, ShowsFileHandler, Settings
+import guide_strings
 
 # noinspection PyPep8Naming
 import PySimpleGUI as sg
 import mouse
 import time
-import guide_strings
+from tkinter.colorchooser import askcolor
 
 sg.theme("DarkBrown4")
 
@@ -664,7 +665,9 @@ class MainWin:
     def update_preferences(self):
         col1 = [[sg.T("Font size:")],
                 [sg.T("Font type:")],
-                [sg.T("Text color:")],
+                [sg.Col([[sg.T("Text colors:"), sg.Push(),
+                          sg.Button(" + ", key="text_add"),
+                          sg.Button(" - ", key="text_remove")]])],
                 [sg.ColorChooserButton("Background color:", target="bg_color")],
                 [sg.ColorChooserButton("Menu background color:", target="menu_bg_color")],
                 [sg.T("Menu font size:")],
@@ -725,6 +728,18 @@ class MainWin:
             if e == sg.WIN_CLOSED or e == "Cancel":
                 pref_win.close()
                 break
+            elif e == "text_add":
+                _, hex_color = askcolor()
+                if hex_color:
+                    settings.text_colors.append(hex_color)
+                pref_win["txtcolor"].update("-".join(settings.text_colors))
+            elif e == "text_remove":
+                _e, _v = sg.Window("Choose one to delete", layout=[[sg.Combo(settings.text_colors, k="combo")],
+                                                                   [sg.Button("Save", bind_return_key=True),
+                                                                    sg.Button("Cancel")]]).read(close=True)
+                if _e == "Save" and _v["combo"]:
+                    settings.text_colors.remove(_v["combo"])
+                pref_win["txtcolor"].update("-".join(settings.text_colors))
             elif e == "Save":
                 try:
                     int(pref_win["fsize"].get())
