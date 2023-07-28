@@ -15,13 +15,20 @@ I sometimes find it slightly difficult to distinguish between the titles of show
   idk what, though. I'm not a graphic designer.
 
 28. July 2023
-Todo: Add a guides menu.  - The program has recently gained more and more features which might be difficult for
- other users (if ever they come to exist) to understand. Therefore, a guide window should be added, so that new users
- will have somewhere to learn from.
- DONE: REMOVE NEXT UPDATE
- +++ Subsequent guide topics will be todos of their own.
-
-28. July 2023
 Todo: Did you know that PySimpleGUI has a Color Picker Button? It opens one of those fancy color picking windows.
  Yeah, i didn't. Colors in setttings should be picked using this button, it's way better.
  UPDATE: i added the color picker button for some of the fields. Imma have to figure where i wanne go from here.
+ I figured it out, mostly. Choosing text colors is still weird, but since that's the only thing
+ i'll just add a new entry about only that.
+
+28. July 2023
+TODO: Figure out how to use color picker windows for the text color setting.
+
+28. July 2023
+TODO: add default text size for subwindows. Many of them are simply too big, way too big.
+
+28. July
+Guide TODOs
+TODO: Add tab about settings DONE
+TODO: Add tab about release
+TODO: Add tab about search

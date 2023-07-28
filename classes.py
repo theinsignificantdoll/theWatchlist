@@ -299,6 +299,7 @@ class Settings:
         self.shorten_with_ellpisis = shorten_with_ellipsis
         self.releases_visible = releases_visible
         self.release_grace_period = 24
+        self.default_text_color = self.text_colors[0]
 
         self._currently_saved_to_disk_list = []  # is initially updated when the savefile is loaded
 
@@ -315,7 +316,7 @@ class Settings:
                 self.right_click_selected_background, self.right_click_fontsize,
                 self.sg.theme_input_background_color(), self.initialwinsize, self.initialwinpos, self.search_results,
                 self.show_amount, self.max_title_display_len, self.indices_visible, self.show_all,
-                self.shorten_with_ellpisis, self.releases_visible, self.release_grace_period]
+                self.shorten_with_ellpisis, self.releases_visible, self.release_grace_period, self.default_text_color]
 
     def load(self):
         with open(self.savefile, "r", newline="") as csvfile:
@@ -333,6 +334,7 @@ class Settings:
                 self.right_click_selected_background = row[5]
                 self.right_click_fontsize = int(row[6])
                 self.sg.theme_input_background_color(row[7])
+                self.default_text_color = row[8]
             except IndexError:
                 missing_data = True
 
@@ -389,7 +391,7 @@ class Settings:
             writer.writerow([self.fontsize, self.fonttype, "-".join(self.text_colors),
                              self.button_color, self.sg.theme_background_color(),
                              self.right_click_selected_background, self.right_click_fontsize,
-                             self.sg.theme_input_background_color()])
+                             self.sg.theme_input_background_color(), self.default_text_color])
             writer.writerow([*self.initialwinsize, *self.initialwinpos])
             writer.writerow([self.search_results])
             writer.writerow([self.show_amount, self.max_title_display_len, self.release_grace_period])

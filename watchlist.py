@@ -101,7 +101,7 @@ def show_properties(title: str = "Show Editor", show: Show = None, show_purge: b
                            [sg.Column([
                                [sg.T("Release Info")],
                                [butt(show.release_info, key="show_release_info",
-                                     tooltip="Expected format example: 'MON-20:00'",
+                                     tooltip="Press ME!",
                                      size=(9, 1))]
                            ]),
                                sg.Column([
@@ -241,7 +241,10 @@ def get_release_string(initial_release_string=""):
 def guide():
     layout = [
         [sg.TabGroup([[sg.Tab("Introduction", [[sg.T(guide_strings.introduction)]]),
-                       sg.Tab("Important", [[sg.T(guide_strings.important)]])]])]
+                       sg.Tab("Important", [[sg.T(guide_strings.important)]]),
+                       sg.Tab("Settings I", [[sg.T(guide_strings.settings_i)]]),
+                       sg.Tab("Settings II", [[sg.T(guide_strings.settings_ii)]]),
+                       ]])]
     ]
     window = sg.Window("Guide", layout=layout, font=(settings.fonttype, settings.fontsize))
     while True:
@@ -263,7 +266,7 @@ class MainWin:
 
         self.shouldbreak = False
 
-        sg.theme_text_color(settings.text_colors[0])
+        sg.theme_text_color(settings.default_text_color)
         sg.theme_element_text_color(settings.button_color)
         sg.theme_element_background_color(sg.theme_background_color())
         sg.theme_text_element_background_color(sg.theme_background_color())
@@ -689,7 +692,9 @@ class MainWin:
                                " of shows on display.\nCan be toggled by the '^' button")]]
         col3 = [[sg.ColorChooserButton("Field Background Color:", target="field_bg_color")],
                 [sg.T("Shorten With Ellipsis:")],
-                [sg.T("Release Grace Period:")]]
+                [sg.T("Release Grace Period:")],
+                [sg.ColorChooserButton("Default Text Color:", target="default_text_color")],
+                ]
         col4 = [[sg.In(sg.theme_input_background_color(), k="field_bg_color",
                        tooltip="The background color of the input fields",
                        background_color=sg.theme_background_color())],
@@ -698,7 +703,9 @@ class MainWin:
                                                                        ' with "..."')],
                 [sg.In(settings.release_grace_period, k="release_grace_period",
                        tooltip="The number of hours after a show has been released that the show should be marked\n"
-                               "as having recently been released.")]]
+                               "as having recently been released.")],
+                [sg.In(settings.default_text_color, k="default_text_color", tooltip="The text color to be used in"
+                                                                                    "subwindows.")]]
         pref_win = sg.Window("Preferences", layout=[
             [sg.Col([[col1[i][0], sg.Push(), col2[i][0]] for i in range(len(col1))]),
              sg.Col([[col3[i][0], sg.Push(), col4[i][0]] for i in range(len(col3))],
@@ -726,6 +733,9 @@ class MainWin:
                     if not is_valid_color(pref_win["field_bg_color"].get()):
                         raise ValueError
 
+                    if not is_valid_color(pref_win["default_text_color"].get()):
+                        raise ValueError
+
                     gotcolors = pref_win["txtcolor"].get().split("-")
                     if len(gotcolors) <= 0:
                         raise ValueError
@@ -751,6 +761,7 @@ class MainWin:
                 settings.show_amount = int(pref_win["showamount"].get())
                 settings.shorten_with_ellpisis = pref_win["shorten_with_ellipsis"].get()
                 settings.release_grace_period = int(pref_win["release_grace_period"].get())
+                settings.default_text_color = pref_win["default_text_color"].get()
 
                 if settings.save():
                     self.restart()
@@ -828,9 +839,9 @@ class MainWin:
         relevant = shows.from_index(index).ep_season_relevant
 
         self.ep_minus_elements[index].set_cursor("sb_down_arrow" if relevant else "arrow")
-        self.ep_plus_elements[index].set_cursor("based_arrow_up" if relevant else "arrow")
-        self.season_minus_elements[index].set_cursor("based_arrow_down" if relevant else "arrow")
-        self.season_plus_elements[index].set_cursor("based_arrow_up" if relevant else "arrow")
+        self.ep_plus_elements[index].set_cursor("sb_up_arrow" if relevant else "arrow")
+        self.season_minus_elements[index].set_cursor("sb_down_arrow" if relevant else "arrow")
+        self.season_plus_elements[index].set_cursor("sb_up_arrow" if relevant else "arrow")
         self.properties_elements[index].set_cursor("plus")
         self.link_elements[index].set_cursor("hand2")
 
