@@ -16,7 +16,7 @@ important =\
     """IMPORTANT
 Before really using this program, there are some things that you shold know.
 
-First of all, by clicking on a title of a show, you can change its color.
+First of all, by clicking on the title of a show, you can change its color.
 
 Second of all, the episode and season counter can be adjusted simply by clicking
 on the counter itself. It will go up and down depending on where you click it.
@@ -30,10 +30,9 @@ configurable in the settings.
 
 settings_i =\
     """SETTINGS I
-The first two settings are simple. Font size is the size of the font. Note that this also
-impacts the size of many windows. Font type is nearly as simple. However, fonts should be
-monotype. This means that the characters are equally wide and helps with alignment.
-You can freely experiment yourself, though.
+The first two settings are simple. Font size is the size of the font.
+Font type is nearly as simple. However, fonts should be monotype. This means that
+the characters are equally wide and helps with alignment. You can freely experiment yourself, though.
 
 The next one is a bit more complicated. "Text color" covers all the colors that shows can be
 it also covers the default cover of text in other windows. This setting is a list of
@@ -68,4 +67,5 @@ Release Grace Period is a bit advanced. Moreover, it isn't needed quite yet, the
 be covered in another tab.
 
 Default text color is the text color used within subwindows like this one (Or settings itself)
+In the same way, default font size is the font size used within subwindows.
 """

@@ -124,7 +124,7 @@ def show_properties(title: str = "Show Editor", show: Show = None, show_purge: b
                        auto_size_buttons=True,
                        auto_size_text=True,
                        default_element_size=(12, 1),
-                       font=(settings.fonttype, int(settings.fontsize)))
+                       font=(settings.fonttype, settings.default_font_size))
 
     release_info = show.release_info
     while True:
@@ -207,7 +207,7 @@ def get_release_string(initial_release_string=""):
     weekday_as_string = ""
 
     rel_win = sg.Window("Release Picker", layout=layout, default_element_size=(9, 1),
-                        font=(settings.fonttype, settings.fontsize))
+                        font=(settings.fonttype, settings.default_font_size))
 
     def write_release_string():
         rel_win["release_string"].update(value=f"{weekday_as_string} {hour}:{0 if minute < 10 else ''}{minute}")
@@ -246,7 +246,7 @@ def guide():
                        sg.Tab("Settings II", [[sg.T(guide_strings.settings_ii)]]),
                        ]])]
     ]
-    window = sg.Window("Guide", layout=layout, font=(settings.fonttype, settings.fontsize))
+    window = sg.Window("Guide", layout=layout, font=(settings.fonttype, settings.default_font_size))
     while True:
         e, v = window.read()
         if e == sg.WIN_CLOSED:
@@ -593,7 +593,8 @@ class MainWin:
         layout = [[sg.T("Search:"), sg.In(key="search", enable_events=True, size=(40, 1))],
                   [sg.Col(rescol)]]
 
-        search_win = sg.Window("Search", layout=layout, finalize=True, font=(settings.fonttype, int(settings.fontsize)))
+        search_win = sg.Window("Search", layout=layout, finalize=True, font=(settings.fonttype,
+                                                                             settings.default_font_size))
 
         found: Union[List[Show], List[str]] = [shows[ind] for ind in range(results)]
 
@@ -694,6 +695,7 @@ class MainWin:
                 [sg.T("Shorten With Ellipsis:")],
                 [sg.T("Release Grace Period:")],
                 [sg.ColorChooserButton("Default Text Color:", target="default_text_color")],
+                [sg.T("Default Font Size:")]
                 ]
         col4 = [[sg.In(sg.theme_input_background_color(), k="field_bg_color",
                        tooltip="The background color of the input fields",
@@ -705,13 +707,15 @@ class MainWin:
                        tooltip="The number of hours after a show has been released that the show should be marked\n"
                                "as having recently been released.")],
                 [sg.In(settings.default_text_color, k="default_text_color", tooltip="The text color to be used in"
-                                                                                    "subwindows.")]]
+                                                                                    "subwindows.")],
+                [sg.In(settings.default_font_size, key="default_font_size", tooltip="The font size in subwindows")],
+                ]
         pref_win = sg.Window("Preferences", layout=[
             [sg.Col([[col1[i][0], sg.Push(), col2[i][0]] for i in range(len(col1))]),
              sg.Col([[col3[i][0], sg.Push(), col4[i][0]] for i in range(len(col3))],
                     expand_y=True, element_justification="n")],
             [sg.Button("Save", bind_return_key=True), sg.Button("Cancel")]], default_element_size=(16, 1),
-                             font=(settings.fonttype, settings.fontsize))
+                             font=(settings.fonttype, settings.default_font_size))
 
         while True:
             e, v = pref_win.read()
@@ -721,6 +725,12 @@ class MainWin:
             elif e == "Save":
                 try:
                     int(pref_win["fsize"].get())
+                    int(pref_win["menu_font_size"].get())
+                    int(pref_win["sresults"].get())
+                    int(pref_win["title_length"].get())
+                    int(pref_win["showamount"].get())
+                    int(pref_win["release_grace_period"].get())
+                    int(pref_win["default_font_size"].get())
                     if not is_valid_color(pref_win["buttoncolor"].get()):
                         raise ValueError
 
@@ -762,6 +772,7 @@ class MainWin:
                 settings.shorten_with_ellpisis = pref_win["shorten_with_ellipsis"].get()
                 settings.release_grace_period = int(pref_win["release_grace_period"].get())
                 settings.default_text_color = pref_win["default_text_color"].get()
+                settings.default_font_size = int(pref_win["default_font_size"].get())
 
                 if settings.save():
                     self.restart()
