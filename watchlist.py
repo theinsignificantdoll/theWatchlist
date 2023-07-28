@@ -17,6 +17,9 @@ recently_released_string = "✓"
 # The number of seconds in between a change being made to a show and the change being saved. Accepts floats
 delay_to_save_shows = 3
 
+# The maximum amount of seconds inbetween checking the release state of shows.
+update_release_vals_interval = 15*60
+
 
 def is_valid_color(color: str):
     """
@@ -220,6 +223,7 @@ class MainWin:
                                 expand_y=True)
         self.shows_col_contents_changed = False
         self.number_of_invisible_rows = 0
+        self.last_release_update = 0
 
         topcol = [[butt(" + ", key="add_show", border_width=0, tooltip="Add a show to the list"),
                    butt(" ⛭ ", key="preferences", border_width=0, tooltip="Preferences"),
@@ -284,9 +288,14 @@ class MainWin:
             #    print(event)
 
             if event == "__TIMEOUT__":
-                if last_show_change != 0 and time.time() - last_show_change > delay_to_save_shows:
+                now = time.time()
+                if last_show_change != 0 and now - last_show_change > delay_to_save_shows:
                     shows.save()
                     last_show_change = 0
+
+                if self.last_release_update + update_release_vals < now:
+                    self.display_release()
+
                 continue
             elif event == sg.WIN_CLOSED or self.shouldbreak or event == "Close":
                 self.close()
@@ -444,11 +453,12 @@ class MainWin:
                                             text_color=color)
             self.win[f"index:{ind}"].update(text_color=color)
             self.win[f"release:{ind}"].update(text_color=color)
-            self.display_release(ind, show)
             self.set_cursors(ind)
+        self.display_release()
 
     def display_release(self, index: int = None, show: Show = None):
         if index is None or show is None:
+            self.last_release_update = time.time()
             for _index, _show in enumerate(shows[:self.number_of_displayed_shows]):
                 self.win[f"release:{_index}"].update(visible=settings.releases_visible
                                                      and _show.check_release(settings.release_grace_period))

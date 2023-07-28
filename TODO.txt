@@ -15,13 +15,15 @@ I sometimes find it slightly difficult to distinguish between the titles of show
   idk what, though. I'm not a graphic designer.
 
 28. July 2023
-Todo: i've added a method to the Show class, that is capable of checking whether or not a show was released
- within x hours. Next step is to add a setting, that allows the user to control the value of x.
- Moreover, shows should be somehow marked when they are within their grace_period. (And this should be updated
- periodically). Rather than displaying Show.release_info, whether or not a new episode is out should be displayed.
- DONE: REMOVE NEXT UPDATE
-
-28. July 2023
 Todo: Add a guides menu.  - The program has recently gained more and more features which might be difficult for
  other users (if ever they come to exist) to understand. Therefore, a guide window should be added, so that new users
  will have somewhere to learn from.
+
+28. July 2023
+Todo: Did you know that PySimpleGUI has a Color Picker Button? It opens one of those fancy color picking windows.
+ Yeah, i didn't. Colors in setttings should be picked using this button, it's way better.
+
+28. July 2023
+Todo: Users are dumb. Rather than having the user themselves write the release_info string, there should be a window
+ that merely generates it. Even the dumbest user must be capable of using that. Right? RIHGT? I say that as if
+ it's been more than, like, one or two hours since release_info parsing was added. Heh.
