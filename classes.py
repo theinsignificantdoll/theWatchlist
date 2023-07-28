@@ -75,7 +75,9 @@ class Show:
         now = datetime.datetime.now()
         current_weekday, current_hour, current_minute = now.weekday(), now.hour, now.minute
 
-        if release_weekday > current_weekday:
+        if release_weekday == 7:
+            days_since_release = 0
+        elif release_weekday > current_weekday:
             days_since_release = 7 - (release_weekday - current_weekday)
         else:
             days_since_release = current_weekday - release_weekday

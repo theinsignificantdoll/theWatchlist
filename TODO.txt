@@ -18,9 +18,7 @@ I sometimes find it slightly difficult to distinguish between the titles of show
 TODO: Figure out how to use color picker windows for the text color setting.
 
 28. July 2023
-TODO: add default text size for subwindows. Many of them are simply too big, way too big. DONE
-
-28. July
 Guide TODOs
-TODO: Add tab about release
-TODO: Add tab about search
+TODO: Add tab about release DONE
+TODO: Add tab about search DONE
+TODO: Add tab about Show Editor DONE

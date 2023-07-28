@@ -69,3 +69,58 @@ be covered in another tab.
 Default text color is the text color used within subwindows like this one (Or settings itself)
 In the same way, default font size is the font size used within subwindows.
 """
+
+show_editor =\
+    """SHOW EDITOR
+The show editor is opened when either adding a new show or editing an existing one. You can find it by
+pressing the gear to the right of the "LINK" button.
+It is only within the show editor that the weight of a show can be changed.
+
+More important to explain is the function of the "Show Details" checkbox. If this checkbox is unchecked,
+the program will not display the episode or season.
+Moreover, "Purge Weight" might also require explanation. This field is intended to be used once a show
+has been finished. That is to say, when it should be moved out of the way.
+
+The field works like this: When a numerical value is entered into it, and the changes are saved
+the weight of the show will be set to the value of the "Purge Weight" field. Other than that, it
+will also clear the "Release Info" and uncheck the "Ongoing" checkbox.
+
+In other words, in order to 'dismiss' a show, a low weight should be entered in the "Purge Field" field
+and the rest will automatically happen.
+
+Release Info and Ongoing is described in Release
+"""
+
+release =\
+    """RELEASE
+Manually checking whether or not a new episode has come out is a tedious task. Therefore, it is only
+proper that the computer does it for you.
+
+Firstly, the computer must learn when a new episode is released. In order for it to do this,
+enter the Show Editor (The gear symbol left of "LINK"). Once there, press on the button beneath
+"Release Info". This will open a window. In order to choose at weekday, simply press the
+corresponding button. If you'd like set a time of day as well, simply type it in the two
+input fields. Then, press save.
+With that done, the "Ongoing" checkbox must also be checked. Once you've exited the Show Editor, you
+should also make sure that the second checkbox in the top-left has been checked.
+When the time of release is within some amount of hours, there will be a checkmark right of the Show Editor button.
+To specify how many hours after release this checkmark should remain, enter settings and edit the value
+in "Release Grace Period". The value is given in hours after release.
+"""
+
+search =\
+    """SEARCH
+To enter the searching window press the magnifying glass in the top-left.
+
+Write your search query in the search bar and search! But, beware that the searching algorithm
+is extraordinarily rudimentary. The search functions in such a way, that it merely checks whether
+or not your search query is contained within the title of the show (ignoring case). Moreover,
+the shows found after the search are displayed in their ordinary order.
+
+Other than that, it is useful to know that the right most numbers are the indices of the shows. These indices
+can also be displayed in the main window. This is done by checking the left most checkbox in the top-left
+of the main window.
+
+Note also that the number of search results can be adjusted. Simply open settings and change the value
+of "Search Results".
+"""

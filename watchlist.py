@@ -244,6 +244,9 @@ def guide():
                        sg.Tab("Important", [[sg.T(guide_strings.important)]]),
                        sg.Tab("Settings I", [[sg.T(guide_strings.settings_i)]]),
                        sg.Tab("Settings II", [[sg.T(guide_strings.settings_ii)]]),
+                       sg.Tab("Show Editor", [[sg.T(guide_strings.show_editor)]]),
+                       sg.Tab("Release", [[sg.T(guide_strings.release)]]),
+                       sg.Tab("Search", [[sg.T(guide_strings.search)]]),
                        ]])]
     ]
     window = sg.Window("Guide", layout=layout, font=(settings.fonttype, settings.default_font_size))
