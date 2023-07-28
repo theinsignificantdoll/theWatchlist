@@ -18,7 +18,7 @@ recently_released_string = "✓"
 delay_to_save_shows = 3
 
 # The maximum amount of seconds inbetween checking the release state of shows.
-update_release_vals_interval = 15*60
+update_release_vals_interval = 15 * 60
 
 
 def is_valid_color(color: str):
@@ -67,62 +67,73 @@ def show_properties(title: str = "Show Editor", show: Show = None, show_purge: b
     :rtype: Union[bool, Show]
     """
     if show is None:  # make a dummy show.
-        show = Show(-1, "", 0, 1, "", 0, 0, True, ongoing=True)
-    button, data = sg.Window(title,
-                             [
-                                 [sg.Column([
-                                     [sg.T("Title")],
-                                     [sg.InputText(show.title, key="show_title")]
-                                     ]),
-                                     sg.Column([
-                                         [sg.T("Episode")],
-                                         [sg.InputText(show.ep, key="show_ep", size=(8, 1))]
-                                     ]),
-                                     sg.Column([
-                                         [sg.T("Season")],
-                                         [sg.InputText(show.season, key="show_season", size=(8, 1))]
-                                     ]),
-                                     sg.Column([
-                                         [sg.T("Link")],
-                                         [sg.InputText(show.link, key="show_link", size=(15, 1))]
-                                     ]),
-                                     sg.Column([
-                                         [sg.T("Weight")],
-                                         [sg.InputText(show.weight, key="show_weight")]
-                                     ]),
-                                     sg.Column([
-                                         [sg.T("Show Details")],
-                                         [sg.Checkbox("", default=show.ep_season_relevant,
-                                                      key="show_ep_season_relevant")]
-                                     ])
-                                  ],
-                                 [sg.HSep()],
-                                 [sg.Column([
-                                     [sg.T("Release Info")],
-                                     [sg.InputText(show.release_info, key="show_release_info",
-                                                   tooltip="Expected format example: 'MON-20:00'")]
-                                 ]),
-                                     sg.Column([
-                                         [sg.T("Ongoing")],
-                                         [sg.Checkbox("", default=show.ongoing,
-                                                      key="show_ongoing")]
-                                     ]),
-                                     sg.Push(),
-                                     sg.Column([
-                                         [sg.T("Purge Weight")],
-                                         [sg.InputText(key="purge_weight",
-                                                       tooltip="If a weight is written in this field, then ongoing\n"
-                                                               "WILL be set to False and Release Info will be cleared\n"
-                                                               "As such this field is useful for quickly discarding\n"
-                                                               "shows, once they have been finished.")]
-                                     ]) if show_purge else sg.T()
-                                 ],
-                                 [sg.Button("Save", bind_return_key=True), sg.Button("Cancel")]],
-                             disable_close=True,
-                             auto_size_buttons=True,
-                             auto_size_text=True,
-                             default_element_size=(12, 1),
-                             font=(settings.fonttype, int(settings.fontsize))).read(close=True)
+        show = Show(ep_season_relevant=True, ongoing=True)
+    window = sg.Window(title,
+                       [
+                           [sg.Column([
+                               [sg.T("Title")],
+                               [sg.InputText(show.title, key="show_title")]
+                           ]),
+                               sg.Column([
+                                   [sg.T("Episode")],
+                                   [sg.InputText(show.ep, key="show_ep", size=(8, 1))]
+                               ]),
+                               sg.Column([
+                                   [sg.T("Season")],
+                                   [sg.InputText(show.season, key="show_season", size=(8, 1))]
+                               ]),
+                               sg.Column([
+                                   [sg.T("Link")],
+                                   [sg.InputText(show.link, key="show_link", size=(15, 1))]
+                               ]),
+                               sg.Column([
+                                   [sg.T("Weight")],
+                                   [sg.InputText(show.weight, key="show_weight")]
+                               ]),
+                               sg.Column([
+                                   [sg.T("Show Details")],
+                                   [sg.Checkbox("", default=show.ep_season_relevant,
+                                                key="show_ep_season_relevant")]
+                               ])
+                           ],
+                           [sg.HSep()],
+                           [sg.Column([
+                               [sg.T("Release Info")],
+                               [butt(show.release_info, key="show_release_info",
+                                     tooltip="Expected format example: 'MON-20:00'",
+                                     size=(9, 1))]
+                           ]),
+                               sg.Column([
+                                   [sg.T("Ongoing")],
+                                   [sg.Checkbox("", default=show.ongoing,
+                                                key="show_ongoing")]
+                               ]),
+                               sg.Push(),
+                               sg.Column([
+                                   [sg.T("Purge Weight")],
+                                   [sg.InputText(key="purge_weight",
+                                                 tooltip="If a weight is written in this field, then ongoing\n"
+                                                         "WILL be set to False and Release Info will be cleared\n"
+                                                         "As such this field is useful for quickly discarding\n"
+                                                         "shows, once they have been finished.")]
+                               ]) if show_purge else sg.T()
+                           ],
+                           [sg.Button("Save", bind_return_key=True), sg.Button("Cancel")]],
+                       disable_close=True,
+                       auto_size_buttons=True,
+                       auto_size_text=True,
+                       default_element_size=(12, 1),
+                       font=(settings.fonttype, int(settings.fontsize)))
+
+    release_info = show.release_info
+    while True:
+        button, data = window.read()
+        if button == "show_release_info":
+            release_info = get_release_string(show.release_info)
+            window["show_release_info"].update(release_info)
+        else:
+            break
+    window.close()
 
     if button == "Cancel":
         return False
@@ -150,7 +161,7 @@ def show_properties(title: str = "Show Editor", show: Show = None, show_purge: b
     show.ep_season_relevant = data["show_ep_season_relevant"]
 
     if purge_weight is False:
-        show.release_info = data["show_release_info"]
+        show.release_info = release_info
         show.ongoing = data["show_ongoing"]
         show.weight = data["show_weight"]
     else:
@@ -162,7 +173,7 @@ def show_properties(title: str = "Show Editor", show: Show = None, show_purge: b
 
 
 def butt(button_text="", key=None, tooltip=None, butt_color=(False, None), border_width=None, size=(None, None),
-         mouseover_colors=sg.theme_background_color(), disabled=False, right_click_menu=None):
+         mouseover_colors=sg.theme_background_color(), disabled=False, right_click_menu=None, bind_return_key=False):
     """
     A wrapper function for sg.Button with some different default values
 
@@ -172,7 +183,77 @@ def butt(button_text="", key=None, tooltip=None, butt_color=(False, None), borde
         butt_color = (settings.button_color, butt_color[1])
     return sg.Button(button_text=button_text, key=key, tooltip=tooltip, button_color=butt_color,
                      border_width=border_width, size=size, mouseover_colors=mouseover_colors, disabled=disabled,
-                     right_click_menu=right_click_menu)
+                     right_click_menu=right_click_menu, bind_return_key=bind_return_key)
+
+
+def get_release_string(initial_release_string=""):
+    temp_show = Show(release_info=initial_release_string)
+    parsed = temp_show.parse_release_info()
+    if parsed:
+        weekday, hour, minute = parsed
+    else:
+        weekday = 0
+        hour = 0
+        minute = 0
+    layout = [
+        [sg.Push(), butt("MON"), butt("TUE"), butt("WED"), butt("THU"), butt("FRI"), butt("SAT"), butt("SUN"),
+         sg.Push()],
+        [sg.Push(), sg.I(hour, key="hour", enable_events=True), sg.T(":"),
+         sg.I(minute, key="minute", enable_events=True), sg.Push()],
+        [butt("Save", bind_return_key=True), butt("Cancel"), sg.Push(),
+         sg.T(initial_release_string, key="release_string")]
+    ]
+
+    weekday_as_string = ""
+
+    rel_win = sg.Window("Release Picker", layout=layout, default_element_size=(9, 1),
+                        font=(settings.fonttype, settings.fontsize))
+
+    def write_release_string():
+        rel_win["release_string"].update(value=f"{weekday_as_string} {hour}:{0 if minute < 10 else ''}{minute}")
+
+    while True:
+        event, values, = rel_win.read()
+
+        if event == sg.WIN_CLOSED or event == "Cancel":
+            rel_win.close()
+            return initial_release_string
+        elif event == "Save":
+            rel_win.close()
+            return rel_win["release_string"].get()
+        elif event == "hour":
+            try:
+                hour = int(values["hour"])
+            except ValueError:
+                hour = 0
+            write_release_string()
+        elif event == "minute":
+            try:
+                minute = int(values["minute"])
+            except ValueError:
+                minute = 0
+            write_release_string()
+        elif event == "MON":
+            weekday_as_string = "MON"
+            write_release_string()
+        elif event == "TUE":
+            weekday_as_string = "TUE"
+            write_release_string()
+        elif event == "WED":
+            weekday_as_string = "WED"
+            write_release_string()
+        elif event == "THU":
+            weekday_as_string = "THU"
+            write_release_string()
+        elif event == "FRI":
+            weekday_as_string = "FRI"
+            write_release_string()
+        elif event == "SAT":
+            weekday_as_string = "SAT"
+            write_release_string()
+        elif event == "SUN":
+            weekday_as_string = "SUN"
+            write_release_string()
 
 
 class MainWin:
@@ -293,7 +374,7 @@ class MainWin:
                     shows.save()
                     last_show_change = 0
 
-                if self.last_release_update + update_release_vals < now:
+                if self.last_release_update + update_release_vals_interval < now:
                     self.display_release()
 
                 continue
@@ -461,10 +542,10 @@ class MainWin:
             self.last_release_update = time.time()
             for _index, _show in enumerate(shows[:self.number_of_displayed_shows]):
                 self.win[f"release:{_index}"].update(visible=settings.releases_visible
-                                                     and _show.check_release(settings.release_grace_period))
+                                                             and _show.check_release(settings.release_grace_period))
             return
         self.win[f"release:{index}"].update(visible=settings.releases_visible
-                                            and show.check_release(settings.release_grace_period))
+                                                    and show.check_release(settings.release_grace_period))
 
     def update_show_color(self, show: Show, new_color_id: int, show_index=None):
         show.color = new_color_id
@@ -579,24 +660,27 @@ class MainWin:
         col1 = [[sg.T("Font size:")],
                 [sg.T("Font type:")],
                 [sg.T("Text color:")],
-                [sg.T("Background color:")],
-                [sg.T("Menu background color:")],
+                [sg.ColorChooserButton("Background color:", target="bg_color")],
+                [sg.ColorChooserButton("Menu background color:", target="menu_bg_color")],
                 [sg.T("Menu font size:")],
-                [sg.T("Button Color")],
+                [sg.ColorChooserButton("Button Color", target="buttoncolor")],
                 [sg.T("Search Results")],
                 [sg.T("Title Length")],
                 [sg.T("Show Cut-off")]]
         col2 = [[sg.In(settings.fontsize, key="fsize", tooltip="Any integer")],
                 [sg.In(settings.fonttype, key="ftype",
-                       tooltip="Any font name, as one might use in word or libreOffice Writer")],
+                       tooltip="Any font name, as one might use in Word or libreOffice Writer")],
                 [sg.In("-".join(settings.text_colors), key="txtcolor",
                        tooltip="Ex: '#ff0000-#404040' or '#ff0000-#404040-#878787'")],
-                [sg.In(sg.theme_background_color(), k="bg_color", tooltip="The background color")],
+                [sg.In(sg.theme_background_color(), k="bg_color", tooltip="The background color",
+                       background_color=sg.theme_background_color())],
                 [sg.In(settings.right_click_selected_background, k="menu_bg_color",
+                       background_color=sg.theme_background_color(),
                        tooltip="The background color of the right click menu")],
                 [sg.In(settings.right_click_fontsize, k="menu_font_size",
                        tooltip="The font size of the right click menu")],
-                [sg.In(settings.button_color, key="buttoncolor", tooltip="A single color, Ex: '#e0e0e0'")],
+                [sg.In(settings.button_color, key="buttoncolor", tooltip="A single color, Ex: '#e0e0e0'",
+                       background_color=sg.theme_background_color())],
                 [sg.In(settings.search_results, key="sresults",
                        tooltip="The number of results shown when searching. Default:3")],
                 [sg.In(settings.max_title_display_len, key="title_length",
@@ -605,11 +689,12 @@ class MainWin:
                 [sg.In(settings.show_amount, key="showamount",
                        tooltip="For performance reasons not all shows are displayed by default. This is the amount"
                                " of shows on display.\nCan be toggled by the '^' button")]]
-        col3 = [[sg.T("Field Background Color:")],
+        col3 = [[sg.ColorChooserButton("Field Background Color:", target="field_bg_color")],
                 [sg.T("Shorten With Ellipsis:")],
                 [sg.T("Release Grace Period:")]]
         col4 = [[sg.In(sg.theme_input_background_color(), k="field_bg_color",
-                       tooltip="The background color of the input fields")],
+                       tooltip="The background color of the input fields",
+                       background_color=sg.theme_background_color())],
                 [sg.Checkbox(default=settings.shorten_with_ellpisis, k="shorten_with_ellipsis", text="",
                              text_color=settings.button_color, tooltip='Whether or not to end shortened titles'
                                                                        ' with "..."')],
@@ -735,7 +820,8 @@ class MainWin:
 
     def release_element(self, index):
         self.release_elements.append(sg.Text(recently_released_string,
-                                             key=f"release:{index}"))
+                                             key=f"release:{index}",
+                                             visible=False))
         return self.release_elements[-1]
 
     def set_cursors(self, index):

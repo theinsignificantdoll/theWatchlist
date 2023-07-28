@@ -14,9 +14,16 @@ class Show:
                       "sat": 5,
                       "sun": 6}
 
-    def __init__(self, num_id: Union[str, int], title: str, ep: Union[str, int], season: Union[str, int],
-                 link: str, weight: Union[str, int], color: Union[str, int],
-                 ep_season_relevant: Union[str, bool] = None, release_info: str = "", ongoing: Union[str, bool] = None):
+    def __init__(self, num_id: Union[str, int] = -1,
+                 title: str = "",
+                 ep: Union[str, int] = 0,
+                 season: Union[str, int] = 0,
+                 link: str = "",
+                 weight: Union[str, int] = 0,
+                 color: Union[str, int] = 0,
+                 ep_season_relevant: Union[str, bool] = None,
+                 release_info: str = "",
+                 ongoing: Union[str, bool] = None):
         self.id: int = int(num_id)
         self.title: str = title
         self.ep: int = int(ep)
@@ -45,7 +52,7 @@ class Show:
         webbrowser.open(self.link)
 
     def release_is_parseable(self):
-        if self._parse_release_info():
+        if self.parse_release_info():
             return True
         return False
 
@@ -61,7 +68,7 @@ class Show:
         if not self.ongoing:
             return False
 
-        parsed = self._parse_release_info()
+        parsed = self.parse_release_info()
         if not parsed:
             return False
         release_weekday, release_hour, release_minute = parsed
@@ -77,7 +84,7 @@ class Show:
         hours_since_release += (current_minute - release_minute) / 60
         return hours_since_release <= grace_period
 
-    def _parse_release_info(self):
+    def parse_release_info(self):
         """
         Parses release_info. Note that weekday is converted to an integer, where monday is 0 and sunday is 6.
         If no weekday is given, the integer 7 is returned.

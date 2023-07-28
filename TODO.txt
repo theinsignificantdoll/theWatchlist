@@ -22,8 +22,10 @@ Todo: Add a guides menu.  - The program has recently gained more and more featur
 28. July 2023
 Todo: Did you know that PySimpleGUI has a Color Picker Button? It opens one of those fancy color picking windows.
  Yeah, i didn't. Colors in setttings should be picked using this button, it's way better.
+ UPDATE: i added the color picker button for some of the fields. Imma have to figure where i wanne go from here.
 
 28. July 2023
 Todo: Users are dumb. Rather than having the user themselves write the release_info string, there should be a window
  that merely generates it. Even the dumbest user must be capable of using that. Right? RIHGT? I say that as if
  it's been more than, like, one or two hours since release_info parsing was added. Heh.
+ DONE: REMOVE NEXT UPDATE
