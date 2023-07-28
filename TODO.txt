@@ -14,12 +14,14 @@ It can currently be slightly difficult to see which elements are on the same row
 I sometimes find it slightly difficult to distinguish between the titles of shows. Something should be done.
   idk what, though. I'm not a graphic designer.
 
-27. July 2023
-  Given the recent addition of release info to shows, it could become annoying for the user (me) to get rid of shows
-  once they've been watched. Till now, this has been possible to do, by simply changing the color of the show and
-  changing its weight. However, now, one must also press the "ongoing" checkbox within properties. Moreover, it would
-  be theoretically optimal to also purge the release info of the show. But, doing all of that is a lot of work
-  and I, the user, am very lazy.
-  TODO: add a button that will allow the user to quickly purge release info, set ongoing to False and assign
-   a new weight value to the show.
-  DONE - REMOVE NEXT UPDATE TO FILE
+28. July 2023
+Todo: i've added a method to the Show class, that is capable of checking whether or not a show was released
+ within x hours. Next step is to add a setting, that allows the user to control the value of x.
+ Moreover, shows should be somehow marked when they are within their grace_period. (And this should be updated
+ periodically). Rather than displaying Show.release_info, whether or not a new episode is out should be displayed.
+ DONE: REMOVE NEXT UPDATE
+
+28. July 2023
+Todo: Add a guides menu.  - The program has recently gained more and more features which might be difficult for
+ other users (if ever they come to exist) to understand. Therefore, a guide window should be added, so that new users
+ will have somewhere to learn from.

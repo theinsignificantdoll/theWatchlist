@@ -12,6 +12,8 @@ savefile = "saved.csv"
 settingsfile = "settings.csv"
 delimiter = "\\"
 
+recently_released_string = "✓"
+
 # The number of seconds in between a change being made to a show and the change being saved. Accepts floats
 delay_to_save_shows = 3
 
@@ -352,8 +354,7 @@ class MainWin:
 
             elif event == "release_checkbox":
                 settings.releases_visible = self.win["release_checkbox"].get()
-                for show_index in range(self.number_of_displayed_shows):
-                    self.win[f"release:{show_index}"].update(visible=settings.releases_visible)
+                self.display_release()
 
             elif event.startswith("properties:"):
                 show = shows.from_index(event.removeprefix("properties:"))
@@ -428,8 +429,7 @@ class MainWin:
 
         shows.do_sorting()
 
-        for ind, show in enumerate(shows if settings.show_all else shows[:min(len(shows),
-                                                                              self.number_of_displayed_shows)]):
+        for ind, show in enumerate(shows[:self.number_of_displayed_shows]):
             color = settings.text_colors[show.color]
             self.win[f"title:{ind}"].update(value=limit_string_len(show.title, settings.max_title_display_len,
                                                                    use_ellipsis=settings.shorten_with_ellpisis),
@@ -443,9 +443,18 @@ class MainWin:
             self.win[f"Splus:{ind}"].update(value=show.season if show.ep_season_relevant else "",
                                             text_color=color)
             self.win[f"index:{ind}"].update(text_color=color)
-            self.win[f"release:{ind}"].update(value=show.release_info if show.ongoing else "",
-                                              text_color=color)
+            self.win[f"release:{ind}"].update(text_color=color)
+            self.display_release(ind, show)
             self.set_cursors(ind)
+
+    def display_release(self, index: int = None, show: Show = None):
+        if index is None or show is None:
+            for _index, _show in enumerate(shows[:self.number_of_displayed_shows]):
+                self.win[f"release:{_index}"].update(visible=settings.releases_visible
+                                                     and _show.check_release(settings.release_grace_period))
+            return
+        self.win[f"release:{index}"].update(visible=settings.releases_visible
+                                            and show.check_release(settings.release_grace_period))
 
     def update_show_color(self, show: Show, new_color_id: int, show_index=None):
         show.color = new_color_id
@@ -587,12 +596,16 @@ class MainWin:
                        tooltip="For performance reasons not all shows are displayed by default. This is the amount"
                                " of shows on display.\nCan be toggled by the '^' button")]]
         col3 = [[sg.T("Field Background Color:")],
-                [sg.T("Shorten With Ellipsis:")]]
+                [sg.T("Shorten With Ellipsis:")],
+                [sg.T("Release Grace Period:")]]
         col4 = [[sg.In(sg.theme_input_background_color(), k="field_bg_color",
                        tooltip="The background color of the input fields")],
                 [sg.Checkbox(default=settings.shorten_with_ellpisis, k="shorten_with_ellipsis", text="",
                              text_color=settings.button_color, tooltip='Whether or not to end shortened titles'
-                                                                       ' with "..."')]]
+                                                                       ' with "..."')],
+                [sg.In(settings.release_grace_period, k="release_grace_period",
+                       tooltip="The number of hours after a show has been released that the show should be marked\n"
+                               "as having recently been released.")]]
         pref_win = sg.Window("Preferences", layout=[
             [sg.Col(col1),
              sg.Col(col2),
@@ -644,6 +657,7 @@ class MainWin:
                 settings.max_title_display_len = int(pref_win["title_length"].get())
                 settings.show_amount = int(pref_win["showamount"].get())
                 settings.shorten_with_ellpisis = pref_win["shorten_with_ellipsis"].get()
+                settings.release_grace_period = int(pref_win["release_grace_period"].get())
 
                 if settings.save():
                     self.restart()
@@ -710,9 +724,8 @@ class MainWin:
         return self.index_elements[-1]
 
     def release_element(self, index):
-        self.release_elements.append(sg.Text(size=(9, 1),
-                                             key=f"release:{index}",
-                                             visible=settings.releases_visible))
+        self.release_elements.append(sg.Text(recently_released_string,
+                                             key=f"release:{index}"))
         return self.release_elements[-1]
 
     def set_cursors(self, index):

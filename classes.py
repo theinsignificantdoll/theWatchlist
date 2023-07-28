@@ -2,9 +2,18 @@ from typing import Union
 import csv
 import os
 import webbrowser
+import datetime
 
 
 class Show:
+    weekday_to_int = {"mon": 0,
+                      "tue": 1,
+                      "wed": 2,
+                      "thu": 3,
+                      "fri": 4,
+                      "sat": 5,
+                      "sun": 6}
+
     def __init__(self, num_id: Union[str, int], title: str, ep: Union[str, int], season: Union[str, int],
                  link: str, weight: Union[str, int], color: Union[str, int],
                  ep_season_relevant: Union[str, bool] = None, release_info: str = "", ongoing: Union[str, bool] = None):
@@ -34,6 +43,77 @@ class Show:
 
     def open_link(self):
         webbrowser.open(self.link)
+
+    def release_is_parseable(self):
+        if self._parse_release_info():
+            return True
+        return False
+
+    def check_release(self, grace_period: Union[int, float] = 24):
+        """
+        Returns True if a show was released within - grace_period - hours
+        NOTE: Returns False if not ongoing or release_info cannot be parsed.
+
+        :param grace_period: The amount of hours after the release that the function should continue to return True
+        :return: Whether or not show was released within grace_period.
+        :rtype: bool
+        """
+        if not self.ongoing:
+            return False
+
+        parsed = self._parse_release_info()
+        if not parsed:
+            return False
+        release_weekday, release_hour, release_minute = parsed
+        now = datetime.datetime.now()
+        current_weekday, current_hour, current_minute = now.weekday(), now.hour, now.minute
+
+        if release_weekday > current_weekday:
+            days_since_release = 7 - (release_weekday - current_weekday)
+        else:
+            days_since_release = current_weekday - release_weekday
+
+        hours_since_release = days_since_release * 24 + (current_hour - release_hour)
+        hours_since_release += (current_minute - release_minute) / 60
+        return hours_since_release <= grace_period
+
+    def _parse_release_info(self):
+        """
+        Parses release_info. Note that weekday is converted to an integer, where monday is 0 and sunday is 6.
+        If no weekday is given, the integer 7 is returned.
+        If no time of day is given, the time is returned as 00:00
+
+        Accepted formats:
+        'Monday 20:20'   #  Note that ' ' is used as a delimiter between weekday and time of day.
+        '6:55 Tuesday'   #  Note also that ':' is used as a delimiter between hours and minutes.
+        'Monday'     # Both weekday and time of day are not required.
+        '19:10'      # Although False is returned if neither is present.
+
+
+        :return: A tuple of the release info. (weekday: int, hour: int, minute: int)
+        :rtype: tuple[int, int, int]
+        """
+        try:
+            space_split = self.release_info.lower().split(" ")
+            weekday = None
+            hour = None
+            minute = None
+            for part in space_split:
+                if part:
+                    if part[0].isdigit():  # For time of day
+                        hour, minute = (int(num) for num in part.split(":"))
+                    else:  # For weekday
+                        weekday = self.weekday_to_int[part[:3]]
+            if weekday is None:
+                weekday = 7
+                if hour is None:
+                    return False
+            if hour is None:
+                hour = 0
+                minute = 0
+            return weekday, hour, minute
+        except (IndexError, KeyError, TypeError, ValueError):  # I don't know
+            return False
 
 
 def sort_list_of_shows_alphabetically(lst: list[Show], reverse=False):
@@ -211,6 +291,7 @@ class Settings:
         self.show_all = show_all
         self.shorten_with_ellpisis = shorten_with_ellipsis
         self.releases_visible = releases_visible
+        self.release_grace_period = 24
 
         self._currently_saved_to_disk_list = []  # is initially updated when the savefile is loaded
 
@@ -227,7 +308,7 @@ class Settings:
                 self.right_click_selected_background, self.right_click_fontsize,
                 self.sg.theme_input_background_color(), self.initialwinsize, self.initialwinpos, self.search_results,
                 self.show_amount, self.max_title_display_len, self.indices_visible, self.show_all,
-                self.shorten_with_ellpisis, self.releases_visible]
+                self.shorten_with_ellpisis, self.releases_visible, self.release_grace_period]
 
     def load(self):
         with open(self.savefile, "r", newline="") as csvfile:
@@ -265,6 +346,7 @@ class Settings:
             try:
                 self.show_amount = int(displaydata[0])
                 self.max_title_display_len = int(displaydata[1])
+                self.release_grace_period = int(displaydata[2])
             except IndexError:
                 missing_data = True
 
@@ -303,7 +385,7 @@ class Settings:
                              self.sg.theme_input_background_color()])
             writer.writerow([*self.initialwinsize, *self.initialwinpos])
             writer.writerow([self.search_results])
-            writer.writerow([self.show_amount, self.max_title_display_len])
+            writer.writerow([self.show_amount, self.max_title_display_len, self.release_grace_period])
             writer.writerow([self.indices_visible, self.show_all, self.shorten_with_ellpisis, self.releases_visible])
 
         self._currently_saved_to_disk_list = self.represent_as_list()
