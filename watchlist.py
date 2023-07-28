@@ -5,6 +5,7 @@ from classes import Show, ShowsFileHandler, Settings
 import PySimpleGUI as sg
 import mouse
 import time
+import guide_strings
 
 sg.theme("DarkBrown4")
 
@@ -232,27 +233,22 @@ def get_release_string(initial_release_string=""):
             except ValueError:
                 minute = 0
             write_release_string()
-        elif event == "MON":
-            weekday_as_string = "MON"
+        elif event in ("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"):
+            weekday_as_string = event
             write_release_string()
-        elif event == "TUE":
-            weekday_as_string = "TUE"
-            write_release_string()
-        elif event == "WED":
-            weekday_as_string = "WED"
-            write_release_string()
-        elif event == "THU":
-            weekday_as_string = "THU"
-            write_release_string()
-        elif event == "FRI":
-            weekday_as_string = "FRI"
-            write_release_string()
-        elif event == "SAT":
-            weekday_as_string = "SAT"
-            write_release_string()
-        elif event == "SUN":
-            weekday_as_string = "SUN"
-            write_release_string()
+
+
+def guide():
+    layout = [
+        [sg.TabGroup([[sg.Tab("Introduction", [[sg.T(guide_strings.introduction)]]),
+                       sg.Tab("Important", [[sg.T(guide_strings.important)]])]])]
+    ]
+    window = sg.Window("Guide", layout=layout, font=(settings.fonttype, settings.fontsize))
+    while True:
+        e, v = window.read()
+        if e == sg.WIN_CLOSED:
+            window.close()
+            break
 
 
 class MainWin:
@@ -315,8 +311,8 @@ class MainWin:
                                default=settings.indices_visible, enable_events=True),
                    sg.Checkbox(" ", key="release_checkbox", text_color=settings.button_color,
                                tooltip="Enables or disables the showing of release info",
-                               default=settings.releases_visible, enable_events=True)
-                   ]]
+                               default=settings.releases_visible, enable_events=True),
+                   butt(" 📖 ", key="open_guide", border_width=0, tooltip="Open guide")]]
 
         layout = [
             [sg.Col(topcol)],
@@ -455,6 +451,9 @@ class MainWin:
             elif event == "h":  # Move self.win to mouse
                 mouse_pos = mouse.get_position()
                 self.win.move(*mouse_pos)
+
+            elif event == "open_guide":
+                guide()
 
             elif event == "preferences":
                 self.update_preferences()
@@ -701,16 +700,16 @@ class MainWin:
                        tooltip="The number of hours after a show has been released that the show should be marked\n"
                                "as having recently been released.")]]
         pref_win = sg.Window("Preferences", layout=[
-            [sg.Col(col1),
-             sg.Col(col2),
-             sg.Col(col3, expand_y=True, element_justification="n"),
-             sg.Col(col4, expand_y=True, element_justification="n")],
-            [sg.Button("Save", bind_return_key=True)]], default_element_size=(16, 1),
+            [sg.Col([[col1[i][0], sg.Push(), col2[i][0]] for i in range(len(col1))]),
+             sg.Col([[col3[i][0], sg.Push(), col4[i][0]] for i in range(len(col3))],
+                    expand_y=True, element_justification="n")],
+            [sg.Button("Save", bind_return_key=True), sg.Button("Cancel")]], default_element_size=(16, 1),
                              font=(settings.fonttype, settings.fontsize))
 
         while True:
             e, v = pref_win.read()
-            if e == sg.WIN_CLOSED:
+            if e == sg.WIN_CLOSED or e == "Cancel":
+                pref_win.close()
                 break
             elif e == "Save":
                 try:
