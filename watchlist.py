@@ -126,7 +126,8 @@ def show_properties(title: str = "Show Editor", show: Show = None, show_purge: b
                        auto_size_buttons=True,
                        auto_size_text=True,
                        default_element_size=(12, 1),
-                       font=(settings.fonttype, settings.default_font_size))
+                       font=(settings.fonttype, settings.default_font_size),
+                       keep_on_top=True)
 
     release_info = show.release_info
     while True:
@@ -331,7 +332,8 @@ class MainWin:
                    sg.Checkbox("", key="release_checkbox", text_color=settings.button_color,
                                tooltip="Enables or disables the showing of release info",
                                default=settings.releases_visible, enable_events=True),
-                   butt(" 📖 ", key="open_guide", border_width=0, tooltip="Open guide")]]
+                   butt(" 📖 ", key="open_guide", border_width=0, tooltip="Open guide")]
+        ]
 
         layout = [
             [sg.Col(topcol)],
