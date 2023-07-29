@@ -10,12 +10,10 @@ It can currently be slightly difficult to see which elements are on the same row
   if not impossible, to change the entire background color of a row ugly spots inbetween elements.
   Moreover, I also noticed that the compute power needed to implement this highlight was quite significant.
 
-22. July 2023
-I sometimes find it slightly difficult to distinguish between the titles of shows. Something should be done.
-  idk what, though. I'm not a graphic designer.
-  As of now, this has been improved. The fonttype no longer needs to be monotype. This, i find, helps
-  a lot with distinguishing between titles. This makes sense, since it also makes the shape of the titles more distinct
-  DONE (for now anyway)
-
 28. July 2023
 Guide TODOs (None currently, but i'll leave this here until i am certain that i haven't forgotten somethin)
+
+29. July 2023
+Given the recent change in title visualisation some titles are now ugly, as they aren't being
+properly shortened anymore.
+TODO: add a better way to shorten titles.
