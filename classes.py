@@ -209,10 +209,12 @@ class ShowsFileHandler:
     def __len__(self):
         return len(self.shows)
 
-    def do_sorting(self):
+    def do_sorting(self, release_grace_period=0):
         """
         Sorts self.shows according firstly to their weights and secondarily according to their
         titles alphabetically.
+
+        :param release_grace_period: If this value is not 0, then recently released shows will be moved to the top with this grace period.
         """
         dct = {}
         for n in self.shows:
@@ -229,6 +231,12 @@ class ShowsFileHandler:
         for n in slist:
             lt += sort_list_of_shows_alphabetically(dct[n], reverse=True)
         lt.reverse()
+
+        if release_grace_period:
+            def inverse_release(x: Show):
+                return 0 if x.check_release(release_grace_period) else 1
+            lt.sort(key=inverse_release)
+
         self.shows = lt
 
     def highest_id(self):
@@ -270,7 +278,8 @@ class Settings:
                  right_click_fontsize=10, input_background=None, initialwinsize=(400, 200),
                  initialwinpos=(50, 50), search_results=3, show_amount=32,
                  max_title_display_len=0, indices_visible=True, show_all=False, shorten_with_ellipsis=True,
-                 releases_visible=True):
+                 releases_visible=True, release_grace_period=24, default_text_color=None, default_font_size=11,
+                 move_recently_released_to_top=True):
 
         self.sg = sg
         # Note that some settings are not stored as attributes of this class, but are instead
@@ -300,9 +309,11 @@ class Settings:
         self.show_all = show_all
         self.shorten_with_ellpisis = shorten_with_ellipsis
         self.releases_visible = releases_visible
-        self.release_grace_period = 24
-        self.default_text_color = self.text_colors[0]
-        self.default_font_size = 11
+        self.release_grace_period = release_grace_period
+        self.default_text_color = self.text_colors[0] if default_text_color is None else default_text_color
+        self.default_font_size = default_font_size
+
+        self.move_recently_released_to_top = move_recently_released_to_top
 
         self._currently_saved_to_disk_list = []  # is initially updated when the savefile is loaded
 
@@ -324,7 +335,7 @@ class Settings:
                 self.sg.theme_input_background_color(), self.initialwinsize, self.initialwinpos, self.search_results,
                 self.show_amount, self.max_title_display_len, self.indices_visible, self.show_all,
                 self.shorten_with_ellpisis, self.releases_visible, self.release_grace_period, self.default_text_color,
-                self.default_font_size]
+                self.default_font_size, self.move_recently_released_to_top]
 
     def load(self):
         """
@@ -378,6 +389,7 @@ class Settings:
                 self.show_all = state_data[1] == "True"
                 self.shorten_with_ellpisis = state_data[2] == "True"
                 self.releases_visible = state_data[3] == "True"
+                self.move_recently_released_to_top = state_data[4] == "True"
             except IndexError:
                 missing_data = True
 
@@ -409,7 +421,8 @@ class Settings:
             writer.writerow([*self.initialwinsize, *self.initialwinpos])
             writer.writerow([self.search_results])
             writer.writerow([self.show_amount, self.max_title_display_len, self.release_grace_period])
-            writer.writerow([self.indices_visible, self.show_all, self.shorten_with_ellpisis, self.releases_visible])
+            writer.writerow([self.indices_visible, self.show_all, self.shorten_with_ellpisis, self.releases_visible,
+                             self.move_recently_released_to_top])
 
         self._currently_saved_to_disk_list = self.represent_as_list()
         return True

@@ -534,7 +534,9 @@ class MainWin:
         if to_display > self.number_of_displayed_shows:
             self.extend_by_x_rows(to_display - self.number_of_displayed_shows)
 
-        shows.do_sorting()
+        shows.do_sorting(
+            release_grace_period=settings.release_grace_period if settings.move_recently_released_to_top else 0
+        )
 
         for ind, show in enumerate(shows[:self.number_of_displayed_shows]):
             color = settings.text_colors[show.color]
@@ -558,11 +560,11 @@ class MainWin:
         if index is None or show is None:
             self.last_release_update = time.time()
             for _index, _show in enumerate(shows[:self.number_of_displayed_shows]):
-                self.win[f"release:{_index}"].update(visible=settings.releases_visible
-                                                     and _show.check_release(settings.release_grace_period))
+                self.win[f"release:{_index}"]\
+                    .update(visible=settings.releases_visible and _show.check_release(settings.release_grace_period))
             return
-        self.win[f"release:{index}"].update(visible=settings.releases_visible
-                                            and show.check_release(settings.release_grace_period))
+        self.win[f"release:{index}"]\
+            .update(visible=settings.releases_visible and show.check_release(settings.release_grace_period))
 
     def update_show_color(self, show: Show, new_color_id: int, show_index=None):
         show.color = new_color_id
@@ -713,7 +715,8 @@ class MainWin:
                 [sg.T("Shorten With Ellipsis:")],
                 [sg.T("Release Grace Period:")],
                 [sg.ColorChooserButton("Default Text Color:", target="default_text_color")],
-                [sg.T("Default Font Size:")]
+                [sg.T("Default Font Size:")],
+                [sg.T("Recent Releases To Top:")],
                 ]
         col4 = [[sg.In(sg.theme_input_background_color(), k="field_bg_color",
                        tooltip="The background color of the input fields",
@@ -727,6 +730,7 @@ class MainWin:
                 [sg.In(settings.default_text_color, k="default_text_color", tooltip="The text color to be used in"
                                                                                     "subwindows.")],
                 [sg.In(settings.default_font_size, key="default_font_size", tooltip="The font size in subwindows")],
+                [sg.Checkbox("", key="move_recently_released_to_top", default=settings.move_recently_released_to_top)],
                 ]
         pref_win = sg.Window("Preferences", layout=[
             [sg.Col([[col1[i][0], sg.Push(), col2[i][0]] for i in range(len(col1))]),
@@ -803,6 +807,7 @@ class MainWin:
                 settings.release_grace_period = int(pref_win["release_grace_period"].get())
                 settings.default_text_color = pref_win["default_text_color"].get()
                 settings.default_font_size = int(pref_win["default_font_size"].get())
+                settings.move_recently_released_to_top = pref_win["move_recently_released_to_top"].get()
 
                 if settings.save():
                     self.restart()
