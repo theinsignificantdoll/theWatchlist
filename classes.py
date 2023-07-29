@@ -104,7 +104,6 @@ class Show:
         'Monday'     # Both weekday and time of day are not required.
         '19:10'      # Although False is returned if neither is present.
 
-
         :return: A tuple of the release info. (weekday: int, hour: int, minute: int)
         """
         try:

@@ -367,7 +367,8 @@ class MainWin:
 
         self.sort_shows_and_display()
 
-        for key in ("add_show", "preferences", "show_all", "search_button", "index_checkbox"):
+        for key in ("add_show", "preferences", "show_all", "search_button", "index_checkbox", "release_checkbox",
+                    "open_guide"):
             self.win[key].block_focus()
             self.win[key].set_cursor("plus")
 
