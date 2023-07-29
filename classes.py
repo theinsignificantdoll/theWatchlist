@@ -17,7 +17,7 @@ class Show:
     def __init__(self, num_id: Union[str, int] = -1,
                  title: str = "",
                  ep: Union[str, int] = 0,
-                 season: Union[str, int] = 0,
+                 season: Union[str, int] = 1,
                  link: str = "",
                  weight: Union[str, int] = 0,
                  color: Union[str, int] = 0,

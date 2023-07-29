@@ -70,7 +70,7 @@ def show_properties(title: str = "Show Editor", show: Show = None, show_purge: b
     :rtype: Union[bool, Show]
     """
     if show is None:  # make a dummy show.
-        show = Show(ep_season_relevant=True, ongoing=True)
+        show = Show()
     window = sg.Window(title,
                        [
                            [sg.Column([
