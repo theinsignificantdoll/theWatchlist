@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, List, Any
 import csv
 import os
 import webbrowser
@@ -56,14 +56,13 @@ class Show:
             return True
         return False
 
-    def check_release(self, grace_period: Union[int, float] = 24):
+    def check_release(self, grace_period: Union[int, float] = 24) -> bool:
         """
         Returns True if a show was released within - grace_period - hours
         NOTE: Returns False if not ongoing or release_info cannot be parsed.
 
         :param grace_period: The amount of hours after the release that the function should continue to return True
         :return: Whether or not show was released within grace_period.
-        :rtype: bool
         """
         if not self.ongoing:
             return False
@@ -86,7 +85,7 @@ class Show:
         hours_since_release += (current_minute - release_minute) / 60
         return hours_since_release <= grace_period
 
-    def parse_release_info(self):
+    def parse_release_info(self) -> Union[tuple[int, int, int], bool]:
         """
         Parses release_info. Note that weekday is converted to an integer, where monday is 0 and sunday is 6.
         If no weekday is given, the integer 7 is returned.
@@ -100,7 +99,6 @@ class Show:
 
 
         :return: A tuple of the release info. (weekday: int, hour: int, minute: int)
-        :rtype: tuple[int, int, int]
         """
         try:
             space_split = self.release_info.lower().split(" ")
@@ -125,7 +123,7 @@ class Show:
             return False
 
 
-def sort_list_of_shows_alphabetically(lst: list[Show], reverse=False):
+def sort_list_of_shows_alphabetically(lst: List[Show], reverse=False) -> List[Show]:
     def get_title(show):
         return show.title
 
@@ -153,7 +151,7 @@ class ShowsFileHandler:
             with open(self.savefile, "w"):
                 pass
 
-    def read_file(self):
+    def read_file(self) -> List[Show]:
         self.shows = []
         with open(self.savefile, "r", newline="") as csvfile:
             reader = csv.reader(csvfile, delimiter=self.delimiter, quotechar="|")
@@ -179,7 +177,7 @@ class ShowsFileHandler:
                 writer.writerow([show.id, show.title, show.ep, show.season, show.link, show.weight, show.color,
                                  show.ep_season_relevant, show.release_info, show.ongoing])
 
-    def pop(self, __index):
+    def pop(self, __index) -> Show:
         return self.shows.pop(__index)
 
     def append(self, __object):
@@ -188,10 +186,10 @@ class ShowsFileHandler:
     def remove(self, __value):
         self.shows.remove(__value)
 
-    def get_index(self, __object: Show):
+    def get_index(self, __object: Show) -> int:
         return self.shows.index(__object)
 
-    def from_index(self, __index: Union[str, int]):
+    def from_index(self, __index: Union[str, int]) -> Show:
         """
         Accepts strings
         """
@@ -219,7 +217,7 @@ class ShowsFileHandler:
         :param weight_to_add: The amount of weight that should be added to a show, when it is recently released.
         """
 
-        def get_sorting_weight(show: Show):
+        def get_sorting_weight(show: Show) -> int:
             if release_grace_period and show.check_release(release_grace_period):
                 return show.weight + weight_to_add
             return show.weight
@@ -243,7 +241,7 @@ class ShowsFileHandler:
 
         self.shows = lt
 
-    def highest_id(self):
+    def highest_id(self) -> int:
         """
         Finds the highest id held by a show in self.shows
 
@@ -254,7 +252,7 @@ class ShowsFileHandler:
             return -1
         return max([int(show.id) for show in self.shows])
 
-    def from_id(self, target_id: Union[str, int]):
+    def from_id(self, target_id: Union[str, int]) -> Show:
         """
         Finds the show with the target id and returns it
 
@@ -330,7 +328,7 @@ class Settings:
         if not os.path.isfile(self.savefile):
             self.save(force_write=True)
 
-    def represent_as_list(self):
+    def represent_as_list(self) -> List[Any]:
         """
         Returns a list of all the settings. Useful when checking whether or not settings have been edited.
         This function is used to define ._currently_saved_to_disk_list.
@@ -404,7 +402,7 @@ class Settings:
             return
         self._currently_saved_to_disk_list = self.represent_as_list()
 
-    def save(self, force_write=False):
+    def save(self, force_write=False) -> bool:
         """
         Checks if settings have changed, subsequently saving if they have.
         Returns True if something has been written to disk else False
@@ -412,7 +410,6 @@ class Settings:
         :param force_write: Skips the check of whether or not settings have been changed
         :type force_write: bool
         :return: True if something was written to the disk
-        :rtype: bool
         """
         if not force_write and self._currently_saved_to_disk_list == self.represent_as_list():
             return False
@@ -434,5 +431,5 @@ class Settings:
         self._currently_saved_to_disk_list = self.represent_as_list()
         return True
 
-    def get_color(self, index):
+    def get_color(self, index) -> str:
         return self.text_colors[index % len(self.text_colors)]

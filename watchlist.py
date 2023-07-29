@@ -23,7 +23,7 @@ delay_to_save_shows = 3
 update_release_vals_interval = 15 * 60
 
 
-def is_valid_color(color: str):
+def is_valid_color(color: str) -> bool:
     """
     Checks whether or not a string is a hex color code
 
@@ -39,7 +39,7 @@ def is_valid_color(color: str):
     return False
 
 
-def limit_string_len(string: str, length: int, use_ellipsis: bool = False):
+def limit_string_len(string: str, length: int, use_ellipsis: bool = False) -> str:
     """
     Shortens a string so that its length doesn't exceed some integer. If the maximum length is 0 or < 0 then
     the string is returned as-is.
@@ -48,7 +48,6 @@ def limit_string_len(string: str, length: int, use_ellipsis: bool = False):
     :param length: The maximum length of the string
     :param use_ellipsis: Whether or not the last three characters should be ... if the string has been shortened
     :return: A string with a maximum length of - length -
-    :rtype: str
     """
     if len(string) > length > 0:
         if use_ellipsis:
@@ -57,7 +56,15 @@ def limit_string_len(string: str, length: int, use_ellipsis: bool = False):
     return string
 
 
-def show_properties(title: str = "Show Editor", show: Show = None, show_purge: bool = False):
+def get_suffix(string: str, splitter="-") -> str:
+    return string.split(splitter)[-1]
+
+
+def get_prefix(string: str, splitter=":") -> str:
+    return string.split(splitter)[0]
+
+
+def show_properties(title: str = "Show Editor", show: Show = None, show_purge: bool = False) -> Union[Show, bool]:
     """
     Opens a small window with all the relevant information about a show allowing these to be changed by the user.
     Then returning the show, if save was pressed and False if Cancel was pressed.
@@ -178,7 +185,8 @@ def show_properties(title: str = "Show Editor", show: Show = None, show_purge: b
 
 
 def butt(button_text="", key=None, tooltip=None, butt_color=(False, None), border_width=None, size=(None, None),
-         mouseover_colors=sg.theme_background_color(), disabled=False, right_click_menu=None, bind_return_key=False):
+         mouseover_colors=sg.theme_background_color(), disabled=False, right_click_menu=None,
+         bind_return_key=False) -> sg.Button:
     """
     A wrapper function for sg.Button with some different default values
 
@@ -191,7 +199,7 @@ def butt(button_text="", key=None, tooltip=None, butt_color=(False, None), borde
                      right_click_menu=right_click_menu, bind_return_key=bind_return_key)
 
 
-def get_release_string(initial_release_string=""):
+def get_release_string(initial_release_string="") -> str:
     temp_show = Show(release_info=initial_release_string)
     parsed = temp_show.parse_release_info()
     if parsed:
@@ -333,7 +341,7 @@ class MainWin:
                                tooltip="Enables or disables the showing of release info",
                                default=settings.releases_visible, enable_events=True),
                    butt(" 📖 ", key="open_guide", border_width=0, tooltip="Open guide")]
-        ]
+                  ]
 
         layout = [
             [sg.Col(topcol)],
@@ -398,8 +406,8 @@ class MainWin:
                 self.close()
                 break
 
-            elif event.startswith("gotolink:"):
-                shows.from_index(int(event.removeprefix("gotolink:"))).open_link()
+            elif event.startswith("link:"):
+                shows.from_index(int(event.removeprefix("link:"))).open_link()
 
             elif event.startswith("delete:"):
                 if sg.popup_yes_no("Are you sure?") == "No":
@@ -493,11 +501,7 @@ class MainWin:
                 self.sort_shows_and_display()
 
             elif "::multi_links-" in event:
-                show_index = -1
-                for ind in range(0, -len(event), -1):
-                    if event[ind] == "-":
-                        show_index = event[ind + 1:]
-                        break
+                show_index = int(get_suffix(event))
                 ref_show = shows.from_index(show_index)
 
                 for show in shows:
@@ -505,22 +509,27 @@ class MainWin:
                         show.open_link()
 
             elif "::tit_color-" in event:
-                col = ""
-                show_index = -1
-                for ind, s in enumerate(event):
-                    if s == ":":
-                        col = event[:ind]
-                        break
-                for ind in range(0, -len(event), -1):
-                    if event[ind] == "-":
-                        show_index = event[ind + 1:]
-                        break
+                col = event.split(":")[0]
+                show_index = int(get_suffix(event))
                 col_index = settings.text_colors.index(col)
                 show = shows.from_index(show_index)
                 self.update_show_color(show, col_index, show_index)
 
+            elif "::weight-" in event:
+                show_index = int(get_suffix(event))
+                add_weight = int(get_prefix(event))
+                show = shows.from_index(show_index)
+                show.weight += add_weight
+                self.sort_shows_and_display()
+
+            elif "::show_details-" in event:
+                show_index = int(get_suffix(event))
+                show = shows.from_index(show_index)
+                show.ep_season_relevant = not show.ep_season_relevant
+                self.sort_shows_and_display()
+
     @staticmethod
-    def num_of_shows_to_display():
+    def num_of_shows_to_display() -> int:
         """
         Returns how many shows should currently be displayed
         """
@@ -818,14 +827,14 @@ class MainWin:
                     self.restart()
                 break
 
-    def delete_element(self, index):
+    def delete_element(self, index) -> sg.Button:
         self.delete_elements.append(butt("DEL",
                                          key=f"delete:{index}",
                                          mouseover_colors="#AA0000",
                                          border_width=0))
         return self.delete_elements[-1]
 
-    def title_element(self, index):
+    def title_element(self, index) -> sg.Text:
         self.title_elements.append(sg.Text(key=f"title:{index}",
                                            size=(abs(settings.max_title_display_len), 1),
                                            enable_events=True,
@@ -834,51 +843,57 @@ class MainWin:
                                                               settings.text_colors]]))
         return self.title_elements[-1]
 
-    def ep_minus_element(self, index):
+    def ep_minus_element(self, index) -> sg.Text:
         self.ep_minus_elements.append(sg.Text(size=(3, 1),
                                               enable_events=True,
                                               key=f"Eminus:{index}"))
         return self.ep_minus_elements[-1]
 
-    def ep_plus_element(self, index):
+    def ep_plus_element(self, index) -> sg.Text:
         self.ep_plus_elements.append(sg.Text(key=f"Eplus:{index}",
                                              enable_events=True,
                                              size=(4, 1)))
         return self.ep_plus_elements[-1]
 
-    def season_minus_element(self, index):
+    def season_minus_element(self, index) -> sg.Text:
         self.season_minus_elements.append(sg.Text(size=(2, 1),
                                                   enable_events=True,
                                                   key=f"Sminus:{index}"))
         return self.season_minus_elements[-1]
 
-    def season_plus_element(self, index):
+    def season_plus_element(self, index) -> sg.Text:
         self.season_plus_elements.append(sg.Text(size=(4, 1),
                                                  enable_events=True,
                                                  key=f"Splus:{index}"))
         return self.season_plus_elements[-1]
 
-    def link_element(self, index):
+    def link_element(self, index) -> sg.Button:
         self.link_elements.append(butt("LINK",
-                                       key=f"gotolink:{index}",
+                                       key=f"link:{index}",
                                        border_width=0,
                                        right_click_menu=["",
                                                          [f"Open all links with the same color::multi_links-{index}"]]))
         return self.link_elements[-1]
 
-    def properties_element(self, index):
+    def properties_element(self, index) -> sg.Button:
         self.properties_elements.append(butt("⛭",
                                              key=f"properties:{index}",
-                                             border_width=0))
+                                             border_width=0,
+                                             right_click_menu=["",
+                                                               ["Weight", [f"+2::weight-{index}",
+                                                                           f"+1::weight-{index}",
+                                                                           f"-1::weight-{index}",
+                                                                           f"-2::weight-{index}"],
+                                                                f"Show Details::show_details-{index}"]]))
         return self.properties_elements[-1]
 
-    def index_element(self, index):
+    def index_element(self, index) -> sg.Text:
         self.index_elements.append(sg.Text(str(index + 1),
                                            key=f"index:{index}",
                                            visible=settings.indices_visible))
         return self.index_elements[-1]
 
-    def release_element(self, index):
+    def release_element(self, index) -> sg.Text:
         self.release_elements.append(sg.Text(recently_released_string,
                                              key=f"release:{index}",
                                              visible=False))
@@ -916,7 +931,7 @@ class MainWin:
         self.win[f"Eplus:{index}"].update(visible=visibility)
         self.win[f"Sminus:{index}"].update(visible=visibility)
         self.win[f"Splus:{index}"].update(visible=visibility)
-        self.win[f"gotolink:{index}"].update(visible=visibility)
+        self.win[f"link:{index}"].update(visible=visibility)
         self.win[f"properties:{index}"].update(visible=visibility)
         self.win[f"index:{index}"].update(visible=visibility)
         self.shows_col_contents_changed = True
