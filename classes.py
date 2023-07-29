@@ -209,19 +209,28 @@ class ShowsFileHandler:
     def __len__(self):
         return len(self.shows)
 
-    def do_sorting(self, release_grace_period=0):
+    def do_sorting(self, release_grace_period=0, weight_to_add=0):
         """
         Sorts self.shows according firstly to their weights and secondarily according to their
         titles alphabetically.
 
-        :param release_grace_period: If this value is not 0, then recently released shows will be moved to the top with this grace period.
+        :param release_grace_period: If this value is not 0, then recently released shows will have their weight
+         increased by weight_to_add
+        :param weight_to_add: The amount of weight that should be added to a show, when it is recently released.
         """
+
+        def get_sorting_weight(show: Show):
+            if release_grace_period and show.check_release(release_grace_period):
+                return show.weight + weight_to_add
+            return show.weight
+
         dct = {}
         for n in self.shows:
-            if n.weight in dct:
-                dct[n.weight].append(n)
+            weight = get_sorting_weight(n)
+            if weight in dct:
+                dct[weight].append(n)
                 continue
-            dct[n.weight] = [n]
+            dct[weight] = [n]
         lt = []
         slist = []  # list of Weights used
         for n in dct:
@@ -231,11 +240,6 @@ class ShowsFileHandler:
         for n in slist:
             lt += sort_list_of_shows_alphabetically(dct[n], reverse=True)
         lt.reverse()
-
-        if release_grace_period:
-            def inverse_release(x: Show):
-                return 0 if x.check_release(release_grace_period) else 1
-            lt.sort(key=inverse_release)
 
         self.shows = lt
 
@@ -279,7 +283,7 @@ class Settings:
                  initialwinpos=(50, 50), search_results=3, show_amount=32,
                  max_title_display_len=0, indices_visible=True, show_all=False, shorten_with_ellipsis=True,
                  releases_visible=True, release_grace_period=24, default_text_color=None, default_font_size=11,
-                 move_recently_released_to_top=True):
+                 move_recently_released_to_top=True, weight_to_add=5):
 
         self.sg = sg
         # Note that some settings are not stored as attributes of this class, but are instead
@@ -313,6 +317,7 @@ class Settings:
         self.default_text_color = self.text_colors[0] if default_text_color is None else default_text_color
         self.default_font_size = default_font_size
 
+        self.weight_to_add = weight_to_add
         self.move_recently_released_to_top = move_recently_released_to_top
 
         self._currently_saved_to_disk_list = []  # is initially updated when the savefile is loaded
@@ -335,7 +340,7 @@ class Settings:
                 self.sg.theme_input_background_color(), self.initialwinsize, self.initialwinpos, self.search_results,
                 self.show_amount, self.max_title_display_len, self.indices_visible, self.show_all,
                 self.shorten_with_ellpisis, self.releases_visible, self.release_grace_period, self.default_text_color,
-                self.default_font_size, self.move_recently_released_to_top]
+                self.default_font_size, self.move_recently_released_to_top, self.weight_to_add]
 
     def load(self):
         """
@@ -380,6 +385,7 @@ class Settings:
                 self.show_amount = int(displaydata[0])
                 self.max_title_display_len = int(displaydata[1])
                 self.release_grace_period = int(displaydata[2])
+                self.weight_to_add = int(displaydata[3])
             except IndexError:
                 missing_data = True
 
@@ -420,7 +426,8 @@ class Settings:
                              self.default_font_size])
             writer.writerow([*self.initialwinsize, *self.initialwinpos])
             writer.writerow([self.search_results])
-            writer.writerow([self.show_amount, self.max_title_display_len, self.release_grace_period])
+            writer.writerow([self.show_amount, self.max_title_display_len, self.release_grace_period,
+                             self.weight_to_add])
             writer.writerow([self.indices_visible, self.show_all, self.shorten_with_ellpisis, self.releases_visible,
                              self.move_recently_released_to_top])
 

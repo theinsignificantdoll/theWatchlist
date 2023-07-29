@@ -533,9 +533,9 @@ class MainWin:
             self.shorten_by_x_rows(self.number_of_displayed_shows - to_display)
         if to_display > self.number_of_displayed_shows:
             self.extend_by_x_rows(to_display - self.number_of_displayed_shows)
-
         shows.do_sorting(
-            release_grace_period=settings.release_grace_period if settings.move_recently_released_to_top else 0
+            release_grace_period=settings.release_grace_period if settings.move_recently_released_to_top else 0,
+            weight_to_add=settings.weight_to_add,
         )
 
         for ind, show in enumerate(shows[:self.number_of_displayed_shows]):
@@ -717,6 +717,7 @@ class MainWin:
                 [sg.ColorChooserButton("Default Text Color:", target="default_text_color")],
                 [sg.T("Default Font Size:")],
                 [sg.T("Recent Releases To Top:")],
+                [sg.T("Recent Release Weight Add:")],
                 ]
         col4 = [[sg.In(sg.theme_input_background_color(), k="field_bg_color",
                        tooltip="The background color of the input fields",
@@ -727,10 +728,13 @@ class MainWin:
                 [sg.In(settings.release_grace_period, k="release_grace_period",
                        tooltip="The number of hours after a show has been released that the show should be marked\n"
                                "as having recently been released.")],
-                [sg.In(settings.default_text_color, k="default_text_color", tooltip="The text color to be used in"
-                                                                                    "subwindows.")],
+                [sg.In(settings.default_text_color, k="default_text_color",
+                       tooltip="The text color to be used in subwindows.",
+                       background_color=sg.theme_background_color())],
                 [sg.In(settings.default_font_size, key="default_font_size", tooltip="The font size in subwindows")],
                 [sg.Checkbox("", key="move_recently_released_to_top", default=settings.move_recently_released_to_top)],
+                [sg.In(settings.weight_to_add, key="weight_to_add", tooltip="The weight that will be added to a show"
+                                                                            "when it is newly released.")],
                 ]
         pref_win = sg.Window("Preferences", layout=[
             [sg.Col([[col1[i][0], sg.Push(), col2[i][0]] for i in range(len(col1))]),
@@ -765,6 +769,7 @@ class MainWin:
                     int(pref_win["showamount"].get())
                     int(pref_win["release_grace_period"].get())
                     int(pref_win["default_font_size"].get())
+                    int(pref_win["weight_to_add"].get())
                     if not is_valid_color(pref_win["buttoncolor"].get()):
                         raise ValueError
 
@@ -808,6 +813,7 @@ class MainWin:
                 settings.default_text_color = pref_win["default_text_color"].get()
                 settings.default_font_size = int(pref_win["default_font_size"].get())
                 settings.move_recently_released_to_top = pref_win["move_recently_released_to_top"].get()
+                settings.weight_to_add = int(pref_win["weight_to_add"].get())
 
                 if settings.save():
                     self.restart()
