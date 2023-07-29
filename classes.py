@@ -433,3 +433,6 @@ class Settings:
 
         self._currently_saved_to_disk_list = self.represent_as_list()
         return True
+
+    def get_color(self, index):
+        return self.text_colors[index % len(self.text_colors)]

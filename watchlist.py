@@ -328,7 +328,7 @@ class MainWin:
                    sg.Checkbox(" ", key="index_checkbox", text_color=settings.button_color,
                                tooltip="Enables or disables the showing of indices",
                                default=settings.indices_visible, enable_events=True),
-                   sg.Checkbox(" ", key="release_checkbox", text_color=settings.button_color,
+                   sg.Checkbox("", key="release_checkbox", text_color=settings.button_color,
                                tooltip="Enables or disables the showing of release info",
                                default=settings.releases_visible, enable_events=True),
                    butt(" 📖 ", key="open_guide", border_width=0, tooltip="Open guide")]]
@@ -427,12 +427,11 @@ class MainWin:
             elif event.startswith("title:"):
                 show_index = event.removeprefix("title:")
                 show = shows.from_index(show_index)
-                if show.ep_season_relevant:
-                    self.update_show_color(show,
-                                           0 if show.color + 1 >= len(settings.text_colors) else show.color + 1,
-                                           show_index=show_index)
+                self.update_show_color(show,
+                                       0 if show.color + 1 >= len(settings.text_colors) else show.color + 1,
+                                       show_index=show_index)
 
-                    last_show_change = time.time()
+                last_show_change = time.time()
 
             elif event.startswith("Splus:"):
                 show = shows.from_index(event.removeprefix("Splus:"))
@@ -539,7 +538,7 @@ class MainWin:
         )
 
         for ind, show in enumerate(shows[:self.number_of_displayed_shows]):
-            color = settings.text_colors[show.color]
+            color = settings.get_color(show.color)
             self.win[f"title:{ind}"].update(value=limit_string_len(show.title, settings.max_title_display_len,
                                                                    use_ellipsis=settings.shorten_with_ellpisis),
                                             text_color=color)
@@ -570,7 +569,7 @@ class MainWin:
         show.color = new_color_id
         if show_index is None:
             show_index = shows.get_index(show)
-        color = settings.text_colors[new_color_id]
+        color = settings.get_color(new_color_id)
         self.win[f"index:{show_index}"].update(text_color=color)
         self.win[f"title:{show_index}"].update(text_color=color)
         self.win[f"Eminus:{show_index}"].update(text_color=color)
@@ -597,11 +596,11 @@ class MainWin:
         delcol = [butt("DEL", key=f"s_delete_{n}", mouseover_colors="#AA0000", border_width=0) for n in range(results)]
 
         titcol = [sg.Text(shows[n].title, key=f"s_title_{n}", enable_events=True,
-                          text_color=settings.text_colors[min(int(shows[n].color), len(settings.text_colors) - 1)],
+                          text_color=settings.get_color(shows[n].color),
                           size=(37, 1)) for n in range(results)]
 
         index_col = [sg.Text(f"{n + 1: >{index_len}}", key=f"s_index_{n}",
-                             text_color=settings.text_colors[min(int(shows[n].color), len(settings.text_colors) - 1)])
+                             text_color=settings.get_color(shows[n].color))
                      for n in range(results)]
 
         propcol = [butt("⛭", key=f"s_properties_{n}", border_width=0) for n in range(results)]
@@ -641,11 +640,9 @@ class MainWin:
                             search_win[f"s_title_{n}"].update(found[n].title)
                             search_win[f"s_index_{n}"].update(f"{found_indices[n] + 1: >{index_len}}")
                             search_win[f"s_title_{n}"] \
-                                .update(text_color=settings.text_colors[min(int(found[n].color),
-                                                                            len(settings.text_colors) - 1)])
+                                .update(text_color=settings.get_color(int(found[n].color)))
                             search_win[f"s_index_{n}"] \
-                                .update(text_color=settings.text_colors[min(int(found[n].color),
-                                                                            len(settings.text_colors) - 1)])
+                                .update(text_color=settings.get_color(int(found[n].color)))
                 except IndexError:
                     pass
 
