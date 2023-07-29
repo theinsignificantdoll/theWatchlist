@@ -41,7 +41,8 @@ def is_valid_color(color: str):
 
 def limit_string_len(string: str, length: int, use_ellipsis: bool = False):
     """
-    Shortens a string so that its length doesn't exceed some integer. If the maximum length is 0, nothing is shortened.
+    Shortens a string so that its length doesn't exceed some integer. If the maximum length is 0 or < 0 then
+    the string is returned as-is.
 
     :param string: The string to limit
     :param length: The maximum length of the string
@@ -49,7 +50,7 @@ def limit_string_len(string: str, length: int, use_ellipsis: bool = False):
     :return: A string with a maximum length of - length -
     :rtype: str
     """
-    if len(string) > length != 0:
+    if len(string) > length > 0:
         if use_ellipsis:
             return f"{string[:length - 3].rstrip(' ')}..."
         return string[:length]
@@ -131,8 +132,9 @@ def show_properties(title: str = "Show Editor", show: Show = None, show_purge: b
     while True:
         button, data = window.read()
         if button == "show_release_info":
-            release_info = get_release_string(show.release_info)
+            release_info = get_release_string(release_info)
             window["show_release_info"].update(release_info)
+            window["show_ongoing"].update(value=True if release_info else False)
         else:
             break
     window.close()
@@ -201,8 +203,8 @@ def get_release_string(initial_release_string=""):
          sg.Push()],
         [sg.Push(), sg.I(hour, key="hour", enable_events=True), sg.T(":"),
          sg.I(minute, key="minute", enable_events=True), sg.Push()],
-        [butt("Save", bind_return_key=True), butt("Cancel"), sg.Push(),
-         sg.T(initial_release_string, key="release_string")]
+        [butt("Save", bind_return_key=True), butt("Cancel"), sg.Push(), sg.Button("CLEAR"),
+         sg.T(initial_release_string, key="release_string", size=(9, 1))]
     ]
 
     weekday_as_string = ""
@@ -211,6 +213,9 @@ def get_release_string(initial_release_string=""):
                         font=(settings.fonttype, settings.default_font_size))
 
     def write_release_string():
+        if not weekday_as_string and not hour and not minute:
+            rel_win["release_string"].update(value="")
+            return
         rel_win["release_string"].update(value=f"{weekday_as_string} {hour}:{0 if minute < 10 else ''}{minute}")
 
     while True:
@@ -237,6 +242,13 @@ def get_release_string(initial_release_string=""):
         elif event in ("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"):
             weekday_as_string = event
             write_release_string()
+        elif event == "CLEAR":
+            weekday_as_string = ""
+            hour = 0
+            minute = 0
+            write_release_string()
+            rel_win["hour"].update(value="0")
+            rel_win["minute"].update(value="0")
 
 
 def guide():
@@ -805,7 +817,7 @@ class MainWin:
 
     def title_element(self, index):
         self.title_elements.append(sg.Text(key=f"title:{index}",
-                                           size=(settings.max_title_display_len, 1),
+                                           size=(abs(settings.max_title_display_len), 1),
                                            enable_events=True,
                                            right_click_menu=["",
                                                              [f"{m}::tit_color-{index}" for m in

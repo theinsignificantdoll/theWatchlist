@@ -13,10 +13,9 @@ It can currently be slightly difficult to see which elements are on the same row
 22. July 2023
 I sometimes find it slightly difficult to distinguish between the titles of shows. Something should be done.
   idk what, though. I'm not a graphic designer.
-
-28. July 2023
-TODO: Figure out how to use color picker windows for the text color setting.
- UPDATE: DONE? yeah. Albeit, the only option is to append to the list, but that's fine.
+  As of now, this has been improved. The fonttype no longer needs to be monotype. This, i find, helps
+  a lot with distinguishing between titles. This makes sense, since it also makes the shape of the titles more distinct
+  DONE (for now anyway)
 
 28. July 2023
 Guide TODOs (None currently, but i'll leave this here until i am certain that i haven't forgotten somethin)

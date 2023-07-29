@@ -31,8 +31,8 @@ configurable in the settings.
 settings_i =\
     """SETTINGS I
 The first two settings are simple. Font size is the size of the font.
-Font type is nearly as simple. However, fonts should be monotype. This means that
-the characters are equally wide and helps with alignment. You can freely experiment yourself, though.
+Font type is just a simple, simply write the name of a font, just like you'd find it
+in Word or LibreOffice Writer!
 
 The next one is a bit more complicated. "Text color" covers all the colors that shows can be
 it also covers the default cover of text in other windows. This setting is a list of
@@ -53,7 +53,9 @@ settings_ii =\
 Search results is how many results should be displayed when searching (magnifying glass in the top-left)
 
 Title length is the maximum amount of characters to be displayed in a title. This is useful,
-if you'd like to avoid one really long title pushing all the other things away!
+if you'd like to avoid one really long title pushing all the other things away! Other than that,
+if the value is negative, then the length of titles will not be altered. However, the size
+of the fields that themselves display the titles will still be limited.
 
 Show Cut-off is the number of shows, which will be displayed when "Show Less" is updated (see Important)
 

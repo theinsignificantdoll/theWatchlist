@@ -315,6 +315,10 @@ class Settings:
             self.save(force_write=True)
 
     def represent_as_list(self):
+        """
+        Returns a list of all the settings. Useful when checking whether or not settings have been edited.
+        This function is used to define ._currently_saved_to_disk_list.
+        """
         return [self.fontsize, self.fonttype, self.text_colors, self.button_color, self.sg.theme_background_color(),
                 self.right_click_selected_background, self.right_click_fontsize,
                 self.sg.theme_input_background_color(), self.initialwinsize, self.initialwinpos, self.search_results,
@@ -323,6 +327,10 @@ class Settings:
                 self.default_font_size]
 
     def load(self):
+        """
+        Reads the settings file and reads it into memory. If any
+        settings are missing from the file, it will also call .save(force_write=True).
+        """
         with open(self.savefile, "r", newline="") as csvfile:
             reader = csv.reader(csvfile, delimiter=self.delimiter, quotechar="|")
 
