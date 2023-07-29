@@ -3,6 +3,7 @@ import csv
 import os
 import webbrowser
 import datetime
+import time
 
 
 class Show:
@@ -23,7 +24,9 @@ class Show:
                  color: Union[str, int] = 0,
                  ep_season_relevant: Union[str, bool] = None,
                  release_info: str = "",
-                 ongoing: Union[str, bool] = None):
+                 ongoing: Union[str, bool] = None,
+                 last_dismissal: Union[str, float] = 0):
+
         self.id: int = int(num_id)
         self.title: str = title
         self.ep: int = int(ep)
@@ -32,6 +35,7 @@ class Show:
         self.weight: int = int(weight)
         self.color: int = int(color)
         self.release_info: str = release_info
+        self.last_dismissal = float(last_dismissal)
         if ep_season_relevant is None:
             self.ep_season_relevant = True
         else:
@@ -46,7 +50,8 @@ class Show:
         return f"Show(num_id={self.id}, title={self.title.__repr__()}, ep={self.ep}," \
                f" season={self.season}, link={self.link.__repr__()}, weight={self.weight}," \
                f" color={self.color}, ep_season_relevant={self.ep_season_relevant}," \
-               f" release_info={self.release_info.__repr__()}, ongoing={self.ongoing})"
+               f" release_info={self.release_info.__repr__()}, ongoing={self.ongoing}," \
+               f" last_dismissal={self.last_dismissal:.4f})"
 
     def open_link(self):
         webbrowser.open(self.link)
@@ -64,7 +69,8 @@ class Show:
         :param grace_period: The amount of hours after the release that the function should continue to return True
         :return: Whether or not show was released within grace_period.
         """
-        if not self.ongoing:
+        if not self.ongoing\
+           or self.last_dismissal + grace_period * 60 * 60 > time.time():
             return False
 
         parsed = self.parse_release_info()
@@ -167,6 +173,7 @@ class ShowsFileHandler:
                     ep_season_relevant=row[7] if len(row) > 7 else None,
                     release_info=row[8] if len(row) > 8 else "",
                     ongoing=row[9] if len(row) > 9 else None,
+                    last_dismissal=row[10] if len(row) > 10 else 0,
                 ))
         return self.shows
 
@@ -175,7 +182,7 @@ class ShowsFileHandler:
             writer = csv.writer(csvfile, delimiter=self.delimiter, quotechar="|")
             for show in self.shows:
                 writer.writerow([show.id, show.title, show.ep, show.season, show.link, show.weight, show.color,
-                                 show.ep_season_relevant, show.release_info, show.ongoing])
+                                 show.ep_season_relevant, show.release_info, show.ongoing, show.last_dismissal])
 
     def pop(self, __index) -> Show:
         return self.shows.pop(__index)

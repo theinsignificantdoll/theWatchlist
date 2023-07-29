@@ -72,6 +72,16 @@ Default text color is the text color used within subwindows like this one (Or se
 In the same way, default font size is the font size used within subwindows.
 """
 
+settings_iii =\
+    """SETTINGS III
+Search results is how many results should be displayed when searching (magnifying glass in the top-left)
+
+Recent Releases To Top will, if enabled, change the weight of recent releases when sorting, so that
+they can be made to appear at the top.
+Recent Release Weight Add is how much weight should be added to recent releases. With this you can
+adjust exactly -how- far up you want the shows to move, when it's just been released.
+"""
+
 show_editor =\
     """SHOW EDITOR
 The show editor is opened when either adding a new show or editing an existing one. You can find it by
@@ -125,4 +135,18 @@ of the main window.
 
 Note also that the number of search results can be adjusted. Simply open settings and change the value
 of "Search Results".
+"""
+
+quick_menus =\
+    """RIGHT CLICK MENUS
+By right clicking on certain parts of the window you can quickly adjust certain things. An example of this,
+is that by right clicking the title of a show, you can pick its color. That way, you don't have to cycle
+through all of them!
+
+Other than that, you can also open all the links of shows with the same color. This is done by simply right-clicking
+the "LINK" button. Moreover, you can quickly adjust some settings by right clicking on the show editor button!
+
+And, if you've set up releases, you can also dismiss shows. This way, you can temporarily remove the checkmark
+(and added weight during sorting) from a show. Simply right click the checkmark and choose "Dismiss". The show
+will no longer be registered as recently released in the "Release Grace Period" amount of hours!
 """

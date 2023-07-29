@@ -219,7 +219,7 @@ def get_release_string(initial_release_string="") -> str:
     weekday_as_string = ""
 
     rel_win = sg.Window("Release Picker", layout=layout, default_element_size=(9, 1),
-                        font=(settings.fonttype, settings.default_font_size))
+                        font=(settings.fonttype, settings.default_font_size), keep_on_top=True)
 
     def write_release_string():
         if not weekday_as_string and not hour and not minute:
@@ -269,6 +269,7 @@ def guide():
                        sg.Tab("Show Editor", [[sg.T(guide_strings.show_editor)]]),
                        sg.Tab("Release", [[sg.T(guide_strings.release)]]),
                        sg.Tab("Search", [[sg.T(guide_strings.search)]]),
+                       sg.Tab("Quick Menus", [[sg.T(guide_strings.quick_menus)]]),
                        ]])]
     ]
     window = sg.Window("Guide", layout=layout, font=(settings.fonttype, settings.default_font_size))
@@ -526,6 +527,12 @@ class MainWin:
                 show_index = int(get_suffix(event))
                 show = shows.from_index(show_index)
                 show.ep_season_relevant = not show.ep_season_relevant
+                self.sort_shows_and_display()
+
+            elif "::dismissal-" in event:
+                show_index = int(get_suffix(event))
+                show = shows.from_index(show_index)
+                show.last_dismissal = time.time()
                 self.sort_shows_and_display()
 
     @staticmethod
@@ -872,7 +879,7 @@ class MainWin:
                                        key=f"link:{index}",
                                        border_width=0,
                                        right_click_menu=["",
-                                                         [f"Open all links with the same color::multi_links-{index}"]]))
+                                                         [f"Open all links with this color::multi_links-{index}"]]))
         return self.link_elements[-1]
 
     def properties_element(self, index) -> sg.Button:
@@ -896,7 +903,8 @@ class MainWin:
     def release_element(self, index) -> sg.Text:
         self.release_elements.append(sg.Text(recently_released_string,
                                              key=f"release:{index}",
-                                             visible=False))
+                                             visible=False,
+                                             right_click_menu=["", [f"Dismiss::dismissal-{index}"]]))
         return self.release_elements[-1]
 
     def set_cursors(self, index):
