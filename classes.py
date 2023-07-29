@@ -54,7 +54,8 @@ class Show:
                f" last_dismissal={self.last_dismissal:.4f})"
 
     def open_link(self):
-        webbrowser.open(self.link)
+        if self.link:
+            webbrowser.open(self.link)
 
     def release_is_parseable(self):
         if self.parse_release_info():
