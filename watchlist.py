@@ -86,7 +86,6 @@ def show_properties(title: str = "Show Editor", show: Show = None, show_purge: b
     :param show: If given, then all values will be changed in this show.
     :param show_purge: Whether or not to show the Purge Weight input field
     :return: True if something has been changed and False if nothing has been changed.
-    :rtype: Union[bool, Show]
     """
     if show is None:  # make a dummy show.
         show = Show()
@@ -201,8 +200,6 @@ def butt(button_text="", key=None, tooltip=None, butt_color=(False, None), borde
          bind_return_key=False) -> sg.Button:
     """
     A wrapper function for sg.Button with some different default values
-
-    :rtype: sg.Button
     """
     if not butt_color[0]:
         butt_color = (settings.button_color, butt_color[1])
@@ -548,6 +545,14 @@ class MainWin:
             elif "::dismissal-" in event:
                 show = get_show_from_suffix(event)
                 show.last_dismissal = time.time()
+                self.sort_shows_and_display()
+
+                last_show_change = time.time()
+
+            elif "::dismissal+ep+1-" in event:
+                show = get_show_from_suffix(event)
+                show.last_dismissal = time.time()
+                show.ep += 1
                 self.sort_shows_and_display()
 
                 last_show_change = time.time()
@@ -927,6 +932,7 @@ class MainWin:
                                              key=f"release:{index}",
                                              visible=False,
                                              right_click_menu=["", [f"Dismiss::dismissal-{index}",
+                                                                    f"Dismiss Ep++::dismissal+ep+1-{index}",
                                                                     f"Open Released::open_released-{index}"]]))
         return self.release_elements[-1]
 

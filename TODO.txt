@@ -12,6 +12,7 @@ It can currently be slightly difficult to see which elements are on the same row
 
 28. July 2023
 Guide TODOs (None currently, but i'll leave this here until i am certain that i haven't forgotten somethin)
+Not certain, but i'm gonna remove this anyway...
 
 29. July 2023
 Given the recent change in title visualisation some titles are now ugly, as they aren't being

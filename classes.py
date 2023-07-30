@@ -276,7 +276,6 @@ class ShowsFileHandler:
         Finds the highest id held by a show in self.shows
 
         :return: The highest id in self.shows
-        :rtype: int
         """
         if len(self.shows) == 0:
             return -1
@@ -288,7 +287,6 @@ class ShowsFileHandler:
 
         :param target_id: id of the show to be returned
         :return: The show with an id equivalent to target_id
-        :rtype: Show
         """
         target_id = int(target_id)
         for show in self.shows:
