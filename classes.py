@@ -5,6 +5,8 @@ import webbrowser
 import datetime
 import time
 
+import default_values as val
+
 weekday_to_int = {"mon": 0,
                   "tue": 1,
                   "wed": 2,
@@ -164,7 +166,7 @@ class ShowsFileHandler:
     a list for the sake of backwards-compatibility.
     The list in question is equivalent to the list self.shows
     """
-    def __init__(self, savefile="saved.csv", delimiter="\\"):
+    def __init__(self, savefile=val.show_file, delimiter=val.csv_delimiter):
         self.savefile = savefile
         self.shows = []
         self.delimiter = delimiter
@@ -303,13 +305,31 @@ class Settings:
         .__init__
         .represent_as_list
     """
-    def __init__(self, sg, savefile="settings.csv", delimiter="\\", fontsize=15, fonttype="Helvetica", text_colors=None,
-                 button_color=None, background_color=None, right_click_selected_background="#252525",
-                 right_click_fontsize=10, input_background=None, initialwinsize=(400, 200),
-                 initialwinpos=(50, 50), search_results=3, show_amount=32,
-                 max_title_display_len=0, indices_visible=True, show_all=False, shorten_with_ellipsis=True,
-                 releases_visible=True, release_grace_period=24, default_text_color=None, default_font_size=11,
-                 move_recently_released_to_top=True, weight_to_add=5):
+    def __init__(self, sg,
+                 savefile=val.settings_file,
+                 delimiter=val.csv_delimiter,
+                 fontsize=val.fontsize,
+                 fonttype=val.fonttype,
+                 text_colors=val.text_colors,
+                 button_color=val.button_color,
+                 background_color=val.background_color,
+                 right_click_selected_background=val.right_click_selected_background,
+                 right_click_fontsize=val.right_click_fontsize,
+                 input_background=val.input_background,
+                 initialwinsize=val.initialwinsize,
+                 initialwinpos=val.initialwinpos,
+                 search_results=val.search_results,
+                 show_amount=val.show_amount,
+                 max_title_display_len=val.max_title_display_len,
+                 indices_visible=val.indices_visible,
+                 show_all=val.show_all,
+                 shorten_with_ellipsis=val.shorten_with_ellipsis,
+                 releases_visible=val.releases_visible,
+                 release_grace_period=val.release_grace_period,
+                 default_text_color=val.default_text_color,
+                 default_font_size=val.default_fontsize,
+                 move_recently_released_to_top=val.move_recently_released_to_top,
+                 weight_to_add=val.weight_to_add):
 
         self.sg = sg
         # Note that some settings are not stored as attributes of this class, but are instead
