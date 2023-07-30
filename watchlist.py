@@ -277,6 +277,7 @@ def guide():
                        sg.Tab("Important", [[sg.T(guide_strings.important)]]),
                        sg.Tab("Settings I", [[sg.T(guide_strings.settings_i)]]),
                        sg.Tab("Settings II", [[sg.T(guide_strings.settings_ii)]]),
+                       sg.Tab("Settings III", [[sg.T(guide_strings.settings_iii)]]),
                        sg.Tab("Show Editor", [[sg.T(guide_strings.show_editor)]]),
                        sg.Tab("Release", [[sg.T(guide_strings.release)]]),
                        sg.Tab("Search", [[sg.T(guide_strings.search)]]),
@@ -361,14 +362,22 @@ class MainWin:
         ]
 
         # noinspection PyTypeChecker
-        self.win = sg.Window(title="Watchlist", layout=layout, auto_size_text=True, auto_size_buttons=True,
+        self.win = sg.Window(title="Watchlist",
+                             layout=layout,
+                             auto_size_text=True,
+                             auto_size_buttons=True,
                              resizable=True,
-                             size=settings.initialwinsize, font=(settings.fonttype, int(settings.fontsize)),
-                             border_depth=0, finalize=True,
+                             size=settings.initialwinsize,
+                             font=(settings.fonttype, int(settings.fontsize)),
+                             border_depth=0,
+                             finalize=True,
                              location=settings.initialwinpos,
-                             titlebar_background_color=sg.theme_background_color(), margins=(0, 0),
-                             element_padding=(3, 1), use_custom_titlebar=False,
-                             titlebar_text_color=settings.text_colors[0], return_keyboard_events=True,
+                             titlebar_background_color=sg.theme_background_color(),
+                             margins=(0, 0),
+                             element_padding=(3, 1),
+                             use_custom_titlebar=False,
+                             titlebar_text_color=settings.text_colors[0],
+                             return_keyboard_events=True,
                              right_click_menu_font=(settings.fonttype, settings.right_click_fontsize),
                              right_click_menu_background_color=sg.theme_background_color(),
                              right_click_menu_text_color=settings.button_color,
@@ -540,6 +549,8 @@ class MainWin:
                 show = get_show_from_suffix(event)
                 show.last_dismissal = time.time()
                 self.sort_shows_and_display()
+
+                last_show_change = time.time()
 
             elif "::open_released-" in event:
                 for show in shows:

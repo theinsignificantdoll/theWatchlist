@@ -51,6 +51,26 @@ def parse_release_info(release_info) -> Union[tuple[int, int, int], bool]:
         return False  # and it doesn't really matter. It should just return False.
 
 
+def hours_since(past_weekday: int, past_hour: int, past_minute: int, date_obj: datetime.datetime) -> Union[int, float]:
+    future_weekday, future_hour, future_minute = date_obj.weekday(), date_obj.hour, date_obj.minute
+
+    if past_weekday == 7:
+        days_since_release = 0
+    elif past_weekday > future_weekday:
+        days_since_release = 7 - (past_weekday - future_weekday)
+    else:
+        days_since_release = future_weekday - past_weekday
+
+    hours_since_release = days_since_release * 24 + (future_hour - past_hour)
+    hours_since_release += (future_minute - past_minute) / 60
+    return hours_since_release
+
+
+def hours_since_two_datetime(past_date: datetime.datetime, future_date: datetime.datetime):
+    weekday = past_date.weekday()
+    return hours_since(weekday, past_date.hour, past_date.minute, future_date)
+
+
 def release_is_parseable(release_info):
     if parse_release_info(release_info):
         return True
@@ -111,8 +131,7 @@ class Show:
         :param grace_period: The amount of hours after the release that the function should continue to return True
         :return: Whether or not show was released within grace_period.
         """
-        if not self.ongoing\
-           or self.last_dismissal + grace_period * 60 * 60 > time.time():
+        if not self.ongoing:
             return False
 
         parsed = parse_release_info(self.release_info)
@@ -120,17 +139,13 @@ class Show:
             return False
         release_weekday, release_hour, release_minute = parsed
         now = datetime.datetime.now()
-        current_weekday, current_hour, current_minute = now.weekday(), now.hour, now.minute
+        hours_since_release = hours_since(release_weekday, release_hour, release_minute, now)
 
-        if release_weekday == 7:
-            days_since_release = 0
-        elif release_weekday > current_weekday:
-            days_since_release = 7 - (release_weekday - current_weekday)
-        else:
-            days_since_release = current_weekday - release_weekday
+        if self.last_dismissal > 1:
+            hours_since_dismissal = hours_since_two_datetime(datetime.datetime.fromtimestamp(self.last_dismissal), now)
+            if hours_since_dismissal < hours_since_release:
+                return False
 
-        hours_since_release = days_since_release * 24 + (current_hour - release_hour)
-        hours_since_release += (current_minute - release_minute) / 60
         self.is_recently_released = hours_since_release <= grace_period
         return self.is_recently_released
 
