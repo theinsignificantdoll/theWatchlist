@@ -36,6 +36,9 @@ class Show:
         self.color: int = int(color)
         self.release_info: str = release_info
         self.last_dismissal = float(last_dismissal)
+
+        self.is_recently_released = False
+
         if ep_season_relevant is None:
             self.ep_season_relevant = True
         else:
@@ -90,7 +93,8 @@ class Show:
 
         hours_since_release = days_since_release * 24 + (current_hour - release_hour)
         hours_since_release += (current_minute - release_minute) / 60
-        return hours_since_release <= grace_period
+        self.is_recently_released = hours_since_release <= grace_period
+        return self.is_recently_released
 
     def parse_release_info(self) -> Union[tuple[int, int, int], bool]:
         """

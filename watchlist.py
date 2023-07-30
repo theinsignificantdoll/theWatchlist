@@ -20,7 +20,7 @@ recently_released_string = "✓"
 delay_to_save_shows = 3
 
 # The maximum amount of seconds inbetween checking the release state of shows.
-update_release_vals_interval = 15 * 60
+update_release_vals_interval = 3 * 60
 
 
 def is_valid_color(color: str) -> bool:
@@ -62,6 +62,18 @@ def get_suffix(string: str, splitter="-") -> str:
 
 def get_prefix(string: str, splitter=":") -> str:
     return string.split(splitter)[0]
+
+
+def get_show_and_index_from_suffix(string: str, splitter: str = None) -> tuple[Show, int]:
+    if splitter is None:
+        index = int(get_suffix(string))
+    else:
+        index = int(get_suffix(string, splitter))
+    return shows.from_index(index), index
+
+
+def get_show_from_suffix(string: str, splitter: str = None) -> Show:
+    return get_show_and_index_from_suffix(string, splitter)[0]
 
 
 def show_properties(title: str = "Show Editor", show: Show = None, show_purge: bool = False) -> Union[Show, bool]:
@@ -503,38 +515,37 @@ class MainWin:
                 self.sort_shows_and_display()
 
             elif "::multi_links-" in event:
-                show_index = int(get_suffix(event))
-                ref_show = shows.from_index(show_index)
-
+                ref_show = get_show_from_suffix(event)
                 for show in shows:
                     if ref_show.color == show.color:
                         show.open_link()
 
             elif "::tit_color-" in event:
                 col = event.split(":")[0]
-                show_index = int(get_suffix(event))
+                show, show_index = get_show_and_index_from_suffix(event)
                 col_index = settings.text_colors.index(col)
-                show = shows.from_index(show_index)
                 self.update_show_color(show, col_index, show_index)
 
             elif "::weight-" in event:
-                show_index = int(get_suffix(event))
                 add_weight = int(get_prefix(event))
-                show = shows.from_index(show_index)
+                show = get_show_from_suffix(event)
                 show.weight += add_weight
                 self.sort_shows_and_display()
 
             elif "::show_details-" in event:
-                show_index = int(get_suffix(event))
-                show = shows.from_index(show_index)
+                show = get_show_from_suffix(event)
                 show.ep_season_relevant = not show.ep_season_relevant
                 self.sort_shows_and_display()
 
             elif "::dismissal-" in event:
-                show_index = int(get_suffix(event))
-                show = shows.from_index(show_index)
+                show = get_show_from_suffix(event)
                 show.last_dismissal = time.time()
                 self.sort_shows_and_display()
+
+            elif "::open_released-" in event:
+                for show in shows:
+                    if show.is_recently_released:
+                        show.open_link()
 
     @staticmethod
     def num_of_shows_to_display() -> int:
@@ -905,7 +916,8 @@ class MainWin:
         self.release_elements.append(sg.Text(recently_released_string,
                                              key=f"release:{index}",
                                              visible=False,
-                                             right_click_menu=["", [f"Dismiss::dismissal-{index}"]]))
+                                             right_click_menu=["", [f"Dismiss::dismissal-{index}",
+                                                                    f"Open Released::open_released-{index}"]]))
         return self.release_elements[-1]
 
     def set_cursors(self, index):
