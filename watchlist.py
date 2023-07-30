@@ -414,7 +414,7 @@ class MainWin:
             # if event != "__TIMEOUT__":
             #    print(event)
 
-            if event == "__TIMEOUT__":
+            if event == "__TIMEOUT__" or event in ("MouseWheel:Down", "MouseWheel:Up"):
                 now = time.time()
                 if last_show_change != 0 and now - last_show_change > delay_to_save_shows:
                     shows.save()
