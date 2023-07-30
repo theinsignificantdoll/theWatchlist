@@ -1,5 +1,5 @@
 from typing import List, Union
-from classes import Show, ShowsFileHandler, Settings
+from classes import *
 import guide_strings
 
 # noinspection PyPep8Naming
@@ -212,8 +212,7 @@ def butt(button_text="", key=None, tooltip=None, butt_color=(False, None), borde
 
 
 def get_release_string(initial_release_string="") -> str:
-    temp_show = Show(release_info=initial_release_string)
-    parsed = temp_show.parse_release_info()
+    parsed = parse_release_info(initial_release_string)
     if parsed:
         weekday, hour, minute = parsed
     else:
@@ -413,7 +412,7 @@ class MainWin:
                     last_show_change = 0
 
                 if self.last_release_update + update_release_vals_interval < now:
-                    self.display_release()
+                    self.update_release_status()
 
                 continue
             elif event == sg.WIN_CLOSED or self.shouldbreak or event == "Close":
@@ -481,7 +480,7 @@ class MainWin:
 
             elif event == "release_checkbox":
                 settings.releases_visible = self.win["release_checkbox"].get()
-                self.display_release()
+                self.update_release_status()
 
             elif event.startswith("properties:"):
                 show = shows.from_index(event.removeprefix("properties:"))
@@ -583,16 +582,16 @@ class MainWin:
             self.win[f"index:{ind}"].update(text_color=color)
             self.win[f"release:{ind}"].update(text_color=color)
             self.set_cursors(ind)
-        self.display_release()
+        self.update_release_status()
 
-    def display_release(self, index: int = None, show: Show = None):
+    def update_release_status(self, index: int = None, show: Show = None):
         if index is None or show is None:
             self.last_release_update = time.time()
             for _index, _show in enumerate(shows[:self.number_of_displayed_shows]):
-                self.win[f"release:{_index}"]\
+                self.win[f"release:{_index}"] \
                     .update(visible=settings.releases_visible and _show.check_release(settings.release_grace_period))
             return
-        self.win[f"release:{index}"]\
+        self.win[f"release:{index}"] \
             .update(visible=settings.releases_visible and show.check_release(settings.release_grace_period))
 
     def update_show_color(self, show: Show, new_color_id: int, show_index=None):

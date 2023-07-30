@@ -5,16 +5,59 @@ import webbrowser
 import datetime
 import time
 
+weekday_to_int = {"mon": 0,
+                  "tue": 1,
+                  "wed": 2,
+                  "thu": 3,
+                  "fri": 4,
+                  "sat": 5,
+                  "sun": 6}
+
+
+def parse_release_info(release_info) -> Union[tuple[int, int, int], bool]:
+    """
+    Parses release_info. Note that weekday is converted to an integer, where monday is 0 and sunday is 6.
+    If no weekday is given, the integer 7 is returned.
+    If no time of day is given, the time is returned as 00:00
+
+    Accepted formats:
+    'Monday 20:20'   #  Note that ' ' is used as a delimiter between weekday and time of day.
+    '6:55 Tuesday'   #  Note also that ':' is used as a delimiter between hours and minutes.
+    'Monday'     # Both weekday and time of day are not required.
+    '19:10'      # Although False is returned if neither is present.
+
+    :return: A tuple of the release info. (weekday: int, hour: int, minute: int)
+    """
+    try:
+        space_split = release_info.lower().split(" ")
+        weekday = None
+        hour = None
+        minute = None
+        for part in space_split:
+            if part:
+                if part[0].isdigit():  # For time of day
+                    hour, minute = (int(num) for num in part.split(":"))
+                else:  # For weekday
+                    weekday = weekday_to_int[part[:3]]
+        if weekday is None:
+            weekday = 7
+            if hour is None:
+                return False
+        if hour is None:
+            hour = 0
+            minute = 0
+        return weekday, hour, minute
+    except (IndexError, KeyError, TypeError, ValueError):  # I don't know which Errors might appear,
+        return False  # and it doesn't really matter. It should just return False.
+
+
+def release_is_parseable(release_info):
+    if parse_release_info(release_info):
+        return True
+    return False
+
 
 class Show:
-    weekday_to_int = {"mon": 0,
-                      "tue": 1,
-                      "wed": 2,
-                      "thu": 3,
-                      "fri": 4,
-                      "sat": 5,
-                      "sun": 6}
-
     def __init__(self, num_id: Union[str, int] = -1,
                  title: str = "",
                  ep: Union[str, int] = 0,
@@ -60,11 +103,6 @@ class Show:
         if self.link:
             webbrowser.open(self.link)
 
-    def release_is_parseable(self):
-        if self.parse_release_info():
-            return True
-        return False
-
     def check_release(self, grace_period: Union[int, float] = 24) -> bool:
         """
         Returns True if a show was released within - grace_period - hours
@@ -77,7 +115,7 @@ class Show:
            or self.last_dismissal + grace_period * 60 * 60 > time.time():
             return False
 
-        parsed = self.parse_release_info()
+        parsed = parse_release_info(self.release_info)
         if not parsed:
             return False
         release_weekday, release_hour, release_minute = parsed
@@ -95,42 +133,6 @@ class Show:
         hours_since_release += (current_minute - release_minute) / 60
         self.is_recently_released = hours_since_release <= grace_period
         return self.is_recently_released
-
-    def parse_release_info(self) -> Union[tuple[int, int, int], bool]:
-        """
-        Parses release_info. Note that weekday is converted to an integer, where monday is 0 and sunday is 6.
-        If no weekday is given, the integer 7 is returned.
-        If no time of day is given, the time is returned as 00:00
-
-        Accepted formats:
-        'Monday 20:20'   #  Note that ' ' is used as a delimiter between weekday and time of day.
-        '6:55 Tuesday'   #  Note also that ':' is used as a delimiter between hours and minutes.
-        'Monday'     # Both weekday and time of day are not required.
-        '19:10'      # Although False is returned if neither is present.
-
-        :return: A tuple of the release info. (weekday: int, hour: int, minute: int)
-        """
-        try:
-            space_split = self.release_info.lower().split(" ")
-            weekday = None
-            hour = None
-            minute = None
-            for part in space_split:
-                if part:
-                    if part[0].isdigit():  # For time of day
-                        hour, minute = (int(num) for num in part.split(":"))
-                    else:  # For weekday
-                        weekday = self.weekday_to_int[part[:3]]
-            if weekday is None:
-                weekday = 7
-                if hour is None:
-                    return False
-            if hour is None:
-                hour = 0
-                minute = 0
-            return weekday, hour, minute
-        except (IndexError, KeyError, TypeError, ValueError):  # I don't know
-            return False
 
 
 def sort_list_of_shows_alphabetically(lst: List[Show], reverse=False) -> List[Show]:

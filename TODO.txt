@@ -16,4 +16,5 @@ Guide TODOs (None currently, but i'll leave this here until i am certain that i 
 29. July 2023
 Given the recent change in title visualisation some titles are now ugly, as they aren't being
 properly shortened anymore. (When using non-monotype fonts and negative title lengths)
-TODO: add a better way to shorten titles.
+TODO: add a better way to shorten titles. Addendum: I'm not sure it's feasible, unfortunately. I might just remove
+ this later.

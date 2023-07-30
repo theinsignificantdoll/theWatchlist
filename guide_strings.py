@@ -1,4 +1,6 @@
-introduction =\
+from watchlist import recently_released_string as rrs  # shortened, so that it fits better in the string
+
+introduction = \
     """INTRODUCTION
 This program is intended to alleviate some of the pains that one might encounter when
 watching shows in more than one place. And so, instead of remembering to check a bunch
@@ -103,8 +105,8 @@ and the rest will automatically happen.
 Release Info and Ongoing is described in Release
 """
 
-release =\
-    """RELEASE
+release = \
+    f"""RELEASE
 Manually checking whether or not a new episode has come out is a tedious task. Therefore, it is only
 proper that the computer does it for you.
 
@@ -115,8 +117,8 @@ corresponding button. If you'd like set a time of day as well, simply type it in
 input fields. Then, press save.
 With that done, the "Ongoing" checkbox must also be checked. Once you've exited the Show Editor, you
 should also make sure that the second checkbox in the top-left has been checked.
-When the time of release is within some amount of hours, there will be a checkmark right of the Show Editor button.
-To specify how many hours after release this checkmark should remain, enter settings and edit the value
+When the time of release is within some amount of hours, there will be a "{rrs}" right of the Show Editor button.
+To specify how many hours after release this "{rrs}" should remain, enter settings and edit the value
 in "Release Grace Period". The value is given in hours after release.
 """
 
@@ -137,8 +139,8 @@ Note also that the number of search results can be adjusted. Simply open setting
 of "Search Results".
 """
 
-quick_menus =\
-    """RIGHT CLICK MENUS
+quick_menus = \
+    f"""RIGHT CLICK MENUS
 By right clicking on certain parts of the window you can quickly adjust certain things. An example of this,
 is that by right clicking the title of a show, you can pick its color. That way, you don't have to cycle
 through all of them!
@@ -146,7 +148,9 @@ through all of them!
 Other than that, you can also open all the links of shows with the same color. This is done by simply right-clicking
 the "LINK" button. Moreover, you can quickly adjust some settings by right clicking on the show editor button!
 
-And, if you've set up releases, you can also dismiss shows. This way, you can temporarily remove the checkmark
-(and added weight during sorting) from a show. Simply right click the checkmark and choose "Dismiss". The show
+And, if you've set up releases, you can also dismiss shows. This way, you can temporarily remove the "{rrs}"
+(and added weight during sorting) from a show. Simply right click the "{rrs}" and choose "Dismiss". The show
 will no longer be registered as recently released in the "Release Grace Period" amount of hours!
+
+Under the "Dismiss" option, you might also see "Open Released". This button will open all the shows with a "{rrs}".
 """
