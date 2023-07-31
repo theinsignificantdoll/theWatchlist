@@ -10,12 +10,8 @@ It can currently be slightly difficult to see which elements are on the same row
   if not impossible, to change the entire background color of a row ugly spots inbetween elements.
   Moreover, I also noticed that the compute power needed to implement this highlight was quite significant.
 
-28. July 2023
-Guide TODOs (None currently, but i'll leave this here until i am certain that i haven't forgotten somethin)
-Not certain, but i'm gonna remove this anyway...
+31. July 2023
+TODO Make it so that you sort by upcoming. What is going to be released next?
 
-29. July 2023
-Given the recent change in title visualisation some titles are now ugly, as they aren't being
-properly shortened anymore. (When using non-monotype fonts and negative title lengths)
-TODO: add a better way to shorten titles. Addendum: I'm not sure it's feasible, unfortunately. I might just remove
- this later.
+31. July 2023
+TODO Add support for monthly releases - and perhaps even yearly? DONE, BOTH even non-repetitive.

@@ -16,44 +16,87 @@ weekday_to_int = {"mon": 0,
                   "sun": 6}
 
 
-def parse_release_info(release_info) -> Union[tuple[int, int, int], bool]:
+def parse_release_info(release_info) -> Union[tuple[int, int, int], tuple[tuple[int, int, int], int, int], bool]:
     """
     Parses release_info. Note that weekday is converted to an integer, where monday is 0 and sunday is 6.
     If no weekday is given, the integer 7 is returned.
     If no time of day is given, the time is returned as 00:00
+    If neither is given, then False is returned.
 
     Accepted formats:
     'Monday 20:20'   #  Note that ' ' is used as a delimiter between weekday and time of day.
     '6:55 Tuesday'   #  Note also that ':' is used as a delimiter between hours and minutes.
-    'Monday'     # Both weekday and time of day are not required.
-    '19:10'      # Although False is returned if neither is present.
+    'Monday'         # Both weekday and time of day are not required.
+    '19:10'          # Although False is returned if neither is present.
+    '.24 10:10'      # Integers prefixed by '.' are returned as the date (i.e. 24th)
+    '/9 .24'         # Integers prefixed by '/' are returned as the month
+    '<2024 /9 .24'   # Integers prefixed by "<" are returned as the year.
+                     # Also note that for dates, the previous resolution must be present. I.e. There cannot be defined
+                     # a month if day is not defined. Moreover, if year is to be defined, then
+                     # so must day and month also be
+    'tUE 06:05' would also be accepted, as extra zeros and more than three letters is ignored.
 
-    :return: A tuple of the release info. (weekday: int, hour: int, minute: int)
+    Both weekday and date cannot be used at the same time. Weekday is prioritised.
+    If date is used, then the first item in the return tuple will be a tuple of (date, month, year)
+
+    :return: A tuple of the release info. (weekday: int, hour: int, minute: int) or False
     """
     try:
         space_split = release_info.lower().split(" ")
         weekday = None
         hour = None
         minute = None
+        date = 0
+        month = 0
+        year = 0
         for part in space_split:
             if part:
                 if part[0].isdigit():  # For time of day
                     hour, minute = (int(num) for num in part.split(":"))
-                else:  # For weekday
+                elif part[0].isalpha():  # For weekday
                     weekday = weekday_to_int[part[:3]]
+                else:  # for date, month and year.
+                    if part[0] == ".":
+                        date = int(part[1:])
+                    elif part[0] == "/":
+                        month = int(part[1:])
+                    elif part[0] == "<":
+                        year = int(part[1:])
+
+        date_month_year_is_defined = date + month + year != 0
+        if (year != 0 and (date == 0 or month == 0)) \
+                or (month != 0 and date == 0):
+            return False
+
         if weekday is None:
             weekday = 7
-            if hour is None:
+            if hour is None and not date_month_year_is_defined:
                 return False
+
         if hour is None:
             hour = 0
             minute = 0
-        return weekday, hour, minute
+
+        if weekday != 7 or not date_month_year_is_defined:
+            return weekday, hour, minute
+        return (date, month, year), hour, minute
     except (IndexError, KeyError, TypeError, ValueError):  # I don't know which Errors might appear,
         return False  # and it doesn't really matter. It should just return False.
 
 
-def hours_since(past_weekday: int, past_hour: int, past_minute: int, date_obj: datetime.datetime) -> Union[int, float]:
+def hours_since_weekly(past_weekday: int, past_hour: int, past_minute: int, date_obj: datetime.datetime) -> float:
+    """
+    Calculates the amount of hours inbetween a certain time of day on a certain weekday and a datetime.datetime object
+    Note that it doesn't calculate the time inbetween points in time, but rather reoccuring points of time in a week.
+
+    If you'd like to use this function with two datetime objects, see hours_since_two_datetime()
+
+    :param past_weekday: A weekday as an integer, where monday is 0 and sunday 6. 7 means - today -.
+    :param past_hour: The hour on the weekday
+    :param past_minute: The minute during the hour on the weekday
+    :param date_obj: The future as a datetime object
+    """
+
     future_weekday, future_hour, future_minute = date_obj.weekday(), date_obj.hour, date_obj.minute
 
     if past_weekday == 7:
@@ -68,19 +111,91 @@ def hours_since(past_weekday: int, past_hour: int, past_minute: int, date_obj: d
     return hours_since_release
 
 
-def hours_since_two_datetime(past_date: datetime.datetime, future_date: datetime.datetime):
+def hours_since_not_weekly(past_date_tuple: int,
+                           past_hour: int,
+                           past_minute: int,
+                           date_obj: datetime.datetime) -> float:
+    """
+    :param past_date_tuple: a tuple of (date, month, year) - where zero means insignificant
+    :param past_hour: The hour on the weekday
+    :param past_minute: The minute during the hour on the weekday
+    :param date_obj: The future as a datetime object
+    :return: The amount of hours before date_obj that the past date occured. Returns a negative number, if it has
+    yet to occur.
+    """
+    past_day, past_month, past_year = past_date_tuple
+
+    if past_month == 0:
+        if past_day > date_obj.day:
+            past_month = date_obj.month - 1
+        elif past_day == date_obj.day:
+            if past_hour > date_obj.hour:
+                past_month = date_obj.month - 1
+            elif past_hour == date_obj.hour:
+                if past_minute >= date_obj.minute:
+                    past_month = date_obj.month - 1
+                else:
+                    past_month = date_obj.month
+            else:
+                past_month = date_obj.month
+        else:
+            past_month = date_obj.month
+
+    if past_year == 0:
+        if past_month > date_obj.month:
+            past_year = date_obj.year - 1
+        elif past_month == date_obj.month:
+            if past_day > date_obj.day:
+                past_year = date_obj.year - 1
+            elif past_day == date_obj.day:
+                if past_hour > date_obj.hour:
+                    past_year = date_obj.year - 1
+                elif past_hour == date_obj.hour:
+                    if past_minute >= date_obj.minute:
+                        past_year = date_obj.year - 1
+                    else:
+                        past_year = date_obj.year
+                else:
+                    past_year = date_obj.year
+            else:
+                past_year = date_obj.year
+        else:
+            past_year = date_obj.year
+    past = datetime.datetime(year=past_year, month=past_month, day=past_day, hour=past_hour, minute=past_minute)
+
+    return hours_since_two_datetime_not_weekly(past, date_obj)
+
+
+def hours_since_two_datetime_not_weekly(past: datetime.datetime, future: datetime.datetime) -> float:
+    """
+    :param past: The past-most datetime object
+    :param future: The future-most datetime object
+    :return: How many hours have passed between the two points in time.
+    """
+    delta: datetime.timedelta = future - past
+    return delta.days * 24 + delta.seconds / 3600
+
+
+def hours_since_two_datetime_weekly(past_date: datetime.datetime, future_date: datetime.datetime) -> float:
+    """
+    Note that day. month and year is ignored. The only thing that matters is weekday, hour and minute.
+    """
     weekday = past_date.weekday()
-    return hours_since(weekday, past_date.hour, past_date.minute, future_date)
+    return hours_since_weekly(weekday, past_date.hour, past_date.minute, future_date)
 
 
-def release_is_parseable(release_info):
+def release_is_parseable(release_info) -> bool:
+    """
+    Checks whether or not a release follows the proper syntax.? (is that the word)
+    """
     if parse_release_info(release_info):
         return True
     return False
 
 
 class Show:
-    def __init__(self, num_id: Union[str, int] = -1,
+    def __init__(self,
+                 num_id: Union[str, int] = -1,
                  title: str = "",
                  ep: Union[str, int] = 0,
                  season: Union[str, int] = 1,
@@ -127,7 +242,7 @@ class Show:
 
     def check_release(self, grace_period: Union[int, float] = 24) -> bool:
         """
-        Returns True if a show was released within - grace_period - hours
+        Returns True if a show was released within - grace_period - hours. grace_period is ignored, if it is 0
         NOTE: Returns False if not ongoing or release_info cannot be parsed.
 
         :param grace_period: The amount of hours after the release that the function should continue to return True
@@ -139,16 +254,22 @@ class Show:
         parsed = parse_release_info(self.release_info)
         if not parsed:
             return False
-        release_weekday, release_hour, release_minute = parsed
         now = datetime.datetime.now()
-        hours_since_release = hours_since(release_weekday, release_hour, release_minute, now)
+
+        if isinstance(parsed[0], tuple):
+            date_tuple, hour, minute = parsed
+            hours_since_release = hours_since_not_weekly(date_tuple, hour, minute, now)
+        else:
+            release_weekday, release_hour, release_minute = parsed
+            hours_since_release = hours_since_weekly(release_weekday, release_hour, release_minute, now)
 
         if self.last_dismissal > 1:
-            hours_since_dismissal = hours_since_two_datetime(datetime.datetime.fromtimestamp(self.last_dismissal), now)
-            if hours_since_dismissal < hours_since_release:
+            hours_since_dismissal = hours_since_two_datetime_weekly(datetime.
+                                                                    datetime.fromtimestamp(self.last_dismissal), now)
+            if hours_since_dismissal < hours_since_release or hours_since_release < 0:
                 return False
 
-        self.is_recently_released = hours_since_release <= grace_period
+        self.is_recently_released = hours_since_release <= grace_period or grace_period == 0
         return self.is_recently_released
 
 
@@ -237,18 +358,18 @@ class ShowsFileHandler:
     def __len__(self):
         return len(self.shows)
 
-    def do_sorting(self, release_grace_period=0, weight_to_add=0):
+    def do_sorting(self, release_grace_period=-1, weight_to_add=0):
         """
         Sorts self.shows according firstly to their weights and secondarily according to their
         titles alphabetically.
 
-        :param release_grace_period: If this value is not 0, then recently released shows will have their weight
+        :param release_grace_period: If this value is not -1, then recently released shows will have their weight
          increased by weight_to_add
         :param weight_to_add: The amount of weight that should be added to a show, when it is recently released.
         """
 
         def get_sorting_weight(show: Show) -> int:
-            if release_grace_period and show.check_release(release_grace_period):
+            if release_grace_period != -1 and show.check_release(release_grace_period):
                 return show.weight + weight_to_add
             return show.weight
 

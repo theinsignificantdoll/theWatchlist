@@ -208,6 +208,76 @@ def butt(button_text="", key=None, tooltip=None, butt_color=(False, None), borde
                      right_click_menu=right_click_menu, bind_return_key=bind_return_key)
 
 
+def get_date_wise_release_string(initial_release_string="") -> str:
+    parsed = parse_release_info(initial_release_string)
+    year = 0
+    month = 0
+    day = 0
+    hour = 0
+    minute = 0
+    if parsed:
+        if isinstance(parsed[0], tuple):
+            day, month, year = parsed[0]
+        hour = parsed[1]
+        minute = parsed[2]
+
+    layout = [
+        [sg.Push(), sg.CalendarButton("Calendar", target="HIDDEN"), sg.Push(), sg.In(visible=False, key="HIDDEN")],
+        [sg.Text("Day:"), sg.Text(day if day else "", key="day"),
+         sg.Text("Month:"), sg.Text(month if month else "", key="month"),
+         sg.Text("Year:"), sg.Text(year if year else "", key="year")],
+        [sg.Radio("Never Repeat", "Repetition", enable_events=True, key="never")],
+        [sg.Radio("Repeat Yearly", "Repetition", enable_events=True, key="yearly")],
+        [sg.Radio("Repeat Monthly", "Repetition", True, enable_events=True, key="monthly")],
+        [sg.In(hour, key="hour", enable_events=True, justification="e"),
+         sg.T(":"),
+         sg.In(minute, key="minute", enable_events=True)],
+        [sg.T("Current String:"), sg.T(f"{f'.{day}' if day else ''}", key="current")],
+        [sg.B("Save", bind_return_key=True), sg.B("Cancel")]
+    ]
+
+    window = sg.Window("Pick a Date", layout=layout, keep_on_top=True)
+
+    def get_current_string() -> str:
+        if window["never"].get():
+            return f".{day} /{month} <{year} {hour}:{minute}"
+        if window["yearly"].get():
+            return f".{day} /{month} {hour}:{minute}"
+        if window["monthly"].get():
+            return f".{day} {hour}:{minute}"
+
+    def set_upper_strings():
+        window["day"].update(value=day if day else 'N/A')
+        window["month"].update(value=month if month and window["never"].get() or window["yearly"].get() else 'N/A')
+        window["year"].update(value=year if year and window["never"].get() else 'N/A')
+
+    while True:
+        event, values = window.read(timeout=100)
+        if event == sg.WIN_CLOSED:
+            window.close()
+            break
+        elif event == "__TIMEOUT__":
+            if values["HIDDEN"]:
+                dat = datetime.datetime.fromisoformat(values["HIDDEN"])
+                day, month, year = dat.day, dat.month, dat.year
+                window["current"].update(value=get_current_string())
+                set_upper_strings()
+                window["HIDDEN"].update(value="")
+        elif event in ("monthly", "yearly", "never"):
+            window["current"].update(value=get_current_string())
+            set_upper_strings()
+        elif event == "hour":
+            hour = int(values["hour"])
+        elif event == "minute":
+            minute = int(values["minute"])
+        elif event == "Cancel":
+            window.close()
+            return initial_release_string
+        elif event == "Save":
+            window.close()
+            return get_current_string()
+
+
 def get_release_string(initial_release_string="") -> str:
     parsed = parse_release_info(initial_release_string)
     if parsed:
@@ -218,9 +288,9 @@ def get_release_string(initial_release_string="") -> str:
     layout = [
         [sg.Push(), butt("MON"), butt("TUE"), butt("WED"), butt("THU"), butt("FRI"), butt("SAT"), butt("SUN"),
          sg.Push()],
-        [sg.Push(), sg.I(hour, key="hour", enable_events=True), sg.T(":"),
+        [sg.Push(), sg.I(hour, key="hour", enable_events=True, justification="e"), sg.T(":"),
          sg.I(minute, key="minute", enable_events=True), sg.Push()],
-        [butt("Save", bind_return_key=True), butt("Cancel"), sg.Push(), sg.Button("CLEAR"),
+        [butt("Save", bind_return_key=True), butt("Cancel"), sg.B("DATE"), sg.Push(), sg.Button("CLEAR"),
          sg.T(initial_release_string, key="release_string", size=(9, 1))]
     ]
 
@@ -244,6 +314,8 @@ def get_release_string(initial_release_string="") -> str:
         elif event == "Save":
             rel_win.close()
             return rel_win["release_string"].get()
+        elif event == "DATE":
+            rel_win["release_string"].update(value=get_date_wise_release_string())
         elif event == "hour":
             try:
                 hour = int(values["hour"])
@@ -578,7 +650,7 @@ class MainWin:
         if to_display > self.number_of_displayed_shows:
             self.extend_by_x_rows(to_display - self.number_of_displayed_shows)
         shows.do_sorting(
-            release_grace_period=settings.release_grace_period if settings.move_recently_released_to_top else 0,
+            release_grace_period=settings.release_grace_period if settings.move_recently_released_to_top else -1,
             weight_to_add=settings.weight_to_add,
         )
 
@@ -621,6 +693,7 @@ class MainWin:
         self.win[f"Eplus:{show_index}"].update(text_color=color)
         self.win[f"Splus:{show_index}"].update(text_color=color)
         self.win[f"Sminus:{show_index}"].update(text_color=color)
+        self.win[f"release:{show_index}"].update(text_color=color)
 
     def close(self):
         self.shouldbreak = True
