@@ -358,18 +358,16 @@ class ShowsFileHandler:
     def __len__(self):
         return len(self.shows)
 
-    def do_sorting(self, release_grace_period=-1, weight_to_add=0):
+    def do_sorting(self, weight_to_add=0):
         """
         Sorts self.shows according firstly to their weights and secondarily according to their
         titles alphabetically.
 
-        :param release_grace_period: If this value is not -1, then recently released shows will have their weight
-         increased by weight_to_add
-        :param weight_to_add: The amount of weight that should be added to a show, when it is recently released.
+        :param weight_to_add: The amount of weight that should be added to a show when it is recently released.
         """
 
         def get_sorting_weight(show: Show) -> int:
-            if release_grace_period != -1 and show.check_release(release_grace_period):
+            if show.is_recently_released:
                 return show.weight + weight_to_add
             return show.weight
 

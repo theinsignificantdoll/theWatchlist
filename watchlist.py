@@ -373,6 +373,11 @@ def guide():
             break
 
 
+def update_show_release_status():
+    for show in shows:
+        show.check_release(settings.release_grace_period)
+
+
 class MainWin:
     def __init__(self, main_loop=False):
         """
@@ -502,7 +507,7 @@ class MainWin:
                     last_show_change = 0
 
                 if self.last_release_update + update_release_vals_interval < now:
-                    self.update_release_status()
+                    self.full_release_update()
 
                 continue
             elif event == sg.WIN_CLOSED or self.shouldbreak or event == "Close":
@@ -570,7 +575,7 @@ class MainWin:
 
             elif event == "release_checkbox":
                 settings.releases_visible = self.win["release_checkbox"].get()
-                self.update_release_status()
+                self.update_release_column()
 
             elif event.startswith("properties:"):
                 show = shows.from_index(event.removeprefix("properties:"))
@@ -661,8 +666,10 @@ class MainWin:
             self.shorten_by_x_rows(self.number_of_displayed_shows - to_display)
         if to_display > self.number_of_displayed_shows:
             self.extend_by_x_rows(to_display - self.number_of_displayed_shows)
+
+        update_show_release_status()
+
         shows.do_sorting(
-            release_grace_period=settings.release_grace_period if settings.move_recently_released_to_top else -1,
             weight_to_add=settings.weight_to_add,
         )
 
@@ -682,17 +689,18 @@ class MainWin:
             self.win[f"index:{ind}"].update(text_color=color)
             self.win[f"release:{ind}"].update(text_color=color)
             self.set_cursors(ind)
-        self.update_release_status()
 
-    def update_release_status(self, index: int = None, show: Show = None):
-        if index is None or show is None:
-            self.last_release_update = time.time()
-            for _index, _show in enumerate(shows[:self.number_of_displayed_shows]):
-                self.win[f"release:{_index}"] \
-                    .update(visible=settings.releases_visible and _show.check_release(settings.release_grace_period))
-            return
-        self.win[f"release:{index}"] \
-            .update(visible=settings.releases_visible and show.check_release(settings.release_grace_period))
+        self.update_release_column()
+
+    def full_release_update(self):
+        update_show_release_status()
+        self.update_release_column()
+
+    def update_release_column(self):
+        self.last_release_update = time.time()
+        for _index, _show in enumerate(shows[:self.number_of_displayed_shows]):
+            self.win[f"release:{_index}"] \
+                .update(visible=settings.releases_visible and _show.is_recently_released)
 
     def update_show_color(self, show: Show, new_color_id: int, show_index=None):
         show.color = new_color_id
