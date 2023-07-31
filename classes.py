@@ -249,11 +249,13 @@ class Show:
         :return: Whether or not show was released within grace_period.
         """
         if not self.ongoing:
-            return False
+            self.is_recently_released = False
+            return self.is_recently_released
 
         parsed = parse_release_info(self.release_info)
         if not parsed:
-            return False
+            self.is_recently_released = False
+            return self.is_recently_released
         now = datetime.datetime.now()
 
         if isinstance(parsed[0], tuple):
@@ -267,7 +269,8 @@ class Show:
             hours_since_dismissal = hours_since_two_datetime_weekly(datetime.
                                                                     datetime.fromtimestamp(self.last_dismissal), now)
             if hours_since_dismissal < hours_since_release or hours_since_release < 0:
-                return False
+                self.is_recently_released = False
+                return self.is_recently_released
 
         self.is_recently_released = hours_since_release <= grace_period or grace_period == 0
         return self.is_recently_released
