@@ -427,6 +427,7 @@ class MainWin:
         self.shows_col_contents_changed = False
         self.number_of_invisible_rows = 0
         self.last_release_update = 0
+        self.last_show_change = 0
 
         topcol = [[butt(" + ", key="add_show", border_width=0, tooltip="Add a show to the list"),
                    butt(" ⛭ ", key="preferences", border_width=0, tooltip="Preferences"),
@@ -482,8 +483,6 @@ class MainWin:
             self.main_loop()
 
     def main_loop(self):
-        last_show_change = 0
-
         while not self.shouldbreak:
             settings.initialwinpos = self.win.CurrentLocation()
             settings.initialwinsize = self.win.Size
@@ -502,9 +501,9 @@ class MainWin:
 
             if event == "__TIMEOUT__" or event in ("MouseWheel:Down", "MouseWheel:Up"):
                 now = time.time()
-                if last_show_change != 0 and now - last_show_change > delay_to_save_shows:
+                if self.last_show_change != 0 and now - self.last_show_change > delay_to_save_shows:
                     shows.save()
-                    last_show_change = 0
+                    self.last_show_change = 0
 
                 if self.last_release_update + update_release_vals_interval < now:
                     self.full_release_update()
@@ -530,8 +529,7 @@ class MainWin:
                 if show.ep_season_relevant:
                     show.ep = int(show.ep) + 1
                     self.win[event](value=show.ep)
-
-                    last_show_change = time.time()
+                    self.update_last_show_change()
 
             elif event.startswith("Eminus:"):
                 show_index = event.removeprefix("Eminus:")
@@ -539,8 +537,7 @@ class MainWin:
                 if show.ep_season_relevant:
                     show.ep = int(show.ep) - 1
                     self.win[f"Eplus:{show_index}"](value=show.ep)
-
-                    last_show_change = time.time()
+                    self.update_last_show_change()
 
             elif event.startswith("title:"):
                 show_index = event.removeprefix("title:")
@@ -549,15 +546,12 @@ class MainWin:
                                        0 if show.color + 1 >= len(settings.text_colors) else show.color + 1,
                                        show_index=show_index)
 
-                last_show_change = time.time()
-
             elif event.startswith("Splus:"):
                 show = shows.from_index(event.removeprefix("Splus:"))
                 if show.ep_season_relevant:
                     show.season = str(int(show.season) + 1)
                     self.win[event].update(value=show.season)
-
-                    last_show_change = time.time()
+                    self.update_last_show_change()
 
             elif event.startswith("Sminus:"):
                 show_index = event.removeprefix("Sminus:")
@@ -565,8 +559,7 @@ class MainWin:
                 if show.ep_season_relevant:
                     show.season = str(int(show.season) - 1)
                     self.win[f"Splus:{show_index}"].update(value=show.season)
-
-                    last_show_change = time.time()
+                    self.update_last_show_change()
 
             elif event == "index_checkbox":
                 settings.indices_visible = self.win["index_checkbox"].get()
@@ -636,15 +629,11 @@ class MainWin:
                 show.last_dismissal = time.time()
                 self.sort_shows_and_display()
 
-                last_show_change = time.time()
-
             elif "::dismissal+ep+1-" in event:
                 show = get_show_from_suffix(event)
                 show.last_dismissal = time.time()
                 show.ep += 1
                 self.sort_shows_and_display()
-
-                last_show_change = time.time()
 
             elif "::open_released-" in event:
                 for show in shows:
@@ -659,6 +648,9 @@ class MainWin:
         if settings.show_all:
             return len(shows)
         return min(settings.show_amount, len(shows))
+
+    def update_last_show_change(self):
+        self.last_show_change = time.time()
 
     def sort_shows_and_display(self):
         to_display = self.num_of_shows_to_display()
@@ -691,6 +683,7 @@ class MainWin:
             self.set_cursors(ind)
 
         self.update_release_column()
+        self.update_last_show_change()
 
     def full_release_update(self):
         update_show_release_status()
@@ -714,6 +707,7 @@ class MainWin:
         self.win[f"Splus:{show_index}"].update(text_color=color)
         self.win[f"Sminus:{show_index}"].update(text_color=color)
         self.win[f"release:{show_index}"].update(text_color=color)
+        self.update_last_show_change()
 
     def close(self):
         self.shouldbreak = True
