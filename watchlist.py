@@ -122,7 +122,7 @@ def show_properties(title: str = "Show Editor", show: Show = None, show_purge: b
                                [sg.T("Release Info")],
                                [butt(show.release_info, key="show_release_info",
                                      tooltip="Press ME!",
-                                     size=(9, 1))]
+                                     size=(19, 1))]
                            ]),
                                sg.Column([
                                    [sg.T("Ongoing")],
@@ -232,11 +232,13 @@ def get_date_wise_release_string(initial_release_string="") -> str:
         [sg.In(hour, key="hour", enable_events=True, justification="e"),
          sg.T(":"),
          sg.In(minute, key="minute", enable_events=True)],
-        [sg.T("Current String:"), sg.T(f"{f'.{day}' if day else ''}", key="current")],
+        [sg.T("Current String:"), sg.T(f"{f'.{day}' if day else ''}", key="current", size=(19, 1))],
         [sg.B("Save", bind_return_key=True), sg.B("Cancel")]
     ]
 
-    window = sg.Window("Pick a Date", layout=layout, keep_on_top=True)
+    window = sg.Window("Pick a Date", layout=layout, keep_on_top=True,
+                       font=(settings.fonttype, settings.default_font_size),
+                       default_element_size=(9, 1))
 
     def get_current_string() -> str:
         if window["never"].get():
@@ -255,7 +257,7 @@ def get_date_wise_release_string(initial_release_string="") -> str:
         event, values = window.read(timeout=100)
         if event == sg.WIN_CLOSED:
             window.close()
-            break
+            return initial_release_string
         elif event == "__TIMEOUT__":
             if values["HIDDEN"]:
                 dat = datetime.datetime.fromisoformat(values["HIDDEN"])
@@ -267,9 +269,19 @@ def get_date_wise_release_string(initial_release_string="") -> str:
             window["current"].update(value=get_current_string())
             set_upper_strings()
         elif event == "hour":
-            hour = int(values["hour"])
+            try:
+                hour = int(values["hour"])
+            except ValueError:
+                hour = 0
+            window["current"].update(value=get_current_string())
+            set_upper_strings()
         elif event == "minute":
-            minute = int(values["minute"])
+            try:
+                minute = int(values["minute"])
+            except ValueError:
+                minute = 0
+            window["current"].update(value=get_current_string())
+            set_upper_strings()
         elif event == "Cancel":
             window.close()
             return initial_release_string
@@ -291,7 +303,7 @@ def get_release_string(initial_release_string="") -> str:
         [sg.Push(), sg.I(hour, key="hour", enable_events=True, justification="e"), sg.T(":"),
          sg.I(minute, key="minute", enable_events=True), sg.Push()],
         [butt("Save", bind_return_key=True), butt("Cancel"), sg.B("DATE"), sg.Push(), sg.Button("CLEAR"),
-         sg.T(initial_release_string, key="release_string", size=(9, 1))]
+         sg.T(initial_release_string, key="release_string", size=(19, 1))]
     ]
 
     weekday_as_string = ""
