@@ -10,10 +10,6 @@ from tkinter.colorchooser import askcolor
 
 sg.theme("DarkBrown4")
 
-savefile = "saved.csv"
-settingsfile = "settings.csv"
-delimiter = "\\"
-
 recently_released_string = "✓"
 
 # The number of seconds in between a change being made to a show and the change being saved. Accepts floats
@@ -124,17 +120,12 @@ def show_properties(title: str = "Show Editor", show: Show = None, show_purge: b
                                      tooltip="Press ME!",
                                      size=(19, 1))]
                            ]),
-                               sg.Column([
-                                   [sg.T("Ongoing")],
-                                   [sg.Checkbox("", default=show.ongoing,
-                                                key="show_ongoing")]
-                               ]),
                                sg.Push(),
                                sg.Column([
                                    [sg.T("Purge Weight")],
                                    [sg.InputText(key="purge_weight",
-                                                 tooltip="If a weight is written in this field, then ongoing\n"
-                                                         "WILL be set to False and Release Info will be cleared\n"
+                                                 tooltip="If a weight is written in this field,\n"
+                                                         "then Release Info will be cleared\n"
                                                          "As such this field is useful for quickly discarding\n"
                                                          "shows, once they have been finished.")]
                                ]) if show_purge else sg.T()
@@ -153,7 +144,6 @@ def show_properties(title: str = "Show Editor", show: Show = None, show_purge: b
         if button == "show_release_info":
             release_info = get_release_string(release_info)
             window["show_release_info"].update(release_info)
-            window["show_ongoing"].update(value=True if release_info else False)
         else:
             break
     window.close()
@@ -185,11 +175,9 @@ def show_properties(title: str = "Show Editor", show: Show = None, show_purge: b
 
     if purge_weight is False:
         show.release_info = release_info
-        show.ongoing = data["show_ongoing"]
         show.weight = data["show_weight"]
     else:
         show.release_info = ""
-        show.ongoing = False
         show.weight = purge_weight
 
     return show
@@ -663,6 +651,7 @@ class MainWin:
 
         shows.do_sorting(
             weight_to_add=settings.weight_to_add,
+            sort_by_upcoming=settings.sort_by_upcoming,
         )
 
         for ind, show in enumerate(shows[:self.number_of_displayed_shows]):
@@ -847,6 +836,7 @@ class MainWin:
                 [sg.T("Default Font Size:")],
                 [sg.T("Recent Releases To Top:")],
                 [sg.T("Recent Release Weight Add:")],
+                [sg.T("Sort by Upcoming:")],
                 ]
         col4 = [[sg.In(sg.theme_input_background_color(), k="field_bg_color",
                        tooltip="The background color of the input fields",
@@ -864,6 +854,7 @@ class MainWin:
                 [sg.Checkbox("", key="move_recently_released_to_top", default=settings.move_recently_released_to_top)],
                 [sg.In(settings.weight_to_add, key="weight_to_add", tooltip="The weight that will be added to a show"
                                                                             "when it is newly released.")],
+                [sg.Checkbox("", key="sort_by_upcoming", default=settings.sort_by_upcoming)],
                 ]
         pref_win = sg.Window("Preferences", layout=[
             [sg.Col([[col1[i][0], sg.Push(), col2[i][0]] for i in range(len(col1))]),
@@ -943,6 +934,7 @@ class MainWin:
                 settings.default_font_size = int(pref_win["default_font_size"].get())
                 settings.move_recently_released_to_top = pref_win["move_recently_released_to_top"].get()
                 settings.weight_to_add = int(pref_win["weight_to_add"].get())
+                settings.sort_by_upcoming = pref_win["sort_by_upcoming"].get()
 
                 if settings.save():
                     self.restart()
@@ -1085,8 +1077,8 @@ class MainWin:
 
 
 if __name__ == '__main__':
-    settings = Settings(sg, savefile=settingsfile, delimiter=delimiter)
-    shows = ShowsFileHandler(savefile=savefile, delimiter=delimiter)
+    settings = Settings(sg)
+    shows = ShowsFileHandler()
 
     should_restart = True
     while should_restart:

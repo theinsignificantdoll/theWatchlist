@@ -35,3 +35,4 @@ default_text_color = None
 default_fontsize = 11
 move_recently_released_to_top = True
 weight_to_add = 5
+sort_by_upcoming = False

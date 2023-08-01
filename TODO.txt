@@ -11,7 +11,5 @@ It can currently be slightly difficult to see which elements are on the same row
   Moreover, I also noticed that the compute power needed to implement this highlight was quite significant.
 
 31. July 2023
-TODO Make it so that you sort by upcoming. What is going to be released next?
-
-31. July 2023
-TODO Add support for monthly releases - and perhaps even yearly? DONE, BOTH even non-repetitive.
+TODO Make it so that you can sort by upcoming. What is going to be released next?
+ DONE

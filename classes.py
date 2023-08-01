@@ -28,7 +28,7 @@ def parse_release_info(release_info) -> Union[tuple[int, int, int], tuple[tuple[
     '6:55 Tuesday'   #  Note also that ':' is used as a delimiter between hours and minutes.
     'Monday'         # Both weekday and time of day are not required.
     '19:10'          # Although False is returned if neither is present.
-    '.24 10:10'      # Integers prefixed by '.' are returned as the date (i.e. 24th)
+    '.24 10:10'      # Integers prefixed by '.' are returned as the day (i.e. 24th)
     '/9 .24'         # Integers prefixed by '/' are returned as the month
     '<2024 /9 .24'   # Integers prefixed by "<" are returned as the year.
                      # Also note that for dates, the previous resolution must be present. I.e. There cannot be defined
@@ -37,7 +37,7 @@ def parse_release_info(release_info) -> Union[tuple[int, int, int], tuple[tuple[
     'tUE 06:05' would also be accepted, as extra zeros and more than three letters is ignored.
 
     Both weekday and date cannot be used at the same time. Weekday is prioritised.
-    If date is used, then the first item in the return tuple will be a tuple of (date, month, year)
+    If date is used, then the first item in the return tuple will be a tuple of (day, month, year)
 
     :return: A tuple of the release info. (weekday: int, hour: int, minute: int) or False
     """
@@ -46,7 +46,7 @@ def parse_release_info(release_info) -> Union[tuple[int, int, int], tuple[tuple[
         weekday = None
         hour = None
         minute = None
-        date = 0
+        day = 0
         month = 0
         year = 0
         for part in space_split:
@@ -55,17 +55,17 @@ def parse_release_info(release_info) -> Union[tuple[int, int, int], tuple[tuple[
                     hour, minute = (int(num) for num in part.split(":"))
                 elif part[0].isalpha():  # For weekday
                     weekday = weekday_to_int[part[:3]]
-                else:  # for date, month and year.
+                else:  # for day, month and year.
                     if part[0] == ".":
-                        date = int(part[1:])
+                        day = int(part[1:])
                     elif part[0] == "/":
                         month = int(part[1:])
                     elif part[0] == "<":
                         year = int(part[1:])
 
-        date_month_year_is_defined = date + month + year != 0
-        if (year != 0 and (date == 0 or month == 0)) \
-                or (month != 0 and date == 0):
+        date_month_year_is_defined = day + month + year != 0
+        if (year != 0 and (day == 0 or month == 0)) \
+                or (month != 0 and day == 0):
             return False
 
         if weekday is None:
@@ -79,7 +79,7 @@ def parse_release_info(release_info) -> Union[tuple[int, int, int], tuple[tuple[
 
         if weekday != 7 or not date_month_year_is_defined:
             return weekday, hour, minute
-        return (date, month, year), hour, minute
+        return (day, month, year), hour, minute
     except (IndexError, KeyError, TypeError, ValueError):  # I don't know which Errors might appear,
         return False  # and it doesn't really matter. It should just return False.
 
@@ -103,8 +103,18 @@ def hours_since_weekly(past_weekday: int, past_hour: int, past_minute: int, date
         days_since_release = 0
     elif past_weekday > future_weekday:
         days_since_release = 7 - (past_weekday - future_weekday)
-    else:
+    elif past_weekday < future_weekday:
         days_since_release = future_weekday - past_weekday
+    else:
+        if past_hour < future_hour:
+            days_since_release = 0
+        elif past_hour > future_hour:
+            days_since_release = 7
+        else:
+            if past_minute > future_minute:
+                days_since_release = 7
+            else:
+                days_since_release = 0
 
     hours_since_release = days_since_release * 24 + (future_hour - past_hour)
     hours_since_release += (future_minute - past_minute) / 60
@@ -116,7 +126,7 @@ def hours_since_not_weekly(past_date_tuple: int,
                            past_minute: int,
                            date_obj: datetime.datetime) -> float:
     """
-    :param past_date_tuple: a tuple of (date, month, year) - where zero means insignificant
+    :param past_date_tuple: a tuple of (day, month, year) - where zero means insignificant
     :param past_hour: The hour on the weekday
     :param past_minute: The minute during the hour on the weekday
     :param date_obj: The future as a datetime object
@@ -166,6 +176,99 @@ def hours_since_not_weekly(past_date_tuple: int,
     return hours_since_two_datetime_not_weekly(past, date_obj)
 
 
+def hours_till_weekly(future_weekday: int,
+                      future_hour: int,
+                      future_minute: int,
+                      date_obj: datetime.datetime) -> float:
+
+    past_weekday = date_obj.weekday()
+    days_to_release = 0
+    if future_weekday == 7:
+        pass
+    elif future_weekday == past_weekday:
+        if future_hour < date_obj.hour:
+            days_to_release = 7
+        elif future_hour > date_obj.hour:
+            days_to_release = 0
+        else:
+            if future_minute < date_obj.minute:
+                days_to_release = 7
+            else:
+                days_to_release = 0
+    elif future_weekday < past_weekday:
+        days_to_release = 7 - (past_weekday - future_weekday)
+    elif future_weekday > past_weekday:
+        days_to_release = future_weekday - past_weekday
+
+    return days_to_release * 24 + future_hour - date_obj.hour + (future_minute - date_obj.minute) / 60
+
+
+def hours_till_not_weekly(future_date_tuple: tuple[int, int, int],
+                          future_hour: int,
+                          future_minute: int,
+                          date_obj: datetime.datetime) -> float:
+    """
+    :param future_date_tuple: a tuple of (day, month, year) - where zero means insignificant
+    :param future_hour: The hour
+    :param future_minute: The minute
+    :param date_obj: The past as a datetime.datetime object
+    :return: The from date_obj till the future parameters are met.
+    """
+    future_day, future_month, future_year = future_date_tuple
+
+    if future_month == 0:
+        if future_day < date_obj.day:
+            future_month = date_obj.month + 1
+        elif future_day == date_obj.day:
+            if future_hour < date_obj.hour:
+                future_month = date_obj.month + 1
+            elif future_hour == date_obj.hour:
+                if future_minute <= date_obj.minute:
+                    future_month = date_obj.month + 1
+                else:
+                    future_month = date_obj.month
+            else:
+                future_month = date_obj.month
+        else:
+            future_month = date_obj.month
+
+    if future_year == 0:
+        if future_month < date_obj.month:
+            future_year = date_obj.year + 1
+        elif future_month == date_obj.month:
+            if future_day < date_obj.day:
+                future_year = date_obj.year + 1
+            elif future_day == date_obj.day:
+                if future_hour < date_obj.hour:
+                    future_year = date_obj.year + 1
+                elif future_hour == date_obj.hour:
+                    if future_minute <= date_obj.minute:
+                        future_year = date_obj.year + 1
+                    else:
+                        future_year = date_obj.year
+                else:
+                    future_year = date_obj.year
+            else:
+                future_year = date_obj.year
+        else:
+            future_year = date_obj.year
+
+    future = None
+    for i in range(31):  # This for loop makes it so that if a day is given, but that day is not present in the month
+        # then the day will fallback to the maximum value.
+        # Example: 31. September will be turned into 30. September.
+        try:
+            future = datetime.datetime(year=future_year, month=future_month, day=future_day-i,
+                                       hour=future_hour, minute=future_minute)
+            break
+        except ValueError:
+            pass
+    if future is None:  # This will probably never be True, but if it is, at least nothing will crash
+        return 0
+
+    return hours_since_two_datetime_not_weekly(date_obj, future)
+
+
 def hours_since_two_datetime_not_weekly(past: datetime.datetime, future: datetime.datetime) -> float:
     """
     :param past: The past-most datetime object
@@ -204,7 +307,6 @@ class Show:
                  color: Union[str, int] = 0,
                  ep_season_relevant: Union[str, bool] = None,
                  release_info: str = "",
-                 ongoing: Union[str, bool] = None,
                  last_dismissal: Union[str, float] = 0):
 
         self.id: int = int(num_id)
@@ -224,31 +326,43 @@ class Show:
         else:
             self.ep_season_relevant = ep_season_relevant if isinstance(ep_season_relevant, bool)\
                 else ep_season_relevant == "True"
-        if ongoing is None:
-            self.ongoing = False
-        else:
-            self.ongoing = ongoing if isinstance(ongoing, bool) else ongoing == "True"
 
     def __repr__(self):
         return f"Show(num_id={self.id}, title={self.title.__repr__()}, ep={self.ep}," \
                f" season={self.season}, link={self.link.__repr__()}, weight={self.weight}," \
                f" color={self.color}, ep_season_relevant={self.ep_season_relevant}," \
-               f" release_info={self.release_info.__repr__()}, ongoing={self.ongoing}," \
+               f" release_info={self.release_info.__repr__()}," \
                f" last_dismissal={self.last_dismissal:.4f})"
 
     def open_link(self):
         if self.link:
             webbrowser.open(self.link)
 
+    def hours_to_release(self) -> float:
+        parsed = parse_release_info(self.release_info)
+        if not parsed:
+            return 0
+
+        now = datetime.datetime.now()
+
+        if isinstance(parsed[0], tuple):
+            date_tuple, hour, minute = parsed
+            return hours_till_not_weekly(date_tuple, hour, minute, now)
+        else:
+            release_weekday, release_hour, release_minute = parsed
+            return hours_till_weekly(release_weekday, release_hour, release_minute, now)
+
     def check_release(self, grace_period: Union[int, float] = 24) -> bool:
         """
         Returns True if a show was released within - grace_period - hours. grace_period is ignored, if it is 0
-        NOTE: Returns False if not ongoing or release_info cannot be parsed.
+        NOTE: Also returns False if release_info cannot be parsed, the show has been dismissed AFTER the last release
+        or if the show has yet to ever be released (In the case of non-repeating releases).
 
         :param grace_period: The amount of hours after the release that the function should continue to return True
         :return: Whether or not show was released within grace_period.
         """
-        if not self.ongoing:
+
+        if not self.release_info:
             self.is_recently_released = False
             return self.is_recently_released
 
@@ -319,8 +433,7 @@ class ShowsFileHandler:
                     color=row[6],
                     ep_season_relevant=row[7] if len(row) > 7 else None,
                     release_info=row[8] if len(row) > 8 else "",
-                    ongoing=row[9] if len(row) > 9 else None,
-                    last_dismissal=row[10] if len(row) > 10 else 0,
+                    last_dismissal=row[9] if len(row) > 9 else 0,
                 ))
         return self.shows
 
@@ -329,7 +442,7 @@ class ShowsFileHandler:
             writer = csv.writer(csvfile, delimiter=self.delimiter, quotechar="|")
             for show in self.shows:
                 writer.writerow([show.id, show.title, show.ep, show.season, show.link, show.weight, show.color,
-                                 show.ep_season_relevant, show.release_info, show.ongoing, show.last_dismissal])
+                                 show.ep_season_relevant, show.release_info, show.last_dismissal])
 
     def pop(self, __index) -> Show:
         return self.shows.pop(__index)
@@ -361,18 +474,24 @@ class ShowsFileHandler:
     def __len__(self):
         return len(self.shows)
 
-    def do_sorting(self, weight_to_add=0):
+    def do_sorting(self, weight_to_add=0, sort_by_upcoming=False):
         """
         Sorts self.shows according firstly to their weights and secondarily according to their
         titles alphabetically.
 
         :param weight_to_add: The amount of weight that should be added to a show when it is recently released.
+        :param sort_by_upcoming: If True, shows of the same weight will be sorted based on when a new release is coming.
         """
 
         def get_sorting_weight(show: Show) -> int:
             if show.is_recently_released:
                 return show.weight + weight_to_add
             return show.weight
+
+        def sort_by_upcoming_key(show: Show) -> float:
+            if show.is_recently_released:
+                return 0
+            return show.hours_to_release()
 
         dct = {}
         for n in self.shows:
@@ -387,8 +506,22 @@ class ShowsFileHandler:
             slist.append(int(n))
             dct[n].sort(key=lambda x: x.id)
         slist.sort()
+
         for n in slist:
-            lt += sort_list_of_shows_alphabetically(dct[n], reverse=True)
+            if sort_by_upcoming:
+                has_release = []
+                no_release = []
+                for _show in dct[n]:
+                    if _show.release_info:
+                        has_release.append(_show)
+                    else:
+                        no_release.append(_show)
+                has_release.sort(key=sort_by_upcoming_key, reverse=True)
+                sort_list_of_shows_alphabetically(no_release, reverse=True)
+                lt += no_release + has_release
+            else:
+                lt += sort_list_of_shows_alphabetically(dct[n], reverse=True)
+
         lt.reverse()
 
         self.shows = lt
@@ -449,7 +582,8 @@ class Settings:
                  default_text_color=val.default_text_color,
                  default_font_size=val.default_fontsize,
                  move_recently_released_to_top=val.move_recently_released_to_top,
-                 weight_to_add=val.weight_to_add):
+                 weight_to_add=val.weight_to_add,
+                 sort_by_upcoming=val.sort_by_upcoming):
 
         self.sg = sg
         # Note that some settings are not stored as attributes of this class, but are instead
@@ -485,6 +619,7 @@ class Settings:
 
         self.weight_to_add = weight_to_add
         self.move_recently_released_to_top = move_recently_released_to_top
+        self.sort_by_upcoming = sort_by_upcoming
 
         self._currently_saved_to_disk_list = []  # is initially updated when the savefile is loaded
 
@@ -506,7 +641,7 @@ class Settings:
                 self.sg.theme_input_background_color(), self.initialwinsize, self.initialwinpos, self.search_results,
                 self.show_amount, self.max_title_display_len, self.indices_visible, self.show_all,
                 self.shorten_with_ellpisis, self.releases_visible, self.release_grace_period, self.default_text_color,
-                self.default_font_size, self.move_recently_released_to_top, self.weight_to_add]
+                self.default_font_size, self.move_recently_released_to_top, self.weight_to_add, self.sort_by_upcoming]
 
     def load(self):
         """
@@ -562,6 +697,7 @@ class Settings:
                 self.shorten_with_ellpisis = state_data[2] == "True"
                 self.releases_visible = state_data[3] == "True"
                 self.move_recently_released_to_top = state_data[4] == "True"
+                self.sort_by_upcoming = state_data[5] == "True"
             except IndexError:
                 missing_data = True
 
@@ -594,7 +730,7 @@ class Settings:
             writer.writerow([self.show_amount, self.max_title_display_len, self.release_grace_period,
                              self.weight_to_add])
             writer.writerow([self.indices_visible, self.show_all, self.shorten_with_ellpisis, self.releases_visible,
-                             self.move_recently_released_to_top])
+                             self.move_recently_released_to_top, self.sort_by_upcoming])
 
         self._currently_saved_to_disk_list = self.represent_as_list()
         return True
