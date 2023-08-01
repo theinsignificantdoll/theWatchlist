@@ -387,19 +387,11 @@ class MainWin:
         self.properties_elements = []
         self.index_elements = []
         self.release_elements = []
+        self.column_elements = []
 
         self.number_of_displayed_shows = len(shows) if settings.show_all else min(len(shows), settings.show_amount)
 
-        self.shows_col = sg.Col([[self.delete_element(ind),
-                                  self.title_element(ind),
-                                  self.ep_minus_element(ind),
-                                  self.ep_plus_element(ind),
-                                  self.season_minus_element(ind),
-                                  self.season_plus_element(ind),
-                                  self.link_element(ind),
-                                  self.properties_element(ind),
-                                  self.index_element(ind),
-                                  self.release_element(ind)] for ind in range(self.number_of_displayed_shows)],
+        self.shows_col = sg.Col([[self.column_element(ind)] for ind in range(self.number_of_displayed_shows)],
                                 vertical_scroll_only=True,
                                 scrollable=True,
                                 expand_x=True,
@@ -829,6 +821,8 @@ class MainWin:
                 [sg.T("Recent Releases To Top:")],
                 [sg.T("Recent Release Weight Add:")],
                 [sg.T("Sort by Upcoming:")],
+                [sg.T("Alternate Show Background:")],
+                [sg.ColorChooserButton("Alternate Show Bg Color:", target="secondary_show_background")]
                 ]
         col4 = [[sg.In(sg.theme_input_background_color(), k="field_bg_color",
                        tooltip="The background color of the input fields",
@@ -847,6 +841,10 @@ class MainWin:
                 [sg.In(settings.weight_to_add, key="weight_to_add", tooltip="The weight that will be added to a show"
                                                                             "when it is newly released.")],
                 [sg.Checkbox("", key="sort_by_upcoming", default=settings.sort_by_upcoming)],
+                [sg.Checkbox("", key="enable_secondary_show_background",
+                             default=settings.enable_secondary_show_background)],
+                [sg.In(settings.secondary_show_background, k="secondary_show_background",
+                       background_color=sg.theme_background_color())],
                 ]
         pref_win = sg.Window("Preferences", layout=[
             [sg.Col([[col1[i][0], sg.Push(), col2[i][0]] for i in range(len(col1))]),
@@ -897,6 +895,9 @@ class MainWin:
                     if not is_valid_color(pref_win["default_text_color"].get()):
                         raise ValueError
 
+                    if not is_valid_color(pref_win["secondary_show_background"].get()):
+                        raise ValueError
+
                     gotcolors = pref_win["txtcolor"].get().split("-")
                     if len(gotcolors) <= 0:
                         raise ValueError
@@ -927,6 +928,8 @@ class MainWin:
                 settings.move_recently_released_to_top = pref_win["move_recently_released_to_top"].get()
                 settings.weight_to_add = int(pref_win["weight_to_add"].get())
                 settings.sort_by_upcoming = pref_win["sort_by_upcoming"].get()
+                settings.enable_secondary_show_background = pref_win["enable_secondary_show_background"].get()
+                settings.secondary_show_background = pref_win["secondary_show_background"].get()
 
                 if settings.save():
                     self.restart()
@@ -936,7 +939,8 @@ class MainWin:
         self.delete_elements.append(butt("DEL",
                                          key=f"delete:{index}",
                                          mouseover_colors="#AA0000",
-                                         border_width=0))
+                                         border_width=0,
+                                         butt_color=(False, self.get_background_color_to_use(index))))
         return self.delete_elements[-1]
 
     def title_element(self, index) -> sg.Text:
@@ -945,31 +949,36 @@ class MainWin:
                                            enable_events=True,
                                            right_click_menu=["",
                                                              [f"{m}::tit_color-{index}" for m in
-                                                              settings.text_colors]]))
+                                                              settings.text_colors]],
+                                           background_color=self.get_background_color_to_use(index)))
         return self.title_elements[-1]
 
     def ep_minus_element(self, index) -> sg.Text:
         self.ep_minus_elements.append(sg.Text(size=(3, 1),
                                               enable_events=True,
-                                              key=f"Eminus:{index}"))
+                                              key=f"Eminus:{index}",
+                                              background_color=self.get_background_color_to_use(index)))
         return self.ep_minus_elements[-1]
 
     def ep_plus_element(self, index) -> sg.Text:
         self.ep_plus_elements.append(sg.Text(key=f"Eplus:{index}",
                                              enable_events=True,
-                                             size=(4, 1)))
+                                             size=(4, 1),
+                                             background_color=self.get_background_color_to_use(index)))
         return self.ep_plus_elements[-1]
 
     def season_minus_element(self, index) -> sg.Text:
         self.season_minus_elements.append(sg.Text(size=(2, 1),
                                                   enable_events=True,
-                                                  key=f"Sminus:{index}"))
+                                                  key=f"Sminus:{index}",
+                                                  background_color=self.get_background_color_to_use(index)))
         return self.season_minus_elements[-1]
 
     def season_plus_element(self, index) -> sg.Text:
         self.season_plus_elements.append(sg.Text(size=(4, 1),
                                                  enable_events=True,
-                                                 key=f"Splus:{index}"))
+                                                 key=f"Splus:{index}",
+                                                 background_color=self.get_background_color_to_use(index)))
         return self.season_plus_elements[-1]
 
     def link_element(self, index) -> sg.Button:
@@ -977,7 +986,8 @@ class MainWin:
                                        key=f"link:{index}",
                                        border_width=0,
                                        right_click_menu=["",
-                                                         [f"Open all links with this color::multi_links-{index}"]]))
+                                                         [f"Open all links with this color::multi_links-{index}"]],
+                                       butt_color=(False, self.get_background_color_to_use(index))))
         return self.link_elements[-1]
 
     def properties_element(self, index) -> sg.Button:
@@ -989,13 +999,15 @@ class MainWin:
                                                                            f"+1::weight-{index}",
                                                                            f"-1::weight-{index}",
                                                                            f"-2::weight-{index}"],
-                                                                f"Show Details::show_details-{index}"]]))
+                                                                f"Show Details::show_details-{index}"]],
+                                             butt_color=(False, self.get_background_color_to_use(index))))
         return self.properties_elements[-1]
 
     def index_element(self, index) -> sg.Text:
         self.index_elements.append(sg.Text(str(index + 1),
                                            key=f"index:{index}",
-                                           visible=settings.indices_visible))
+                                           visible=settings.indices_visible,
+                                           background_color=self.get_background_color_to_use(index)))
         return self.index_elements[-1]
 
     def release_element(self, index) -> sg.Text:
@@ -1004,8 +1016,31 @@ class MainWin:
                                              visible=False,
                                              right_click_menu=["", [f"Dismiss::dismissal-{index}",
                                                                     f"Dismiss Ep++::dismissal+ep+1-{index}",
-                                                                    f"Open Released::open_released-{index}"]]))
+                                                                    f"Open Released::open_released-{index}"]],
+                                             background_color=self.get_background_color_to_use(index)))
         return self.release_elements[-1]
+
+    def column_element(self, index) -> sg.Column:
+        self.column_elements.append(sg.Col([[self.delete_element(index),
+                                             self.title_element(index),
+                                             self.ep_minus_element(index),
+                                             self.ep_plus_element(index),
+                                             self.season_minus_element(index),
+                                             self.season_plus_element(index),
+                                             self.link_element(index),
+                                             self.properties_element(index),
+                                             self.index_element(index),
+                                             self.release_element(index)]],
+                                           key=f"column:{index}",
+                                           background_color=self.get_background_color_to_use(index),
+                                           expand_x=True))
+        return self.column_elements[-1]
+
+    @staticmethod
+    def get_background_color_to_use(index):
+        if settings.enable_secondary_show_background and index % 2 == 1:
+            return settings.secondary_show_background
+        return sg.theme_background_color()
 
     def set_cursors(self, index):
         self.delete_elements[index].set_cursor("plus")
@@ -1033,15 +1068,7 @@ class MainWin:
         self.number_of_invisible_rows += 1
 
     def change_visibility_of_row(self, index, visibility):
-        self.win[f"delete:{index}"].update(visible=visibility)
-        self.win[f"title:{index}"].update(visible=visibility)
-        self.win[f"Eminus:{index}"].update(visible=visibility)
-        self.win[f"Eplus:{index}"].update(visible=visibility)
-        self.win[f"Sminus:{index}"].update(visible=visibility)
-        self.win[f"Splus:{index}"].update(visible=visibility)
-        self.win[f"link:{index}"].update(visible=visibility)
-        self.win[f"properties:{index}"].update(visible=visibility)
-        self.win[f"index:{index}"].update(visible=visibility)
+        self.win[f"column:{index}"].update(visible=visibility)
         self.shows_col_contents_changed = True
 
     def extend_by_x_rows(self, x):
@@ -1054,15 +1081,8 @@ class MainWin:
             self.change_visibility_of_row(index, True)
             self.number_of_invisible_rows -= 1
         else:
-            self.win.extend_layout(self.shows_col, [[self.delete_element(index),
-                                                     self.title_element(index),
-                                                     self.ep_minus_element(index),
-                                                     self.ep_plus_element(index),
-                                                     self.season_minus_element(index),
-                                                     self.season_plus_element(index),
-                                                     self.link_element(index),
-                                                     self.properties_element(index),
-                                                     self.index_element(index)]])
+            self.win.extend_layout(self.shows_col, [[self.column_element(index)]])
+
         self.shows_col_contents_changed = True  # This causes self.shows_col.contents_changed() to be called
         # immediately after self.win.read(). Why this needs to be the case, I cannot fathom. (BUT IT WORKS!)
         self.number_of_displayed_shows += 1

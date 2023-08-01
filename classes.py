@@ -583,7 +583,9 @@ class Settings:
                  default_font_size=val.default_fontsize,
                  move_recently_released_to_top=val.move_recently_released_to_top,
                  weight_to_add=val.weight_to_add,
-                 sort_by_upcoming=val.sort_by_upcoming):
+                 sort_by_upcoming=val.sort_by_upcoming,
+                 secondary_show_background=val.secondary_show_background,
+                 enable_secondary_show_background=val.enable_secondary_show_background):
 
         self.sg = sg
         # Note that some settings are not stored as attributes of this class, but are instead
@@ -620,6 +622,8 @@ class Settings:
         self.weight_to_add = weight_to_add
         self.move_recently_released_to_top = move_recently_released_to_top
         self.sort_by_upcoming = sort_by_upcoming
+        self.secondary_show_background = secondary_show_background
+        self.enable_secondary_show_background = enable_secondary_show_background
 
         self._currently_saved_to_disk_list = []  # is initially updated when the savefile is loaded
 
@@ -641,7 +645,8 @@ class Settings:
                 self.sg.theme_input_background_color(), self.initialwinsize, self.initialwinpos, self.search_results,
                 self.show_amount, self.max_title_display_len, self.indices_visible, self.show_all,
                 self.shorten_with_ellpisis, self.releases_visible, self.release_grace_period, self.default_text_color,
-                self.default_font_size, self.move_recently_released_to_top, self.weight_to_add, self.sort_by_upcoming]
+                self.default_font_size, self.move_recently_released_to_top, self.weight_to_add, self.sort_by_upcoming,
+                self.secondary_show_background, self.enable_secondary_show_background]
 
     def load(self):
         """
@@ -665,6 +670,7 @@ class Settings:
                 self.sg.theme_input_background_color(row[7])
                 self.default_text_color = row[8]
                 self.default_font_size = row[9]
+                self.secondary_show_background = row[10]
             except IndexError:
                 missing_data = True
 
@@ -698,6 +704,7 @@ class Settings:
                 self.releases_visible = state_data[3] == "True"
                 self.move_recently_released_to_top = state_data[4] == "True"
                 self.sort_by_upcoming = state_data[5] == "True"
+                self.enable_secondary_show_background = state_data[6] == "True"
             except IndexError:
                 missing_data = True
 
@@ -724,13 +731,14 @@ class Settings:
                              self.button_color, self.sg.theme_background_color(),
                              self.right_click_selected_background, self.right_click_fontsize,
                              self.sg.theme_input_background_color(), self.default_text_color,
-                             self.default_font_size])
+                             self.default_font_size, self.secondary_show_background])
             writer.writerow([*self.initialwinsize, *self.initialwinpos])
             writer.writerow([self.search_results])
             writer.writerow([self.show_amount, self.max_title_display_len, self.release_grace_period,
                              self.weight_to_add])
             writer.writerow([self.indices_visible, self.show_all, self.shorten_with_ellpisis, self.releases_visible,
-                             self.move_recently_released_to_top, self.sort_by_upcoming])
+                             self.move_recently_released_to_top, self.sort_by_upcoming,
+                             self.enable_secondary_show_background])
 
         self._currently_saved_to_disk_list = self.represent_as_list()
         return True

@@ -36,6 +36,8 @@ default_fontsize = 11
 move_recently_released_to_top = True
 weight_to_add = 5
 sort_by_upcoming = False
+secondary_show_background = "#202020"
+enable_secondary_show_background = False
 
 
 #######################################################################################

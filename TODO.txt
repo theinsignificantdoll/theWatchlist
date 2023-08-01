@@ -10,6 +10,5 @@ It can currently be slightly difficult to see which elements are on the same row
   if not impossible, to change the entire background color of a row ugly spots inbetween elements.
   Moreover, I also noticed that the compute power needed to implement this highlight was quite significant.
 
-31. July 2023
-TODO Make it so that you can sort by upcoming. What is going to be released next?
- DONE
+  I'll add a setting that allows the user to make every other show background another color. See if that works, y'know?
+  DONE
