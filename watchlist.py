@@ -1,22 +1,14 @@
 from typing import List, Union
 from classes import *
 import guide_strings
+from default_values import delay_to_save_shows, update_release_vals_interval, recently_released_string
 
 # noinspection PyPep8Naming
 import PySimpleGUI as sg
 import mouse
 import time
-from tkinter.colorchooser import askcolor
 
 sg.theme("DarkBrown4")
-
-recently_released_string = "✓"
-
-# The number of seconds in between a change being made to a show and the change being saved. Accepts floats
-delay_to_save_shows = 3
-
-# The maximum amount of seconds inbetween checking the release state of shows.
-update_release_vals_interval = 3 * 60
 
 
 def is_valid_color(color: str) -> bool:
@@ -869,7 +861,7 @@ class MainWin:
                 pref_win.close()
                 break
             elif e == "text_add":
-                _, hex_color = askcolor()
+                _, hex_color = sg.askcolor()
                 if hex_color:
                     settings.text_colors.append(hex_color)
                 pref_win["txtcolor"].update("-".join(settings.text_colors))

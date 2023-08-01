@@ -36,3 +36,16 @@ default_fontsize = 11
 move_recently_released_to_top = True
 weight_to_add = 5
 sort_by_upcoming = False
+
+
+#######################################################################################
+#
+#  Settings not important enough to have in GUI.
+#
+
+# The number of seconds in between a change being made to a show and the change being saved. Accepts floats
+delay_to_save_shows = 3
+# The maximum amount of seconds inbetween checking the release state of shows.
+update_release_vals_interval = 3 * 60
+# The mark next to shows that are recently released.
+recently_released_string = "✓"
