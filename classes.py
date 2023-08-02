@@ -526,6 +526,23 @@ class ShowsFileHandler:
 
         self.shows = lt
 
+    def new_text_colors(self, old: List[str], new: List[str]):
+        """
+        When the plausible text colors are changed, shows should keep the same color, if it has not been removed.
+        Otherwise, they should keep their current text_color index - unless this index is not present in the new
+        text_colors. In this case, the color index of the show should be 0.
+
+        :param old: The old text_colors
+        :param new: The new text_colors
+        """
+        for show in self.shows:
+            try:
+                show.color = new.index(old[show.color])
+            except ValueError:
+                if show.color < len(new):
+                    continue
+                show.color = 0
+
     def highest_id(self) -> int:
         """
         Finds the highest id held by a show in self.shows

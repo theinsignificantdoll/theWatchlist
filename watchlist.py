@@ -222,7 +222,7 @@ def get_date_wise_release_string(initial_release_string="") -> str:
 
     def get_current_string() -> str:
         if window["never"].get():
-            return f".{day} /{month} <{year} {hour}:{minute}"
+            return f".{day} /{month} <{year} {min(60, hour)}:{min(60, minute)}"
         if window["yearly"].get():
             return f".{day} /{month} {hour}:{minute}"
         if window["monthly"].get():
@@ -282,7 +282,7 @@ def get_release_string(initial_release_string="") -> str:
          sg.Push()],
         [sg.Push(), sg.I(hour, key="hour", enable_events=True, justification="e"), sg.T(":"),
          sg.I(minute, key="minute", enable_events=True), sg.Push()],
-        [butt("Save", bind_return_key=True), butt("Cancel"), sg.B("DATE"), sg.Push(), sg.Button("CLEAR"),
+        [butt("Save", bind_return_key=True), butt("Cancel"), sg.Push(), sg.B("DATE"), sg.Push(), sg.Button("CLEAR"),
          sg.T(initial_release_string, key="release_string", size=(19, 1))]
     ]
 
@@ -295,7 +295,8 @@ def get_release_string(initial_release_string="") -> str:
         if not weekday_as_string and not hour and not minute:
             rel_win["release_string"].update(value="")
             return
-        rel_win["release_string"].update(value=f"{weekday_as_string} {hour}:{0 if minute < 10 else ''}{minute}")
+        rel_win["release_string"].update(value=f"{weekday_as_string} {min(60, hour)}:"
+                                               f"{0 if minute < 10 else ''}{min(60, minute)}")
 
     while True:
         event, values, = rel_win.read()
@@ -854,6 +855,7 @@ class MainWin:
                     expand_y=True, element_justification="n")],
             [sg.Button("Save", bind_return_key=True), sg.Button("Cancel")]], default_element_size=(16, 1),
                              font=(settings.fonttype, settings.default_font_size))
+        temp_text_colors = settings.text_colors.copy()
 
         while True:
             e, v = pref_win.read()
@@ -863,15 +865,15 @@ class MainWin:
             elif e == "text_add":
                 _, hex_color = sg.askcolor()
                 if hex_color:
-                    settings.text_colors.append(hex_color)
-                pref_win["txtcolor"].update("-".join(settings.text_colors))
+                    temp_text_colors.append(hex_color)
+                pref_win["txtcolor"].update("-".join(temp_text_colors))
             elif e == "text_remove":
-                _e, _v = sg.Window("Choose one to delete", layout=[[sg.Combo(settings.text_colors, k="combo")],
+                _e, _v = sg.Window("Choose one to delete", layout=[[sg.Combo(temp_text_colors, k="combo")],
                                                                    [sg.Button("Save", bind_return_key=True),
                                                                     sg.Button("Cancel")]]).read(close=True)
                 if _e == "Save" and _v["combo"]:
-                    settings.text_colors.remove(_v["combo"])
-                pref_win["txtcolor"].update("-".join(settings.text_colors))
+                    temp_text_colors.remove(_v["combo"])
+                pref_win["txtcolor"].update("-".join(temp_text_colors))
             elif e == "Save":
                 try:
                     int(pref_win["fsize"].get())
@@ -914,7 +916,12 @@ class MainWin:
 
                 settings.fontsize = pref_win["fsize"].get()
                 settings.fonttype = pref_win["ftype"].get()
-                settings.text_colors = pref_win["txtcolor"].get().split("-")
+
+                written_text_colors = pref_win["txtcolor"].get().split("-")
+                if settings.text_colors != written_text_colors:
+                    shows.new_text_colors(settings.text_colors, written_text_colors)
+                    settings.text_colors = written_text_colors
+
                 sg.theme_background_color(pref_win["bg_color"].get())
                 sg.theme_input_background_color(pref_win["field_bg_color"].get())
                 settings.right_click_selected_background = pref_win["menu_bg_color"].get()
