@@ -586,6 +586,16 @@ class MainWin:
                 col_index = settings.text_colors.index(col)
                 self.update_show_color(show, col_index, show_index)
 
+            elif "::tit_color_mass-" in event:
+                col = event.split(":")[0]
+                clicked_show = get_show_from_suffix(event)
+                match_color = clicked_show.color
+                col_index = settings.text_colors.index(col)
+                for show in shows:
+                    if show.color == match_color and show.weight == clicked_show.weight:
+                        show.color = col_index
+                self.sort_shows_and_display()
+
             elif "::weight-" in event:
                 add_weight = int(get_prefix(event))
                 show = get_show_from_suffix(event)
@@ -958,7 +968,11 @@ class MainWin:
                                            enable_events=True,
                                            right_click_menu=["",
                                                              [f"{m}::tit_color-{index}" for m in
-                                                              settings.text_colors]],
+                                                              settings.text_colors] + [
+                                                                   "All with this weight and color",
+                                                                   [f"{m}::tit_color_mass-{index}" for m in
+                                                                    settings.text_colors]
+                                                             ]],
                                            background_color=self.get_background_color_to_use(index)))
         return self.title_elements[-1]
 
