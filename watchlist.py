@@ -753,8 +753,7 @@ class MainWin:
 
             elif e.startswith("s_delete_"):
                 k = int(e.removeprefix("s_delete_"))
-
-                if sg.popup_yes_no("Are you sure?") == "No":
+                if not found[k] or sg.popup_yes_no("Are you sure?") == "No":
                     continue
 
                 delme = -1
@@ -762,6 +761,7 @@ class MainWin:
                     if n.id == found[k].id:
                         delme = ind
                         break
+
                 if delme != -1:
                     shows.pop(delme)
                 search_win.close()
@@ -770,6 +770,8 @@ class MainWin:
 
             elif e.startswith("s_properties_"):
                 k = int(e.removeprefix("s_properties_"))
+                if not found[k]:
+                    continue
                 show = shows.from_id(found[k].id)
                 did_something = show_properties(show=show, show_purge=True)
                 if not did_something:
