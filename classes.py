@@ -528,7 +528,9 @@ class ShowsFileHandler:
 
     def new_text_colors(self, old: List[str], new: List[str]):
         """
-        When the plausible text colors are changed, shows should keep the same color, if it has not been removed.
+        Changes the .color index of shows to match a new text_colors according to the following rules:
+
+        When the possible text colors are changed, shows should keep the same color, if it has not been removed.
         Otherwise, they should keep their current text_color index - unless this index is not present in the new
         text_colors. In this case, the color index of the show should be 0.
 

@@ -12,3 +12,6 @@ It can currently be slightly difficult to see which elements are on the same row
 
   I'll add a setting that allows the user to make every other show background another color. See if that works, y'know?
   DONE
+
+2. August 2023
+TODO Write more comments
