@@ -1,3 +1,6 @@
+# This file contains the default settings used by the program. Thus, changes can easily be made here.
+# Note however, that settings under the "Settings defaults" will not come into effect if settings_file exists
+
 settings_file = "settings.csv"
 show_file = "saved.csv"
 csv_delimiter = "\\"

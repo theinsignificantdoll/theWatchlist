@@ -180,7 +180,9 @@ def hours_till_weekly(future_weekday: int,
                       future_hour: int,
                       future_minute: int,
                       date_obj: datetime.datetime) -> float:
-
+    """
+    Calculates the number of hours until the future parameters are fulfilled from the date_obj.
+    """
     past_weekday = date_obj.weekday()
     days_to_release = 0
     if future_weekday == 7:
@@ -208,6 +210,8 @@ def hours_till_not_weekly(future_date_tuple: tuple[int, int, int],
                           future_minute: int,
                           date_obj: datetime.datetime) -> float:
     """
+    Calculates the number of hours till the future parameters are fulfilled from date_obj
+
     :param future_date_tuple: a tuple of (day, month, year) - where zero means insignificant
     :param future_hour: The hour
     :param future_minute: The minute
@@ -335,10 +339,16 @@ class Show:
                f" last_dismissal={self.last_dismissal:.4f})"
 
     def open_link(self):
+        """
+        Opens the link of the show in a browser
+        """
         if self.link:
             webbrowser.open(self.link)
 
     def hours_to_release(self) -> float:
+        """
+        Calculates the number of hours until this show is released.
+        """
         parsed = parse_release_info(self.release_info)
         if not parsed:
             return 0
@@ -391,6 +401,9 @@ class Show:
 
 
 def sort_list_of_shows_alphabetically(lst: List[Show], reverse=False) -> List[Show]:
+    """
+    Sorts a list of shows alphabetically and then returns it
+    """
     def get_title(show):
         return show.title
 
@@ -414,11 +427,17 @@ class ShowsFileHandler:
         self.read_file()
 
     def ensure_file_exists(self):
+        """
+        Checks if the save file exists. If not, the file is created.
+        """
         if not os.path.isfile(self.savefile):
             with open(self.savefile, "w"):
                 pass
 
     def read_file(self) -> List[Show]:
+        """
+        Reads the save file into memory and therefore updates self.shows
+        """
         self.shows = []
         with open(self.savefile, "r", newline="") as csvfile:
             reader = csv.reader(csvfile, delimiter=self.delimiter, quotechar="|")
@@ -438,6 +457,9 @@ class ShowsFileHandler:
         return self.shows
 
     def save(self):
+        """
+        Writes the current self.shows to disk.
+        """
         with open(self.savefile, "w", newline="") as csvfile:
             writer = csv.writer(csvfile, delimiter=self.delimiter, quotechar="|")
             for show in self.shows:
@@ -445,39 +467,64 @@ class ShowsFileHandler:
                                  show.ep_season_relevant, show.release_info, show.last_dismissal])
 
     def pop(self, __index) -> Show:
+        """
+        Intermediary method allowing for list-like behavior
+        """
         return self.shows.pop(__index)
 
     def append(self, __object):
+        """
+        Intermediary method allowing for list-like behavior
+        """
         self.shows.append(__object)
 
     def remove(self, __value):
+        """
+        Intermediary method allowing for list-like behavior
+        """
         self.shows.remove(__value)
 
     def get_index(self, __object: Show) -> int:
+        """
+        Retrieves the index of a given show
+        """
         return self.shows.index(__object)
 
     def from_index(self, __index: Union[str, int]) -> Show:
         """
-        Accepts strings
+        Retrieves a show from index. Notably, this function accepts strings AND integers.
         """
         return self.shows[int(__index)]
 
     def __getitem__(self, item):
+        """
+        Intermediary method allowing for list-like behavior
+        """
         return self.shows[item]
 
     def __setitem__(self, key, value):
+        """
+        Intermediary method allowing for list-like behavior
+        """
         self.shows[key] = value
 
     def __iter__(self):
+        """
+        Intermediary method allowing for list-like behavior
+        """
         return iter(self.shows)
 
     def __len__(self):
+        """
+        Intermediary method allowing for list-like behavior
+        """
         return len(self.shows)
 
     def do_sorting(self, weight_to_add=0, sort_by_upcoming=False):
         """
         Sorts self.shows according firstly to their weights and secondarily according to their
-        titles alphabetically.
+        titles alphabetically. However, if sort_by_upcoming is true, the shows are secondarily sorted by time until
+        release instead of alphabetically.
 
         :param weight_to_add: The amount of weight that should be added to a show when it is recently released.
         :param sort_by_upcoming: If True, shows of the same weight will be sorted based on when a new release is coming.
@@ -651,6 +698,10 @@ class Settings:
         self.load()
 
     def ensure_file_exists(self):
+        """
+        Checks whether or not the save file exists. If not, the file is created with the initital parameters used to
+        create the object.
+        """
         if not os.path.isfile(self.savefile):
             self.save(force_write=True)
 
@@ -763,4 +814,7 @@ class Settings:
         return True
 
     def get_color(self, index) -> str:
+        """
+        Retrieves a color from index. Notably this function doesn't throw an IndexError, if the index is too large.
+        """
         return self.text_colors[index % len(self.text_colors)]

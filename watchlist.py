@@ -45,14 +45,24 @@ def limit_string_len(string: str, length: int, use_ellipsis: bool = False) -> st
 
 
 def get_suffix(string: str, splitter="-") -> str:
+    """
+    Retrieves the suffix from right click menu events. The standard of these events is to be suffixed by f"-{index}"
+    """
     return string.split(splitter)[-1]
 
 
 def get_prefix(string: str, splitter=":") -> str:
+    """
+    Retrieves the prefix of right click events. In these events, '::' is the delimiter between the shown and the unshown
+    part of the event.
+    """
     return string.split(splitter)[0]
 
 
 def get_show_and_index_from_suffix(string: str, splitter: str = None) -> tuple[Show, int]:
+    """
+    Retrieves the show and index from a right click event.
+    """
     if splitter is None:
         index = int(get_suffix(string))
     else:
@@ -61,6 +71,9 @@ def get_show_and_index_from_suffix(string: str, splitter: str = None) -> tuple[S
 
 
 def get_show_from_suffix(string: str, splitter: str = None) -> Show:
+    """
+    Retrieves the show from a right click event
+    """
     return get_show_and_index_from_suffix(string, splitter)[0]
 
 
@@ -188,7 +201,11 @@ def butt(button_text="", key=None, tooltip=None, butt_color=(False, None), borde
                      right_click_menu=right_click_menu, bind_return_key=bind_return_key)
 
 
-def get_date_wise_release_string(initial_release_string="") -> str:
+def get_date_wise_release_string(initial_release_string: str = "") -> str:
+    """
+    Retrieves a release string from the user using a GUI window. This release string is defined by day, month, year.
+    Therefore, it is also repeating every month, year or never.
+    """
     parsed = parse_release_info(initial_release_string)
     year = 0
     month = 0
@@ -271,6 +288,11 @@ def get_date_wise_release_string(initial_release_string="") -> str:
 
 
 def get_release_string(initial_release_string="") -> str:
+    """
+    Retrieves a release string from the user. This function opens a GUI that allows the user to choose a weekday
+    based release string. It also allows the user to open get_date_wise_release_string. Therefore, this function may
+    return release strings repeating daily, weekly, monthly, yearly and never.
+    """
     parsed = parse_release_info(initial_release_string)
     if parsed:
         weekday, hour, minute = parsed
@@ -334,6 +356,9 @@ def get_release_string(initial_release_string="") -> str:
 
 
 def guide():
+    """
+    Opens a non-interactive window showing some user guides.
+    """
     layout = [
         [sg.TabGroup([[sg.Tab("Introduction", [[sg.T(guide_strings.introduction)]]),
                        sg.Tab("Important", [[sg.T(guide_strings.important)]]),
@@ -355,6 +380,10 @@ def guide():
 
 
 def update_show_release_status():
+    """
+    Updates the release status of all shows.
+    The status can then be retrieved in Show.is_recently_released.
+    """
     for show in shows:
         show.check_release(settings.release_grace_period)
 
@@ -456,6 +485,9 @@ class MainWin:
             self.main_loop()
 
     def main_loop(self):
+        """
+        Main loop of the PySimpleGUI window
+        """
         while not self.shouldbreak:
             settings.initialwinpos = self.win.CurrentLocation()
             settings.initialwinsize = self.win.Size
@@ -633,9 +665,16 @@ class MainWin:
         return min(settings.show_amount, len(shows))
 
     def update_last_show_change(self):
+        """
+        Updates when the last time the data of a show was changed. This is used for determining when shows should
+        be saved to disk
+        """
         self.last_show_change = time.time()
 
     def sort_shows_and_display(self):
+        """
+        Sorts and displays all shows. This function effectively updates the GUI.
+        """
         to_display = self.num_of_shows_to_display()
         if to_display < self.number_of_displayed_shows:
             self.shorten_by_x_rows(self.number_of_displayed_shows - to_display)
@@ -670,16 +709,26 @@ class MainWin:
         self.update_last_show_change()
 
     def full_release_update(self):
+        """
+        Updates the release status of all shows and displays any changes on the GUI
+        """
         update_show_release_status()
         self.update_release_column()
 
     def update_release_column(self):
+        """
+        Ensures that the .is_recently_released is correctly shown on the GUI
+        Note that this function does not update the release status of shows, it merely displays it.
+        """
         self.last_release_update = time.time()
         for _index, _show in enumerate(shows[:self.number_of_displayed_shows]):
             self.win[f"release:{_index}"] \
                 .update(visible=settings.releases_visible and _show.is_recently_released)
 
     def update_show_color(self, show: Show, new_color_id: int, show_index=None):
+        """
+        Changes the color of a single show. Both updates the show and updates the GUI
+        """
         show.color = new_color_id
         if show_index is None:
             show_index = shows.get_index(show)
@@ -694,19 +743,32 @@ class MainWin:
         self.update_last_show_change()
 
     def close(self):
+        """
+        Closes the main window
+        """
         self.shouldbreak = True
         self.win.close()
 
     def restart(self):
+        """
+        Closes the main window and restarts thereafter.
+        """
         global should_restart
         should_restart = True
         self.close()
 
     def toggle_show_all(self):
+        """
+        Toggles the show_all setting.
+        """
         settings.show_all = not settings.show_all
         self.restart()
 
     def search(self, results):
+        """
+        Opens a small GUI that allows the user to search through shows and access the properties of these shows. Or
+        delete them.
+        """
         index_len = 4  # The minimum length of the Text element in the index column. Used for alignment
 
         delcol = [butt("DEL", key=f"s_delete_{n}", mouseover_colors="#AA0000", border_width=0) for n in range(results)]
@@ -792,6 +854,9 @@ class MainWin:
                 return
 
     def update_preferences(self):
+        """
+        Opens a GUI that allows the user to change the settings.
+        """
         col1 = [[sg.T("Font size:")],
                 [sg.T("Font type:")],
                 [sg.Col([[sg.T("Text colors:"), sg.Push(),
@@ -955,6 +1020,9 @@ class MainWin:
                 break
 
     def delete_element(self, index) -> sg.Button:
+        """
+        Returns a new DEL button element
+        """
         self.delete_elements.append(butt("DEL",
                                          key=f"delete:{index}",
                                          mouseover_colors="#AA0000",
@@ -963,6 +1031,9 @@ class MainWin:
         return self.delete_elements[-1]
 
     def title_element(self, index) -> sg.Text:
+        """
+        Returns a new title text element
+        """
         self.title_elements.append(sg.Text(key=f"title:{index}",
                                            size=(abs(settings.max_title_display_len), 1),
                                            enable_events=True,
@@ -977,6 +1048,9 @@ class MainWin:
         return self.title_elements[-1]
 
     def ep_minus_element(self, index) -> sg.Text:
+        """
+        Returns a new ep_minus element
+        """
         self.ep_minus_elements.append(sg.Text(size=(3, 1),
                                               enable_events=True,
                                               key=f"Eminus:{index}",
@@ -984,6 +1058,9 @@ class MainWin:
         return self.ep_minus_elements[-1]
 
     def ep_plus_element(self, index) -> sg.Text:
+        """
+        returns a new ep_plus element
+        """
         self.ep_plus_elements.append(sg.Text(key=f"Eplus:{index}",
                                              enable_events=True,
                                              size=(4, 1),
@@ -991,6 +1068,9 @@ class MainWin:
         return self.ep_plus_elements[-1]
 
     def season_minus_element(self, index) -> sg.Text:
+        """
+        returns a nre season_minus element
+        """
         self.season_minus_elements.append(sg.Text(size=(2, 1),
                                                   enable_events=True,
                                                   key=f"Sminus:{index}",
@@ -998,6 +1078,9 @@ class MainWin:
         return self.season_minus_elements[-1]
 
     def season_plus_element(self, index) -> sg.Text:
+        """
+        returns a new season_plus element
+        """
         self.season_plus_elements.append(sg.Text(size=(4, 1),
                                                  enable_events=True,
                                                  key=f"Splus:{index}",
@@ -1005,6 +1088,9 @@ class MainWin:
         return self.season_plus_elements[-1]
 
     def link_element(self, index) -> sg.Button:
+        """
+        returns a new LINK button element
+        """
         self.link_elements.append(butt("LINK",
                                        key=f"link:{index}",
                                        border_width=0,
@@ -1014,6 +1100,9 @@ class MainWin:
         return self.link_elements[-1]
 
     def properties_element(self, index) -> sg.Button:
+        """
+        Returns a new properties button element
+        """
         self.properties_elements.append(butt("⛭",
                                              key=f"properties:{index}",
                                              border_width=0,
@@ -1027,6 +1116,9 @@ class MainWin:
         return self.properties_elements[-1]
 
     def index_element(self, index) -> sg.Text:
+        """
+        Returns a new index element
+        """
         self.index_elements.append(sg.Text(str(index + 1),
                                            key=f"index:{index}",
                                            visible=settings.indices_visible,
@@ -1034,6 +1126,9 @@ class MainWin:
         return self.index_elements[-1]
 
     def release_element(self, index) -> sg.Text:
+        """
+        Returns a new release element
+        """
         self.release_elements.append(sg.Text(recently_released_string,
                                              key=f"release:{index}",
                                              visible=False,
@@ -1044,6 +1139,9 @@ class MainWin:
         return self.release_elements[-1]
 
     def column_element(self, index) -> sg.Column:
+        """
+        Returns a new column element within which an entire row of the GUI is contained
+        """
         self.column_elements.append(sg.Col([[self.delete_element(index),
                                              self.title_element(index),
                                              self.ep_minus_element(index),
@@ -1060,12 +1158,18 @@ class MainWin:
         return self.column_elements[-1]
 
     @staticmethod
-    def get_background_color_to_use(index):
+    def get_background_color_to_use(index) -> str:
+        """
+        Figures out what the background color of a row should be and returns it.
+        """
         if settings.enable_secondary_show_background and index % 2 == 1:
             return settings.secondary_show_background
         return sg.theme_background_color()
 
     def set_cursors(self, index):
+        """
+        Sets the proper cursors across one row of the GUI
+        """
         self.delete_elements[index].set_cursor("plus")
         self.title_elements[index].set_cursor("plus")
         relevant = shows.from_index(index).ep_season_relevant
@@ -1078,6 +1182,9 @@ class MainWin:
         self.link_elements[index].set_cursor("hand2")
 
     def shorten_by_x_rows(self, x):
+        """
+        Hides x number of rows from the GUI
+        """
         for _ in range(x):
             self.shorten_by_one_row()
 
@@ -1091,14 +1198,23 @@ class MainWin:
         self.number_of_invisible_rows += 1
 
     def change_visibility_of_row(self, index, visibility):
+        """
+        Changes the visibility of a given row
+        """
         self.win[f"column:{index}"].update(visible=visibility)
         self.shows_col_contents_changed = True
 
     def extend_by_x_rows(self, x):
+        """
+        Extends the usable rows in the GUI by x
+        """
         for _ in range(x):
             self.extend_by_one_row()
 
     def extend_by_one_row(self):
+        """
+        Extends the number of usable rows in the GUI by one. If there are hidden rows, these are unhidden first.
+        """
         index = self.number_of_displayed_shows
         if self.number_of_invisible_rows > 0:
             self.change_visibility_of_row(index, True)

@@ -1,17 +1,4 @@
 # TODOLIST
 
-22. July 2023
-It can currently be slightly difficult to see which elements are on the same row.
-  In order to fix this, some kind of visual aid should be added.
-
-  I attempted to make the background color of a row change when the cursor hovers over,
-  however i found this to be problematic for two reasons. First of all, the
-  elements that make up a row are not contained within a single element. This makes it difficult,
-  if not impossible, to change the entire background color of a row ugly spots inbetween elements.
-  Moreover, I also noticed that the compute power needed to implement this highlight was quite significant.
-
-  I'll add a setting that allows the user to make every other show background another color. See if that works, y'know?
-  DONE
-
 2. August 2023
-TODO Write more comments
+TODO Write more comments Done
