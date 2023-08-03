@@ -1176,10 +1176,10 @@ class MainWin:
         self.title_elements[index].set_cursor("plus")
         relevant = shows.from_index(index).ep_season_relevant
 
-        self.ep_minus_elements[index].set_cursor("sb_down_arrow" if relevant else "arrow")
-        self.ep_plus_elements[index].set_cursor("sb_up_arrow" if relevant else "arrow")
-        self.season_minus_elements[index].set_cursor("sb_down_arrow" if relevant else "arrow")
-        self.season_plus_elements[index].set_cursor("sb_up_arrow" if relevant else "arrow")
+        self.ep_minus_elements[index].set_cursor("@down.cur" if relevant else "arrow")
+        self.ep_plus_elements[index].set_cursor("@up.cur" if relevant else "arrow")
+        self.season_minus_elements[index].set_cursor("@down.cur" if relevant else "arrow")
+        self.season_plus_elements[index].set_cursor("@up.cur" if relevant else "arrow")
         self.properties_elements[index].set_cursor("plus")
         self.link_elements[index].set_cursor("hand2")
 
