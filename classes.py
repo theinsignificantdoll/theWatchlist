@@ -348,6 +348,9 @@ class Show:
     def hours_to_release(self) -> float:
         """
         Calculates the number of hours until this show is released.
+        Moreover, the return is rounded to three digits or, in other words, 3.6 seconds. This means
+        that the returned value will mostly (way, way more often than not) be equivalent between shows
+        with the same release_info, assuming that the method is called at nearly the same time.
         """
         parsed = parse_release_info(self.release_info)
         if not parsed:
@@ -357,10 +360,10 @@ class Show:
 
         if isinstance(parsed[0], tuple):
             date_tuple, hour, minute = parsed
-            return hours_till_not_weekly(date_tuple, hour, minute, now)
+            return round(hours_till_not_weekly(date_tuple, hour, minute, now), 3)
         else:
             release_weekday, release_hour, release_minute = parsed
-            return hours_till_weekly(release_weekday, release_hour, release_minute, now)
+            return round(hours_till_weekly(release_weekday, release_hour, release_minute, now), 3)
 
     def check_release(self, grace_period: Union[int, float] = 24) -> bool:
         """
@@ -398,17 +401,6 @@ class Show:
 
         self.is_recently_released = hours_since_release <= grace_period or grace_period == 0
         return self.is_recently_released
-
-
-def sort_list_of_shows_alphabetically(lst: List[Show], reverse=False) -> List[Show]:
-    """
-    Sorts a list of shows alphabetically and then returns it
-    """
-    def get_title(show):
-        return show.title
-
-    lst.sort(key=get_title, reverse=reverse)
-    return lst
 
 
 class ShowsFileHandler:
@@ -524,53 +516,28 @@ class ShowsFileHandler:
         """
         Sorts self.shows according firstly to their weights and secondarily according to their
         titles alphabetically. However, if sort_by_upcoming is true, the shows are secondarily sorted by time until
-        release instead of alphabetically.
+        release instead of alphabetically. If the release info is the same, then they are sorted alphabetically.
 
         :param weight_to_add: The amount of weight that should be added to a show when it is recently released.
         :param sort_by_upcoming: If True, shows of the same weight will be sorted based on when a new release is coming.
         """
         def get_sorting_weight(show: Show) -> int:
             if show.is_recently_released:
-                return show.weight + weight_to_add
-            return show.weight
+                return -show.weight - weight_to_add
+            return -show.weight
 
-        def sort_by_upcoming_key(show: Show) -> float:
+        def main_key(show: Show):
+            return get_sorting_weight(show), show.title
+
+        def upcoming_key(show: Show):
             if show.is_recently_released:
-                return 0
-            return show.hours_to_release()
+                return get_sorting_weight(show), 0, show.hours_to_release(), show.title
+            return get_sorting_weight(show), show.hours_to_release(), show.title
 
-        dct = {}
-        for n in self.shows:
-            weight = get_sorting_weight(n)
-            if weight in dct:
-                dct[weight].append(n)
-                continue
-            dct[weight] = [n]
-        lt = []
-        slist = []  # list of Weights used
-        for n in dct:
-            slist.append(int(n))
-            dct[n].sort(key=lambda x: x.id)
-        slist.sort()
-
-        for n in slist:
-            if sort_by_upcoming:
-                has_release = []
-                no_release = []
-                for _show in dct[n]:
-                    if _show.release_info:
-                        has_release.append(_show)
-                    else:
-                        no_release.append(_show)
-                has_release.sort(key=sort_by_upcoming_key, reverse=True)
-                sort_list_of_shows_alphabetically(no_release, reverse=True)
-                lt += no_release + has_release
-            else:
-                lt += sort_list_of_shows_alphabetically(dct[n], reverse=True)
-
-        lt.reverse()
-
-        self.shows = lt
+        if sort_by_upcoming:
+            self.shows.sort(key=upcoming_key)
+        else:
+            self.shows.sort(key=main_key)
 
     def new_text_colors(self, old: List[str], new: List[str]):
         """

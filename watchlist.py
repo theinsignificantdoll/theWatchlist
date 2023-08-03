@@ -504,7 +504,10 @@ class MainWin:
             # if event != "__TIMEOUT__":
             #    print(event)
 
-            if event.startswith("Mouse"):  # Ignore MouseWheel:Up and MouseWheel:Down events
+            if event == sg.WIN_CLOSED or self.shouldbreak or event == "Close":
+                self.close()
+                break
+            elif event.startswith("Mouse"):  # Ignore MouseWheel:Up and MouseWheel:Down events
                 pass
             elif event == "__TIMEOUT__":
                 now = time.time()
@@ -517,9 +520,6 @@ class MainWin:
                     self.full_release_update()
 
                 continue
-            elif event == sg.WIN_CLOSED or self.shouldbreak or event == "Close":
-                self.close()
-                break
 
             elif event.startswith("link:"):
                 shows.from_index(int(event.removeprefix("link:"))).open_link()
