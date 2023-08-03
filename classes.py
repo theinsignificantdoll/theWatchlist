@@ -529,7 +529,6 @@ class ShowsFileHandler:
         :param weight_to_add: The amount of weight that should be added to a show when it is recently released.
         :param sort_by_upcoming: If True, shows of the same weight will be sorted based on when a new release is coming.
         """
-
         def get_sorting_weight(show: Show) -> int:
             if show.is_recently_released:
                 return show.weight + weight_to_add

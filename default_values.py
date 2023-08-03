@@ -51,6 +51,7 @@ enable_secondary_show_background = False
 # The number of seconds in between a change being made to a show and the change being saved. Accepts floats
 delay_to_save_shows = 3
 # The maximum amount of seconds inbetween checking the release state of shows.
-update_release_vals_interval = 3 * 60
+update_release_vals_interval = 30
 # The mark next to shows that are recently released.
-recently_released_string = "✓"
+# Copy us: ✓ 📅 ★ ✰ ⚝ ⭐ ✨
+recently_released_string = "✨"

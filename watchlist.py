@@ -504,13 +504,16 @@ class MainWin:
             # if event != "__TIMEOUT__":
             #    print(event)
 
-            if event == "__TIMEOUT__" or event in ("MouseWheel:Down", "MouseWheel:Up"):
+            if event.startswith("Mouse"):  # Ignore MouseWheel:Up and MouseWheel:Down events
+                pass
+            elif event == "__TIMEOUT__":
                 now = time.time()
                 if self.last_show_change != 0 and now - self.last_show_change > delay_to_save_shows:
                     shows.save()
                     self.last_show_change = 0
 
                 if self.last_release_update + update_release_vals_interval < now:
+                    self.last_release_update = time.time()
                     self.full_release_update()
 
                 continue
@@ -684,7 +687,7 @@ class MainWin:
         update_show_release_status()
 
         shows.do_sorting(
-            weight_to_add=settings.weight_to_add,
+            weight_to_add=settings.weight_to_add if settings.move_recently_released_to_top else 0,
             sort_by_upcoming=settings.sort_by_upcoming,
         )
 
@@ -720,10 +723,9 @@ class MainWin:
         Ensures that the .is_recently_released is correctly shown on the GUI
         Note that this function does not update the release status of shows, it merely displays it.
         """
-        self.last_release_update = time.time()
-        for _index, _show in enumerate(shows[:self.number_of_displayed_shows]):
-            self.win[f"release:{_index}"] \
-                .update(visible=settings.releases_visible and _show.is_recently_released)
+        for index, show in enumerate(shows[:self.number_of_displayed_shows]):
+            self.win[f"release:{index}"] \
+                .update(visible=settings.releases_visible and show.is_recently_released)
 
     def update_show_color(self, show: Show, new_color_id: int, show_index=None):
         """
