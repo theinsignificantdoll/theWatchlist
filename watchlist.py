@@ -299,6 +299,7 @@ def get_release_string(initial_release_string="") -> str:
     else:
         hour = 0
         minute = 0
+        weekday = 7
     layout = [
         [sg.Push(), butt("MON"), butt("TUE"), butt("WED"), butt("THU"), butt("FRI"), butt("SAT"), butt("SUN"),
          sg.Push()],
@@ -309,6 +310,10 @@ def get_release_string(initial_release_string="") -> str:
     ]
 
     weekday_as_string = ""
+    if weekday != 7:
+        for i in weekday_to_int:
+            if weekday_to_int[i] == weekday:
+                weekday_as_string = i.upper()
 
     rel_win = sg.Window("Release Picker", layout=layout, default_element_size=(9, 1),
                         font=(settings.fonttype, settings.default_font_size), keep_on_top=True)
