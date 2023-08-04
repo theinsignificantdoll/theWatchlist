@@ -530,9 +530,19 @@ class ShowsFileHandler:
             return get_sorting_weight(show), show.title
 
         def upcoming_key(show: Show):
+            """
+            Returns a key, that, when given to the .sort method, will properly sort the shows. This proper sorting is as
+            follows:
+            Firstly, according to the sorting weight of the shows.
+            Secondly, shows that are currently released are placed at the top.
+            Thirdly, According how long there is until their release. Note that shows without a release schedule are
+                sorted as if they are going to be released in an infinite amount of time.
+            Fourthly, alphabetically (According to show.title).
+            """
+            to_release = show.hours_to_release()
             if show.is_recently_released:
-                return get_sorting_weight(show), 0, show.hours_to_release(), show.title
-            return get_sorting_weight(show), show.hours_to_release(), show.title
+                return get_sorting_weight(show), 0, to_release, show.title
+            return get_sorting_weight(show), 1 if to_release > 0 else 2, to_release, show.title
 
         if sort_by_upcoming:
             self.shows.sort(key=upcoming_key)
