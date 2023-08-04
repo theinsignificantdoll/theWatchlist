@@ -1,4 +1,5 @@
 # TODOLIST
 
-2. August 2023
-TODO Write more comments Done
+4. August 2023
+You know how some websites and other applications expand the more you scroll down? Couldn't
+ this program do the same? If nothing else, I'd like to explore the possibility.

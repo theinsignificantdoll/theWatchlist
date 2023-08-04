@@ -8,8 +8,6 @@ import PySimpleGUI as sg
 import mouse
 import time
 
-sg.theme("DarkBrown4")
-
 
 def is_valid_color(color: str) -> bool:
     """
@@ -1088,7 +1086,7 @@ class MainWin:
         """
         returns a new season_plus element
         """
-        self.season_plus_elements.append(sg.Text(size=(4, 1),
+        self.season_plus_elements.append(sg.Text(size=(3, 1),
                                                  enable_events=True,
                                                  key=f"Splus:{index}",
                                                  background_color=self.get_background_color_to_use(index)))
@@ -1235,6 +1233,8 @@ class MainWin:
 
 
 if __name__ == '__main__':
+    sg.theme("DarkBrown4")
+
     settings = Settings(sg)
     shows = ShowsFileHandler()
 
@@ -1244,5 +1244,5 @@ if __name__ == '__main__':
 
         MainWin(main_loop=True)
 
-        settings.save()
-        shows.save()
+    settings.save()
+    shows.save()

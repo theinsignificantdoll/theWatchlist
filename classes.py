@@ -81,7 +81,7 @@ def parse_release_info(release_info) -> Union[tuple[int, int, int], tuple[tuple[
             return weekday, hour, minute
         return (day, month, year), hour, minute
     except (IndexError, KeyError, TypeError, ValueError):  # I don't know which Errors might appear,
-        return False  # and it doesn't really matter. It should just return False.
+        return False  # and it doesn't really matter. It should just return False if release_info can't be parsed.
 
 
 def hours_since_weekly(past_weekday: int, past_hour: int, past_minute: int, date_obj: datetime.datetime) -> float:
@@ -759,13 +759,12 @@ class Settings:
             return
         self._currently_saved_to_disk_list = self.represent_as_list()
 
-    def save(self, force_write=False) -> bool:
+    def save(self, force_write: bool = False) -> bool:
         """
         Checks if settings have changed, subsequently saving if they have.
         Returns True if something has been written to disk else False
 
         :param force_write: Skips the check of whether or not settings have been changed
-        :type force_write: bool
         :return: True if something was written to the disk
         """
         if not force_write and self._currently_saved_to_disk_list == self.represent_as_list():
@@ -791,6 +790,6 @@ class Settings:
 
     def get_color(self, index) -> str:
         """
-        Retrieves a color from index. Notably this function doesn't throw an IndexError, if the index is too large.
+        Retrieves a color from index. Notably this function doesn't throw an IndexError if the index is too large.
         """
         return self.text_colors[index % len(self.text_colors)]
