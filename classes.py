@@ -530,9 +530,10 @@ class ShowsFileHandler:
             return get_sorting_weight(show), show.title
 
         def upcoming_key(show: Show):
+            to_release = show.hours_to_release()
             if show.is_recently_released:
-                return get_sorting_weight(show), 0, show.hours_to_release(), show.title
-            return get_sorting_weight(show), show.hours_to_release(), show.title
+                return get_sorting_weight(show), 0, to_release, show.title
+            return get_sorting_weight(show), 1 if to_release > 0 else 2, to_release, show.title
 
         if sort_by_upcoming:
             self.shows.sort(key=upcoming_key)
