@@ -4,6 +4,7 @@ import os
 import webbrowser
 import datetime
 import time
+from notifypy import Notify
 
 import default_values as val
 
@@ -345,6 +346,16 @@ class Show:
         if self.link:
             webbrowser.open(self.link)
 
+    def send_release_notification(self):
+        """
+        Sends a notification saying the shows has just been released.
+        """
+        notif = Notify(default_notification_title="New Release!",
+                       default_notification_message=f"'{self.title}' has just been released!",
+                       default_notification_application_name="thWatchlist",
+                       default_notification_icon="GenIko.ico")
+        notif.send()
+
     def hours_to_release(self) -> float:
         """
         Calculates the number of hours until this show is released.
@@ -409,10 +420,11 @@ class ShowsFileHandler:
     a list for the sake of backwards-compatibility.
     The list in question is equivalent to the list self.shows
     """
-    def __init__(self, savefile=val.show_file, delimiter=val.csv_delimiter):
+    def __init__(self, settings, savefile=val.show_file, delimiter=val.csv_delimiter):
         self.savefile = savefile
         self.shows = []
         self.delimiter = delimiter
+        self.settings: Settings = settings
 
         self.ensure_file_exists()
 
@@ -446,6 +458,7 @@ class ShowsFileHandler:
                     release_info=row[8] if len(row) > 8 else "",
                     last_dismissal=row[9] if len(row) > 9 else 0,
                 ))
+        self.check_all_releases(allow_notifications=False)
         return self.shows
 
     def save(self):
@@ -511,6 +524,14 @@ class ShowsFileHandler:
         Intermediary method allowing for list-like behavior
         """
         return len(self.shows)
+
+    def check_all_releases(self, allow_notifications=True):
+        for show in self.shows:
+            prev_status = show.is_recently_released
+            show.check_release(self.settings.release_grace_period)
+            if allow_notifications and self.settings.send_notifications \
+               and True is show.is_recently_released != prev_status:
+                show.send_release_notification()
 
     def do_sorting(self, weight_to_add=0, sort_by_upcoming=False):
         """
@@ -627,7 +648,8 @@ class Settings:
                  weight_to_add=val.weight_to_add,
                  sort_by_upcoming=val.sort_by_upcoming,
                  secondary_show_background=val.secondary_show_background,
-                 enable_secondary_show_background=val.enable_secondary_show_background):
+                 enable_secondary_show_background=val.enable_secondary_show_background,
+                 send_notifications=val.send_notifications):
 
         self.sg = sg
         # Note that some settings are not stored as attributes of this class, but are instead
@@ -666,6 +688,7 @@ class Settings:
         self.sort_by_upcoming = sort_by_upcoming
         self.secondary_show_background = secondary_show_background
         self.enable_secondary_show_background = enable_secondary_show_background
+        self.send_notifications = send_notifications
 
         self._currently_saved_to_disk_list = []  # is initially updated when the savefile is loaded
 
@@ -692,7 +715,7 @@ class Settings:
                 self.show_amount, self.max_title_display_len, self.indices_visible, self.show_all,
                 self.shorten_with_ellpisis, self.releases_visible, self.release_grace_period, self.default_text_color,
                 self.default_font_size, self.move_recently_released_to_top, self.weight_to_add, self.sort_by_upcoming,
-                self.secondary_show_background, self.enable_secondary_show_background]
+                self.secondary_show_background, self.enable_secondary_show_background, self.send_notifications]
 
     def load(self):
         """
@@ -751,6 +774,7 @@ class Settings:
                 self.move_recently_released_to_top = state_data[4] == "True"
                 self.sort_by_upcoming = state_data[5] == "True"
                 self.enable_secondary_show_background = state_data[6] == "True"
+                self.send_notifications = state_data[7] == "True"
             except IndexError:
                 missing_data = True
 
@@ -783,7 +807,7 @@ class Settings:
                              self.weight_to_add])
             writer.writerow([self.indices_visible, self.show_all, self.shorten_with_ellpisis, self.releases_visible,
                              self.move_recently_released_to_top, self.sort_by_upcoming,
-                             self.enable_secondary_show_background])
+                             self.enable_secondary_show_background, self.send_notifications])
 
         self._currently_saved_to_disk_list = self.represent_as_list()
         return True

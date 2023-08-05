@@ -41,6 +41,7 @@ weight_to_add = 5
 sort_by_upcoming = False
 secondary_show_background = "#202020"
 enable_secondary_show_background = False
+send_notifications = False
 
 
 #######################################################################################

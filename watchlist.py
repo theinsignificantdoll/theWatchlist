@@ -177,7 +177,9 @@ def show_properties(title: str = "Show Editor", show: Show = None, show_purge: b
     show.ep_season_relevant = data["show_ep_season_relevant"]
 
     if purge_weight is False:
-        show.release_info = release_info
+        if show.release_info != release_info:
+            show.release_info = release_info
+            shows.check_all_releases(allow_notifications=False)
         show.weight = data["show_weight"]
     else:
         show.release_info = ""
@@ -380,15 +382,6 @@ def guide():
         if e == sg.WIN_CLOSED:
             window.close()
             break
-
-
-def update_show_release_status():
-    """
-    Updates the release status of all shows.
-    The status can then be retrieved in Show.is_recently_released.
-    """
-    for show in shows:
-        show.check_release(settings.release_grace_period)
 
 
 class MainWin:
@@ -687,7 +680,7 @@ class MainWin:
         if to_display > self.number_of_displayed_shows:
             self.extend_by_x_rows(to_display - self.number_of_displayed_shows)
 
-        update_show_release_status()
+        shows.check_all_releases()
 
         shows.do_sorting(
             weight_to_add=settings.weight_to_add if settings.move_recently_released_to_top else 0,
@@ -718,7 +711,7 @@ class MainWin:
         """
         Updates the release status of all shows and displays any changes on the GUI
         """
-        update_show_release_status()
+        shows.check_all_releases()
         self.update_release_column()
 
     def update_release_column(self):
@@ -905,7 +898,8 @@ class MainWin:
                 [sg.T("Recent Release Weight Add:")],
                 [sg.T("Sort by Upcoming:")],
                 [sg.T("Alternate Show Background:")],
-                [sg.ColorChooserButton("Alternate Show Bg Color:", target="secondary_show_background")]
+                [sg.ColorChooserButton("Alternate Show Bg Color:", target="secondary_show_background")],
+                [sg.T("Send Notifications:")],
                 ]
         col4 = [[sg.In(sg.theme_input_background_color(), k="field_bg_color",
                        tooltip="The background color of the input fields",
@@ -928,9 +922,12 @@ class MainWin:
                              default=settings.enable_secondary_show_background)],
                 [sg.In(settings.secondary_show_background, k="secondary_show_background",
                        background_color=sg.theme_background_color())],
+                [sg.Checkbox("", key="send_notifications",
+                             default=settings.send_notifications)],
                 ]
         pref_win = sg.Window("Preferences", layout=[
             [sg.Col([[col1[i][0], sg.Push(), col2[i][0]] for i in range(len(col1))]),
+             sg.VSep(),
              sg.Col([[col3[i][0], sg.Push(), col4[i][0]] for i in range(len(col3))],
                     expand_y=True, element_justification="n")],
             [sg.Button("Save", bind_return_key=True), sg.Button("Cancel")]], default_element_size=(16, 1),
@@ -1019,6 +1016,7 @@ class MainWin:
                 settings.sort_by_upcoming = pref_win["sort_by_upcoming"].get()
                 settings.enable_secondary_show_background = pref_win["enable_secondary_show_background"].get()
                 settings.secondary_show_background = pref_win["secondary_show_background"].get()
+                settings.send_notifications = pref_win["send_notifications"].get()
 
                 if settings.save():
                     self.restart()
@@ -1236,7 +1234,7 @@ if __name__ == '__main__':
     sg.theme("DarkBrown4")
 
     settings = Settings(sg)
-    shows = ShowsFileHandler()
+    shows = ShowsFileHandler(settings)
 
     should_restart = True
     while should_restart:
