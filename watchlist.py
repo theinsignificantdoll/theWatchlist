@@ -513,7 +513,7 @@ class MainWin:
 
                 if self.last_release_update + update_release_vals_interval < now:
                     self.last_release_update = time.time()
-                    self.full_release_update()
+                    self.sort_shows_and_display()
 
                 continue
 
@@ -706,13 +706,6 @@ class MainWin:
 
         self.update_release_column()
         self.update_last_show_change()
-
-    def full_release_update(self):
-        """
-        Updates the release status of all shows and displays any changes on the GUI
-        """
-        shows.check_all_releases()
-        self.update_release_column()
 
     def update_release_column(self):
         """
