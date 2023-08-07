@@ -403,8 +403,11 @@ class MainWin:
         sg.theme_slider_color(sg.theme_background_color())
         sg.theme_button_color((settings.button_color, sg.theme_background_color()))
 
+        self.time_till_release_len = 3
+
         self.delete_elements = []
         self.title_elements = []
+        self.time_till_release_elements = []
         self.ep_minus_elements = []
         self.ep_plus_elements = []
         self.season_minus_elements = []
@@ -435,9 +438,12 @@ class MainWin:
                    sg.Checkbox(" ", key="index_checkbox", text_color=settings.button_color,
                                tooltip="Enables or disables the showing of indices",
                                default=settings.indices_visible, enable_events=True),
-                   sg.Checkbox("", key="release_checkbox", text_color=settings.button_color,
+                   sg.Checkbox(" ", key="release_checkbox", text_color=settings.button_color,
                                tooltip="Enables or disables the showing of release info",
                                default=settings.releases_visible, enable_events=True),
+                   sg.Checkbox("", key="till_release_checkbox", text_color=settings.button_color,
+                               tooltip="Enables or disables the showing of time till release",
+                               default=settings.show_till_release, enable_events=True),
                    butt(" 📖 ", key="open_guide", border_width=0, tooltip="Open guide")]
                   ]
 
@@ -574,6 +580,10 @@ class MainWin:
                 settings.releases_visible = self.win["release_checkbox"].get()
                 self.update_release_column()
 
+            elif event == "till_release_checkbox":
+                settings.show_till_release = self.win["till_release_checkbox"].get()
+                self.update_till_release_column()
+
             elif event.startswith("properties:"):
                 show = shows.from_index(event.removeprefix("properties:"))
                 did_something = show_properties(show=show, show_purge=True)
@@ -692,6 +702,8 @@ class MainWin:
             self.win[f"title:{ind}"].update(value=limit_string_len(show.title, settings.max_title_display_len,
                                                                    use_ellipsis=settings.shorten_with_ellpisis),
                                             text_color=color)
+            self.win[f"till_release:{ind}"].update(value=show.string_time_till_release(),
+                                                   text_color=color)
             self.win[f"Eminus:{ind}"].update(value="Ep:" if show.ep_season_relevant else "",
                                              text_color=color)
             self.win[f"Eplus:{ind}"].update(value=show.ep if show.ep_season_relevant else "",
@@ -705,6 +717,7 @@ class MainWin:
             self.set_cursors(ind)
 
         self.update_release_column()
+        self.update_till_release_column()
         self.update_last_show_change()
 
     def update_release_column(self):
@@ -716,6 +729,14 @@ class MainWin:
             self.win[f"release:{index}"] \
                 .update(visible=settings.releases_visible and show.is_recently_released)
 
+    def update_till_release_column(self):
+        """
+        Ensures that the visibility of the time_till_release columns is correct
+        """
+        for index, show in enumerate(shows[:self.number_of_displayed_shows]):
+            self.win[f"till_release:{index}"] \
+                .update(visible=settings.show_till_release)
+
     def update_show_color(self, show: Show, new_color_id: int, show_index=None):
         """
         Changes the color of a single show. Both updates the show and updates the GUI
@@ -726,6 +747,7 @@ class MainWin:
         color = settings.get_color(new_color_id)
         self.win[f"index:{show_index}"].update(text_color=color)
         self.win[f"title:{show_index}"].update(text_color=color)
+        self.win[f"till_release:{show_index}"].update(text_color=color)
         self.win[f"Eminus:{show_index}"].update(text_color=color)
         self.win[f"Eplus:{show_index}"].update(text_color=color)
         self.win[f"Splus:{show_index}"].update(text_color=color)
@@ -1043,6 +1065,12 @@ class MainWin:
                                            background_color=self.get_background_color_to_use(index)))
         return self.title_elements[-1]
 
+    def time_till_release_element(self, index) -> sg.Text:
+        self.time_till_release_elements.append(sg.Text(key=f"till_release:{index}",
+                                                       size=(self.time_till_release_len, 1),
+                                                       background_color=self.get_background_color_to_use(index)))
+        return self.time_till_release_elements[-1]
+
     def ep_minus_element(self, index) -> sg.Text:
         """
         Returns a new ep_minus element
@@ -1140,6 +1168,7 @@ class MainWin:
         """
         self.column_elements.append(sg.Col([[self.delete_element(index),
                                              self.title_element(index),
+                                             sg.pin(self.time_till_release_element(index)),
                                              self.ep_minus_element(index),
                                              self.ep_plus_element(index),
                                              self.season_minus_element(index),

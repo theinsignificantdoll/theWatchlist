@@ -376,6 +376,20 @@ class Show:
             release_weekday, release_hour, release_minute = parsed
             return round(hours_till_weekly(release_weekday, release_hour, release_minute, now), 3)
 
+    def string_time_till_release(self) -> str:
+        if not self.release_info or self.is_recently_released:
+            return ""
+        to_release = self.hours_to_release()
+        if to_release <= 1:
+            return f"{int(to_release * 60 + 0.5)}m"
+        elif to_release <= 24:
+            return f"{int(to_release + 0.5)}h"
+        elif to_release <= 168:
+            return f"{int(to_release / 24 + 0.5)}d"
+        elif to_release <= 8760:
+            return f"{int(to_release / 168 + 0.5)}w"
+        return f"{int(to_release / 8760 + 0.5)}y"
+
     def check_release(self, grace_period: Union[int, float] = 24) -> bool:
         """
         Returns True if a show was released within - grace_period - hours. grace_period is ignored, if it is 0
@@ -620,6 +634,8 @@ class Settings:
         .load
         .__init__
         .represent_as_list
+
+        and the default_values.py (imported as val) file.
     """
     def __init__(self, sg,
                  savefile=val.settings_file,
@@ -649,7 +665,8 @@ class Settings:
                  sort_by_upcoming=val.sort_by_upcoming,
                  secondary_show_background=val.secondary_show_background,
                  enable_secondary_show_background=val.enable_secondary_show_background,
-                 send_notifications=val.send_notifications):
+                 send_notifications=val.send_notifications,
+                 show_till_release=val.show_till_release):
 
         self.sg = sg
         # Note that some settings are not stored as attributes of this class, but are instead
@@ -689,6 +706,7 @@ class Settings:
         self.secondary_show_background = secondary_show_background
         self.enable_secondary_show_background = enable_secondary_show_background
         self.send_notifications = send_notifications
+        self.show_till_release = show_till_release
 
         self._currently_saved_to_disk_list = []  # is initially updated when the savefile is loaded
 
@@ -715,7 +733,8 @@ class Settings:
                 self.show_amount, self.max_title_display_len, self.indices_visible, self.show_all,
                 self.shorten_with_ellpisis, self.releases_visible, self.release_grace_period, self.default_text_color,
                 self.default_font_size, self.move_recently_released_to_top, self.weight_to_add, self.sort_by_upcoming,
-                self.secondary_show_background, self.enable_secondary_show_background, self.send_notifications]
+                self.secondary_show_background, self.enable_secondary_show_background, self.send_notifications,
+                self.show_till_release]
 
     def load(self):
         """
@@ -775,6 +794,7 @@ class Settings:
                 self.sort_by_upcoming = state_data[5] == "True"
                 self.enable_secondary_show_background = state_data[6] == "True"
                 self.send_notifications = state_data[7] == "True"
+                self.show_till_release = state_data[8] == "True"
             except IndexError:
                 missing_data = True
 
@@ -807,7 +827,7 @@ class Settings:
                              self.weight_to_add])
             writer.writerow([self.indices_visible, self.show_all, self.shorten_with_ellpisis, self.releases_visible,
                              self.move_recently_released_to_top, self.sort_by_upcoming,
-                             self.enable_secondary_show_background, self.send_notifications])
+                             self.enable_secondary_show_background, self.send_notifications, self.show_till_release])
 
         self._currently_saved_to_disk_list = self.represent_as_list()
         return True

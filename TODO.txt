@@ -6,4 +6,4 @@ You know how some websites and other applications expand the more you scroll dow
 
 7. August 2023
 TODO Make it easier to check when a show is released. - Maybe add a showable / hideable column with the time till
- till release? I mean, the function already exists.
+ till release? I mean, the function already exists. DONE
