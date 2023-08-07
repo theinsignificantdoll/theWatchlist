@@ -621,6 +621,11 @@ class MainWin:
                     if ref_show.color == show.color:
                         show.open_link()
 
+            elif "::auto_open_on_release-" in event:
+                show = get_show_from_suffix(event)
+                show.auto_open_link_on_release = True
+                self.update_link_color()
+
             elif "::tit_color-" in event:
                 col = event.split(":")[0]
                 show, show_index = get_show_and_index_from_suffix(event)
@@ -691,6 +696,7 @@ class MainWin:
             self.extend_by_x_rows(to_display - self.number_of_displayed_shows)
 
         shows.check_all_releases()
+        self.update_link_color()
 
         shows.do_sorting(
             weight_to_add=settings.weight_to_add if settings.move_recently_released_to_top else 0,
@@ -719,6 +725,18 @@ class MainWin:
         self.update_release_column()
         self.update_till_release_column()
         self.update_last_show_change()
+
+    def update_link_color(self):
+        """
+        Ensures that the color of all link buttons is correct
+        """
+        for index, show in enumerate(shows[:self.number_of_displayed_shows]):
+            if show.auto_open_link_on_release:
+                self.win[f"link:{index}"] \
+                    .update(button_color=(settings.get_color(show.color), None))
+                continue
+            self.win[f"link:{index}"] \
+                .update(button_color=(settings.button_color, None))
 
     def update_release_column(self):
         """
@@ -1119,7 +1137,8 @@ class MainWin:
                                        key=f"link:{index}",
                                        border_width=0,
                                        right_click_menu=["",
-                                                         [f"Open all links with this color::multi_links-{index}"]],
+                                                         [f"Open all links with this color::multi_links-{index}",
+                                                          f"Open on release::auto_open_on_release-{index}"]],
                                        butt_color=(False, self.get_background_color_to_use(index))))
         return self.link_elements[-1]
 

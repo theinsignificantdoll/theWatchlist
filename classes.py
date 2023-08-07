@@ -325,6 +325,7 @@ class Show:
         self.last_dismissal = float(last_dismissal)
 
         self.is_recently_released = False
+        self.auto_open_link_on_release = False
 
         if ep_season_relevant is None:
             self.ep_season_relevant = True
@@ -543,9 +544,14 @@ class ShowsFileHandler:
         for show in self.shows:
             prev_status = show.is_recently_released
             show.check_release(self.settings.release_grace_period)
+
             if allow_notifications and self.settings.send_notifications \
                and True is show.is_recently_released != prev_status:
                 show.send_release_notification()
+
+            if True is show.is_recently_released != prev_status and show.auto_open_link_on_release:
+                show.open_link()
+                show.auto_open_link_on_release = False
 
     def do_sorting(self, weight_to_add=0, sort_by_upcoming=False):
         """
