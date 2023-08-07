@@ -403,7 +403,7 @@ class MainWin:
         sg.theme_slider_color(sg.theme_background_color())
         sg.theme_button_color((settings.button_color, sg.theme_background_color()))
 
-        self.time_till_release_len = 3
+        self.time_till_release_len = 4
 
         self.delete_elements = []
         self.title_elements = []
