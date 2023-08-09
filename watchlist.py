@@ -1093,6 +1093,9 @@ class MainWin:
         return self.title_elements[-1]
 
     def time_till_release_element(self, index) -> sg.Text:
+        """
+        Returns a new time_till_release element
+        """
         self.time_till_release_elements.append(sg.Text(key=f"till_release:{index}",
                                                        size=(self.time_till_release_len, 1),
                                                        background_color=self.get_background_color_to_use(index)))
@@ -1196,7 +1199,12 @@ class MainWin:
         """
         self.column_elements.append(sg.Col([[self.delete_element(index),
                                              self.title_element(index),
-                                             sg.pin(self.time_till_release_element(index)),
+                                             # copied from sg.pin. If sg.pin (and alternating background)
+                                             # is used a visual anomaly occurs, so instead
+                                             # i copied part of sg.pin, which allows the background color to be set.
+                                             sg.Col([[self.time_till_release_element(index), sg.Col([[]], pad=(0, 0))]],
+                                                    background_color=self.get_background_color_to_use(index),
+                                                    pad=(0, 0)),
                                              self.ep_minus_element(index),
                                              self.ep_plus_element(index),
                                              self.season_minus_element(index),
