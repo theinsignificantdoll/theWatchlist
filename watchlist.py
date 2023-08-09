@@ -123,6 +123,9 @@ def show_properties(title: str = "Show Editor", show: Show = None, show_purge: b
                                      tooltip="Press ME!",
                                      size=(19, 1))]
                            ]),
+                               sg.Column([[sg.T()],
+                                          [butt("Clear dismissal", key="dismiss_clear",
+                                                visible=show.last_dismissal != 0)]]),
                                sg.Push(),
                                sg.Column([
                                    [sg.T("Purge Weight")],
@@ -142,11 +145,15 @@ def show_properties(title: str = "Show Editor", show: Show = None, show_purge: b
                        keep_on_top=True)
 
     release_info = show.release_info
+    last_dismissal = show.last_dismissal
     while True:
         button, data = window.read()
         if button == "show_release_info":
             release_info = get_release_string(release_info)
             window["show_release_info"].update(release_info)
+        elif button == "dismiss_clear":
+            last_dismissal = 0
+            window["dismiss_clear"].update(visible=False)
         else:
             break
     window.close()
@@ -177,20 +184,22 @@ def show_properties(title: str = "Show Editor", show: Show = None, show_purge: b
     show.ep_season_relevant = data["show_ep_season_relevant"]
 
     if purge_weight is False:
-        if show.release_info != release_info:
+        if show.release_info != release_info or show.last_dismissal != last_dismissal:
+            show.last_dismissal = last_dismissal
             show.release_info = release_info
             shows.check_all_releases(allow_notifications=False)
         show.weight = data["show_weight"]
     else:
         show.release_info = ""
         show.weight = purge_weight
+        show.last_dismissal = 0
 
     return show
 
 
 def butt(button_text="", key=None, tooltip=None, butt_color=(False, None), border_width=None, size=(None, None),
          mouseover_colors=sg.theme_background_color(), disabled=False, right_click_menu=None,
-         bind_return_key=False) -> sg.Button:
+         bind_return_key=False, visible=True) -> sg.Button:
     """
     A wrapper function for sg.Button with some different default values
     """
@@ -198,7 +207,7 @@ def butt(button_text="", key=None, tooltip=None, butt_color=(False, None), borde
         butt_color = (settings.button_color, butt_color[1])
     return sg.Button(button_text=button_text, key=key, tooltip=tooltip, button_color=butt_color,
                      border_width=border_width, size=size, mouseover_colors=mouseover_colors, disabled=disabled,
-                     right_click_menu=right_click_menu, bind_return_key=bind_return_key)
+                     right_click_menu=right_click_menu, bind_return_key=bind_return_key, visible=visible)
 
 
 def get_date_wise_release_string(initial_release_string: str = "") -> str:
