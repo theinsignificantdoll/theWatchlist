@@ -623,7 +623,7 @@ class MainWin:
 
             elif "::auto_open_on_release-" in event:
                 show = get_show_from_suffix(event)
-                show.auto_open_link_on_release = True
+                show.auto_open_link_on_release = not show.auto_open_link_on_release
                 self.update_link_color()
 
             elif "::tit_color-" in event:
