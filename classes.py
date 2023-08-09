@@ -353,7 +353,7 @@ class Show:
         """
         notif = Notify(default_notification_title="New Release!",
                        default_notification_message=f"'{self.title}' has just been released!",
-                       default_notification_application_name="thWatchlist",
+                       default_notification_application_name="Watchlist",
                        default_notification_icon="GenIko.ico")
         notif.send(block=False)
 
