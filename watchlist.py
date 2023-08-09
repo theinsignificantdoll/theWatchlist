@@ -11,7 +11,7 @@ import time
 
 def is_valid_color(color: str) -> bool:
     """
-    Checks whether or not a string is a hex color code
+    Checks whether a string is a hex color code
 
     :param color: A string
     :return: Returns True if the string col is a proper hex color code, such as "#FFFFFF"
@@ -32,7 +32,7 @@ def limit_string_len(string: str, length: int, use_ellipsis: bool = False) -> st
 
     :param string: The string to limit
     :param length: The maximum length of the string
-    :param use_ellipsis: Whether or not the last three characters should be ... if the string has been shortened
+    :param use_ellipsis: Whether the last three characters should be ... if the string has been shortened
     :return: A string with a maximum length of - length -
     """
     if len(string) > length > 0:
@@ -83,7 +83,7 @@ def show_properties(title: str = "Show Editor", show: Show = None, show_purge: b
 
     :param title: Title of the window
     :param show: If given, then all values will be changed in this show.
-    :param show_purge: Whether or not to show the Purge Weight input field
+    :param show_purge: Whether to show the Purge Weight input field
     :return: True if something has been changed and False if nothing has been changed.
     """
     if show is None:  # make a dummy show.
@@ -162,7 +162,7 @@ def show_properties(title: str = "Show Editor", show: Show = None, show_purge: b
             sg.popup_error(title="Purge not an integer")
 
     try:
-        # Check whether or not the user given values are valid BEFORE making any changes to the show.
+        # Check whether the user given values are valid BEFORE making any changes to the show.
         data["show_ep"] = int(data["show_ep"])
         data["show_season"] = int(data["show_season"])
         data["show_weight"] = int(data["show_weight"])

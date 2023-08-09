@@ -217,7 +217,7 @@ def hours_till_not_weekly(future_date_tuple: tuple[int, int, int],
     :param future_hour: The hour
     :param future_minute: The minute
     :param date_obj: The past as a datetime.datetime object
-    :return: The from date_obj till the future parameters are met.
+    :return: The hours from date_obj till the future parameters are met.
     """
     future_day, future_month, future_year = future_date_tuple
 
@@ -260,7 +260,7 @@ def hours_till_not_weekly(future_date_tuple: tuple[int, int, int],
 
     future = None
     for i in range(31):  # This for loop makes it so that if a day is given, but that day is not present in the month
-        # then the day will fallback to the maximum value.
+        # then the day will default to the maximum value.
         # Example: 31. September will be turned into 30. September.
         try:
             future = datetime.datetime(year=future_year, month=future_month, day=future_day-i,
@@ -294,7 +294,7 @@ def hours_since_two_datetime_weekly(past_date: datetime.datetime, future_date: d
 
 def release_is_parseable(release_info) -> bool:
     """
-    Checks whether or not a release follows the proper syntax.? (is that the word)
+    Checks whether a release follows the proper syntax.? (is that the word)
     """
     if parse_release_info(release_info):
         return True
@@ -370,12 +370,14 @@ class Show:
 
         now = datetime.datetime.now()
 
+        round_to = 3
+
         if isinstance(parsed[0], tuple):
             date_tuple, hour, minute = parsed
-            return round(hours_till_not_weekly(date_tuple, hour, minute, now), 3)
+            return round(hours_till_not_weekly(date_tuple, hour, minute, now), round_to)
         else:
             release_weekday, release_hour, release_minute = parsed
-            return round(hours_till_weekly(release_weekday, release_hour, release_minute, now), 3)
+            return round(hours_till_weekly(release_weekday, release_hour, release_minute, now), round_to)
 
     def string_time_till_release(self) -> str:
         if not self.release_info or self.is_recently_released:
@@ -398,7 +400,7 @@ class Show:
         or if the show has yet to ever be released (In the case of non-repeating releases).
 
         :param grace_period: The amount of hours after the release that the function should continue to return True
-        :return: Whether or not show was released within grace_period.
+        :return: Whether show was released within grace_period.
         """
 
         if not self.release_info:
@@ -431,7 +433,7 @@ class Show:
 
 class ShowsFileHandler:
     """
-    Note: This class was made as a replacement to using a single list. Therefore this class acts like
+    Note: This class was made as a replacement to using a single list, therefore this class acts like
     a list for the sake of backwards-compatibility.
     The list in question is equivalent to the list self.shows
     """
@@ -458,7 +460,7 @@ class ShowsFileHandler:
         Reads the save file into memory and therefore updates self.shows
         """
         self.shows = []
-        with open(self.savefile, "r", newline="") as csvfile:
+        with open(self.savefile, newline="") as csvfile:
             reader = csv.reader(csvfile, delimiter=self.delimiter, quotechar="|")
             for row in reader:
                 self.shows.append(Show(
@@ -582,7 +584,7 @@ class ShowsFileHandler:
             """
             to_release = show.hours_to_release()
             if show.is_recently_released:
-                return get_sorting_weight(show), 0, to_release, show.title
+                return get_sorting_weight(show), 0, to_release if to_release != 0.0 else 99999999, show.title
             return get_sorting_weight(show), 1 if to_release > 0 else 2, to_release, show.title
 
         if sort_by_upcoming:
@@ -722,7 +724,7 @@ class Settings:
 
     def ensure_file_exists(self):
         """
-        Checks whether or not the save file exists. If not, the file is created with the initital parameters used to
+        Checks whether the save file exists. If not, the file is created with the initital parameters used to
         create the object.
         """
         if not os.path.isfile(self.savefile):
@@ -730,7 +732,7 @@ class Settings:
 
     def represent_as_list(self) -> List[Any]:
         """
-        Returns a list of all the settings. Useful when checking whether or not settings have been edited.
+        Returns a list of all the settings. Useful when checking whether settings have been edited.
         This function is used to define ._currently_saved_to_disk_list.
         """
         return [self.fontsize, self.fonttype, self.text_colors, self.button_color, self.sg.theme_background_color(),
@@ -747,7 +749,7 @@ class Settings:
         Reads the settings file and reads it into memory. If any
         settings are missing from the file, it will also call .save(force_write=True).
         """
-        with open(self.savefile, "r", newline="") as csvfile:
+        with open(self.savefile, newline="") as csvfile:
             reader = csv.reader(csvfile, delimiter=self.delimiter, quotechar="|")
 
             missing_data = False
@@ -814,7 +816,7 @@ class Settings:
         Checks if settings have changed, subsequently saving if they have.
         Returns True if something has been written to disk else False
 
-        :param force_write: Skips the check of whether or not settings have been changed
+        :param force_write: Skips the check of whether settings have been changed
         :return: True if something was written to the disk
         """
         if not force_write and self._currently_saved_to_disk_list == self.represent_as_list():
