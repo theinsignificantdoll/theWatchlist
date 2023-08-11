@@ -263,7 +263,7 @@ def hours_till_not_weekly(future_date_tuple: tuple[int, int, int],
         # then the day will default to the maximum value.
         # Example: 31. September will be turned into 30. September.
         try:
-            future = datetime.datetime(year=future_year, month=future_month, day=future_day-i,
+            future = datetime.datetime(year=future_year, month=future_month, day=future_day - i,
                                        hour=future_hour, minute=future_minute)
             break
         except ValueError:
@@ -310,9 +310,10 @@ class Show:
                  link: str = "",
                  weight: Union[str, int] = 0,
                  color: Union[str, int] = 0,
-                 ep_season_relevant: Union[str, bool] = None,
+                 ep_season_relevant: Union[str, bool] = True,
                  release_info: str = "",
-                 last_dismissal: Union[str, float] = 0):
+                 last_dismissal: Union[str, float] = 0,
+                 is_hidden: Union[bool, str] = False):
 
         self.id: int = int(num_id)
         self.title: str = title
@@ -322,16 +323,13 @@ class Show:
         self.weight: int = int(weight)
         self.color: int = int(color)
         self.release_info: str = release_info
-        self.last_dismissal = float(last_dismissal)
+        self.last_dismissal: float = float(last_dismissal)
+        self.is_hidden: bool = is_hidden if isinstance(is_hidden, bool) else is_hidden == "True"
+        self.ep_season_relevant: bool = ep_season_relevant if isinstance(ep_season_relevant, bool) \
+            else ep_season_relevant == "True"
 
         self.is_recently_released = False
         self.auto_open_link_on_release = False
-
-        if ep_season_relevant is None:
-            self.ep_season_relevant = True
-        else:
-            self.ep_season_relevant = ep_season_relevant if isinstance(ep_season_relevant, bool)\
-                else ep_season_relevant == "True"
 
     def __repr__(self):
         return f"Show(num_id={self.id}, title={self.title.__repr__()}, ep={self.ep}," \
@@ -360,7 +358,7 @@ class Show:
     def hours_to_release(self) -> float:
         """
         Calculates the number of hours until this show is released.
-        Moreover, the return is rounded to three digits or, in other words, 3.6 seconds. This means
+        Moreover, the return is rounded to a number of digits. This means
         that the returned value will mostly (way, way more often than not) be equivalent between shows
         with the same release_info, assuming that the method is called at nearly the same time.
         """
@@ -437,6 +435,7 @@ class ShowsFileHandler:
     a list for the sake of backwards-compatibility.
     The list in question is equivalent to the list self.shows
     """
+
     def __init__(self, settings, savefile=val.show_file, delimiter=val.csv_delimiter):
         self.savefile = savefile
         self.shows = []
@@ -474,6 +473,7 @@ class ShowsFileHandler:
                     ep_season_relevant=row[7] if len(row) > 7 else None,
                     release_info=row[8] if len(row) > 8 else "",
                     last_dismissal=row[9] if len(row) > 9 else 0,
+                    is_hidden=row[10] if len(row) > 10 else None,
                 ))
         self.check_all_releases(allow_notifications=False)
         return self.shows
@@ -486,7 +486,7 @@ class ShowsFileHandler:
             writer = csv.writer(csvfile, delimiter=self.delimiter, quotechar="|")
             for show in self.shows:
                 writer.writerow([show.id, show.title, show.ep, show.season, show.link, show.weight, show.color,
-                                 show.ep_season_relevant, show.release_info, show.last_dismissal])
+                                 show.ep_season_relevant, show.release_info, show.last_dismissal, show.is_hidden])
 
     def pop(self, __index) -> Show:
         """
@@ -518,6 +518,25 @@ class ShowsFileHandler:
         """
         return self.shows[int(__index)]
 
+    def from_index_ignore_hidden(self, __index: Union[str, int]) -> Show:
+        """
+        Returns a show from index. Ignores hidden shows.
+        """
+        __index = int(__index)
+        skipped = 0
+        for index, show in enumerate(self.shows):
+            if show.is_hidden and not show.is_recently_released:
+                skipped += 1
+                continue
+            if index - skipped == __index:
+                return show
+
+    def get_num_of_shown(self) -> int:
+        """
+        Returns the number of items in self.shows where is_hidden is False AND is_recently_released is False
+        """
+        return sum([not i.is_hidden and not i.is_recently_released for i in self.shows])
+
     def __getitem__(self, item):
         """
         Intermediary method allowing for list-like behavior
@@ -548,7 +567,7 @@ class ShowsFileHandler:
             show.check_release(self.settings.release_grace_period)
 
             if allow_notifications and self.settings.send_notifications \
-               and True is show.is_recently_released != prev_status:
+                    and True is show.is_recently_released != prev_status:
                 show.send_release_notification()
 
             if True is show.is_recently_released != prev_status and show.auto_open_link_on_release:
@@ -564,6 +583,7 @@ class ShowsFileHandler:
         :param weight_to_add: The amount of weight that should be added to a show when it is recently released.
         :param sort_by_upcoming: If True, shows of the same weight will be sorted based on when a new release is coming.
         """
+
         def get_sorting_weight(show: Show) -> int:
             if show.is_recently_released:
                 return -show.weight - weight_to_add
@@ -645,6 +665,7 @@ class Settings:
 
         and the default_values.py (imported as val) file.
     """
+
     def __init__(self, sg,
                  savefile=val.settings_file,
                  delimiter=val.csv_delimiter,
@@ -674,7 +695,8 @@ class Settings:
                  secondary_show_background=val.secondary_show_background,
                  enable_secondary_show_background=val.enable_secondary_show_background,
                  send_notifications=val.send_notifications,
-                 show_till_release=val.show_till_release):
+                 show_till_release=val.show_till_release,
+                 display_hidden=val.display_hidden):
 
         self.sg = sg
         # Note that some settings are not stored as attributes of this class, but are instead
@@ -715,6 +737,7 @@ class Settings:
         self.enable_secondary_show_background = enable_secondary_show_background
         self.send_notifications = send_notifications
         self.show_till_release = show_till_release
+        self.display_hidden = display_hidden
 
         self._currently_saved_to_disk_list = []  # is initially updated when the savefile is loaded
 
@@ -742,7 +765,7 @@ class Settings:
                 self.shorten_with_ellpisis, self.releases_visible, self.release_grace_period, self.default_text_color,
                 self.default_font_size, self.move_recently_released_to_top, self.weight_to_add, self.sort_by_upcoming,
                 self.secondary_show_background, self.enable_secondary_show_background, self.send_notifications,
-                self.show_till_release]
+                self.show_till_release, self.display_hidden]
 
     def load(self):
         """
@@ -803,6 +826,7 @@ class Settings:
                 self.enable_secondary_show_background = state_data[6] == "True"
                 self.send_notifications = state_data[7] == "True"
                 self.show_till_release = state_data[8] == "True"
+                self.display_hidden = state_data[9] == "True"
             except IndexError:
                 missing_data = True
 
@@ -835,7 +859,8 @@ class Settings:
                              self.weight_to_add])
             writer.writerow([self.indices_visible, self.show_all, self.shorten_with_ellpisis, self.releases_visible,
                              self.move_recently_released_to_top, self.sort_by_upcoming,
-                             self.enable_secondary_show_background, self.send_notifications, self.show_till_release])
+                             self.enable_secondary_show_background, self.send_notifications, self.show_till_release,
+                             self.display_hidden])
 
         self._currently_saved_to_disk_list = self.represent_as_list()
         return True

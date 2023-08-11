@@ -1,10 +1,10 @@
-from typing import List, Union
 from classes import *
 import guide_strings
 from default_values import delay_to_save_shows, update_release_vals_interval, recently_released_string
 
 # noinspection PyPep8Naming
 import PySimpleGUI as sg
+from typing import List, Union
 import mouse
 import time
 
@@ -57,25 +57,7 @@ def get_prefix(string: str, splitter=":") -> str:
     return string.split(splitter)[0]
 
 
-def get_show_and_index_from_suffix(string: str, splitter: str = None) -> tuple[Show, int]:
-    """
-    Retrieves the show and index from a right click event.
-    """
-    if splitter is None:
-        index = int(get_suffix(string))
-    else:
-        index = int(get_suffix(string, splitter))
-    return shows.from_index(index), index
-
-
-def get_show_from_suffix(string: str, splitter: str = None) -> Show:
-    """
-    Retrieves the show from a right click event
-    """
-    return get_show_and_index_from_suffix(string, splitter)[0]
-
-
-def show_properties(title: str = "Show Editor", show: Show = None, show_purge: bool = False) -> Union[Show, bool]:
+def show_editor(title: str = "Show Editor", show: Show = None, show_purge: bool = False) -> Union[Show, bool]:
     """
     Opens a small window with all the relevant information about a show allowing these to be changed by the user.
     Then returning the show, if save was pressed and False if Cancel was pressed.
@@ -114,6 +96,11 @@ def show_properties(title: str = "Show Editor", show: Show = None, show_purge: b
                                    [sg.T("Show Details")],
                                    [sg.Checkbox("", default=show.ep_season_relevant,
                                                 key="show_ep_season_relevant")]
+                               ]),
+                               sg.Column([
+                                   [sg.T("Hide")],
+                                   [sg.Checkbox("", default=show.is_hidden,
+                                                key="show_is_hidden")]
                                ])
                            ],
                            [sg.HSep()],
@@ -181,6 +168,7 @@ def show_properties(title: str = "Show Editor", show: Show = None, show_purge: b
     show.ep = data["show_ep"]
     show.season = data["show_season"]
     show.link = data["show_link"]
+    show.is_hidden = data["show_is_hidden"]
     show.ep_season_relevant = data["show_ep_season_relevant"]
 
     if purge_weight is False:
@@ -453,6 +441,9 @@ class MainWin:
                    sg.Checkbox("", key="till_release_checkbox", text_color=settings.button_color,
                                tooltip="Enables or disables the showing of time till release",
                                default=settings.show_till_release, enable_events=True),
+                   sg.Checkbox("", key="display_hidden_checkbox", text_color=settings.button_color,
+                               tooltip="Enables or disables the showing of hidden shows",
+                               default=settings.display_hidden, enable_events=True),
                    butt(" 📖 ", key="open_guide", border_width=0, tooltip="Open guide")]
                   ]
 
@@ -533,18 +524,18 @@ class MainWin:
                 continue
 
             elif event.startswith("link:"):
-                shows.from_index(int(event.removeprefix("link:"))).open_link()
+                self.get_show_from_visual_index(int(event.removeprefix("link:"))).open_link()
 
             elif event.startswith("delete:"):
                 if sg.popup_yes_no("Are you sure?") == "No":
                     continue
 
-                show = shows.from_index(event.removeprefix("delete:"))
+                show = self.get_show_from_visual_index(event.removeprefix("delete:"))
                 shows.remove(show)
                 self.sort_shows_and_display()
 
             elif event.startswith("Eplus:"):
-                show = shows.from_index(event.removeprefix("Eplus:"))
+                show = self.get_show_from_visual_index(event.removeprefix("Eplus:"))
                 if show.ep_season_relevant:
                     show.ep = int(show.ep) + 1
                     self.win[event](value=show.ep)
@@ -552,7 +543,7 @@ class MainWin:
 
             elif event.startswith("Eminus:"):
                 show_index = event.removeprefix("Eminus:")
-                show = shows.from_index(show_index)
+                show = self.get_show_from_visual_index(show_index)
                 if show.ep_season_relevant:
                     show.ep = int(show.ep) - 1
                     self.win[f"Eplus:{show_index}"](value=show.ep)
@@ -560,13 +551,13 @@ class MainWin:
 
             elif event.startswith("title:"):
                 show_index = event.removeprefix("title:")
-                show = shows.from_index(show_index)
+                show = self.get_show_from_visual_index(show_index)
                 self.update_show_color(show,
                                        0 if show.color + 1 >= len(settings.text_colors) else show.color + 1,
                                        show_index=show_index)
 
             elif event.startswith("Splus:"):
-                show = shows.from_index(event.removeprefix("Splus:"))
+                show = self.get_show_from_visual_index(event.removeprefix("Splus:"))
                 if show.ep_season_relevant:
                     show.season = str(int(show.season) + 1)
                     self.win[event].update(value=show.season)
@@ -574,7 +565,7 @@ class MainWin:
 
             elif event.startswith("Sminus:"):
                 show_index = event.removeprefix("Sminus:")
-                show = shows.from_index(show_index)
+                show = self.get_show_from_visual_index(show_index)
                 if show.ep_season_relevant:
                     show.season = str(int(show.season) - 1)
                     self.win[f"Splus:{show_index}"].update(value=show.season)
@@ -593,9 +584,13 @@ class MainWin:
                 settings.show_till_release = self.win["till_release_checkbox"].get()
                 self.update_till_release_column()
 
+            elif event == "display_hidden_checkbox":
+                settings.display_hidden = self.win["display_hidden_checkbox"].get()
+                self.sort_shows_and_display()
+
             elif event.startswith("properties:"):
-                show = shows.from_index(event.removeprefix("properties:"))
-                did_something = show_properties(show=show, show_purge=True)
+                show = self.get_show_from_visual_index(event.removeprefix("properties:"))
+                did_something = show_editor(show=show, show_purge=True)
                 if not did_something:
                     continue
                 self.sort_shows_and_display()
@@ -617,7 +612,7 @@ class MainWin:
                 self.search(results=settings.search_results)
 
             elif event == "add_show":
-                show = show_properties()
+                show = show_editor()
                 if not show:
                     continue
                 show.id = shows.highest_id() + 1
@@ -625,13 +620,13 @@ class MainWin:
                 self.sort_shows_and_display()
 
             elif "::multi_links-" in event:
-                ref_show = get_show_from_suffix(event)
+                ref_show = self.get_show_from_suffix(event)
                 for show in shows:
                     if ref_show.color == show.color:
                         show.open_link()
 
             elif "::auto_open_on_release-" in event:
-                show = get_show_from_suffix(event)
+                show = self.get_show_from_suffix(event)
                 show.auto_open_link_on_release = not show.auto_open_link_on_release
                 self.update_link_color()
 
@@ -643,7 +638,7 @@ class MainWin:
 
             elif "::tit_color_mass-" in event:
                 col = event.split(":")[0]
-                clicked_show = get_show_from_suffix(event)
+                clicked_show = self.get_show_from_suffix(event)
                 match_color = clicked_show.color
                 col_index = settings.text_colors.index(col)
                 for show in shows:
@@ -651,24 +646,29 @@ class MainWin:
                         show.color = col_index
                 self.sort_shows_and_display()
 
+            elif "::hide_title-" in event:
+                show = self.get_show_from_suffix(event)
+                show.is_hidden = not show.is_hidden
+                self.sort_shows_and_display()
+
             elif "::weight-" in event:
                 add_weight = int(get_prefix(event))
-                show = get_show_from_suffix(event)
+                show = self.get_show_from_suffix(event)
                 show.weight += add_weight
                 self.sort_shows_and_display()
 
             elif "::show_details-" in event:
-                show = get_show_from_suffix(event)
+                show = self.get_show_from_suffix(event)
                 show.ep_season_relevant = not show.ep_season_relevant
                 self.sort_shows_and_display()
 
             elif "::dismissal-" in event:
-                show = get_show_from_suffix(event)
+                show = self.get_show_from_suffix(event)
                 show.last_dismissal = time.time()
                 self.sort_shows_and_display()
 
             elif "::dismissal+ep+1-" in event:
-                show = get_show_from_suffix(event)
+                show = self.get_show_from_suffix(event)
                 show.last_dismissal = time.time()
                 show.ep += 1
                 self.sort_shows_and_display()
@@ -678,14 +678,32 @@ class MainWin:
                     if show.is_recently_released:
                         show.open_link()
 
+    def get_show_and_index_from_suffix(self, string: str, splitter: str = None) -> tuple[Show, int]:
+        """
+        Retrieves the show and index from a right click event.
+        """
+        if splitter is None:
+            index = int(get_suffix(string))
+        else:
+            index = int(get_suffix(string, splitter))
+        return self.get_show_from_visual_index(index), index
+
+    def get_show_from_suffix(self, string: str, splitter: str = None) -> Show:
+        """
+        Retrieves the show from a right click event
+        """
+        return self.get_show_and_index_from_suffix(string, splitter)[0]
+
     @staticmethod
     def num_of_shows_to_display() -> int:
         """
         Returns how many shows should currently be displayed
         """
         if settings.show_all:
-            return len(shows)
-        return min(settings.show_amount, len(shows))
+            if settings.display_hidden:
+                return len(shows)
+            return shows.get_num_of_shown()
+        return min(settings.show_amount, shows.get_num_of_shown())
 
     def update_last_show_change(self):
         """
@@ -694,10 +712,25 @@ class MainWin:
         """
         self.last_show_change = time.time()
 
+    @staticmethod
+    def get_show_from_visual_index(__index):
+        """
+        Returns the corresponding show object to a visual index. (This means settings.display_hidden and hidden shows
+        are taken into account)
+        """
+        if settings.display_hidden:
+            return shows.from_index(__index)
+        return shows.from_index_ignore_hidden(__index)
+
     def sort_shows_and_display(self):
         """
         Sorts and displays all shows. This function effectively updates the GUI.
         """
+        shows.do_sorting(
+            weight_to_add=settings.weight_to_add if settings.move_recently_released_to_top else 0,
+            sort_by_upcoming=settings.sort_by_upcoming,
+        )
+
         to_display = self.num_of_shows_to_display()
         if to_display < self.number_of_displayed_shows:
             self.shorten_by_x_rows(self.number_of_displayed_shows - to_display)
@@ -707,13 +740,10 @@ class MainWin:
         shows.check_all_releases()
         self.update_link_color()
 
-        shows.do_sorting(
-            weight_to_add=settings.weight_to_add if settings.move_recently_released_to_top else 0,
-            sort_by_upcoming=settings.sort_by_upcoming,
-        )
-
-        for ind, show in enumerate(shows[:self.number_of_displayed_shows]):
+        for ind in range(self.number_of_displayed_shows):
+            show = self.get_show_from_visual_index(ind)
             color = settings.get_color(show.color)
+
             self.win[f"title:{ind}"].update(value=limit_string_len(show.title, settings.max_title_display_len,
                                                                    use_ellipsis=settings.shorten_with_ellpisis),
                                             text_color=color)
@@ -886,7 +916,7 @@ class MainWin:
                 if not found[k]:
                     continue
                 show = shows.from_id(found[k].id)
-                did_something = show_properties(show=show, show_purge=True)
+                did_something = show_editor(show=show, show_purge=True)
                 if not did_something:
                     continue
                 search_win.close()
@@ -1085,10 +1115,10 @@ class MainWin:
                                            right_click_menu=["",
                                                              [f"{m}::tit_color-{index}" for m in
                                                               settings.text_colors] + [
-                                                                   "All with this weight and color",
-                                                                   [f"{m}::tit_color_mass-{index}" for m in
-                                                                    settings.text_colors]
-                                                             ]],
+                                                                 "All with this weight and color",
+                                                                 [f"{m}::tit_color_mass-{index}" for m in
+                                                                  settings.text_colors],
+                                                                 f"Hide::hide_title-{index}"]],
                                            background_color=self.get_background_color_to_use(index)))
         return self.title_elements[-1]
 
@@ -1233,7 +1263,7 @@ class MainWin:
         """
         self.delete_elements[index].set_cursor("plus")
         self.title_elements[index].set_cursor("plus")
-        relevant = shows.from_index(index).ep_season_relevant
+        relevant = self.get_show_from_visual_index(index).ep_season_relevant
 
         self.ep_minus_elements[index].set_cursor("@down.cur" if relevant else "arrow")
         self.ep_plus_elements[index].set_cursor("@up.cur" if relevant else "arrow")
@@ -1289,6 +1319,8 @@ class MainWin:
 
 
 if __name__ == '__main__':
+    # Setting a default theme is exlusively used on the first startup.
+    # All settings (or just most) will otherwise be defined in the settings savefile.
     sg.theme("DarkBrown4")
 
     settings = Settings(sg)
