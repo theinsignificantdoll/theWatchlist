@@ -726,6 +726,7 @@ class MainWin:
         """
         Sorts and displays all shows. This function effectively updates the GUI.
         """
+        shows.check_all_releases()
         shows.do_sorting(
             weight_to_add=settings.weight_to_add if settings.move_recently_released_to_top else 0,
             sort_by_upcoming=settings.sort_by_upcoming,
@@ -737,9 +738,7 @@ class MainWin:
         if to_display > self.number_of_displayed_shows:
             self.extend_by_x_rows(to_display - self.number_of_displayed_shows)
 
-        shows.check_all_releases()
         self.update_link_color()
-
         for ind in range(self.number_of_displayed_shows):
             show = self.get_show_from_visual_index(ind)
             color = settings.get_color(show.color)
