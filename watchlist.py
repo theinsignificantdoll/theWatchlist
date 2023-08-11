@@ -632,7 +632,7 @@ class MainWin:
 
             elif "::tit_color-" in event:
                 col = event.split(":")[0]
-                show, show_index = get_show_and_index_from_suffix(event)
+                show, show_index = self.get_show_and_index_from_suffix(event)
                 col_index = settings.text_colors.index(col)
                 self.update_show_color(show, col_index, show_index)
 
@@ -646,7 +646,7 @@ class MainWin:
                         show.color = col_index
                 self.sort_shows_and_display()
 
-            elif "::hide_title-" in event:
+            elif "::hide_show-" in event:
                 show = self.get_show_from_suffix(event)
                 show.is_hidden = not show.is_hidden
                 self.sort_shows_and_display()
@@ -1118,7 +1118,7 @@ class MainWin:
                                                                  "All with this weight and color",
                                                                  [f"{m}::tit_color_mass-{index}" for m in
                                                                   settings.text_colors],
-                                                                 f"Hide::hide_title-{index}"]],
+                                                                 f"Hide::hide_show-{index}"]],
                                            background_color=self.get_background_color_to_use(index)))
         return self.title_elements[-1]
 
@@ -1196,7 +1196,8 @@ class MainWin:
                                                                            f"+1::weight-{index}",
                                                                            f"-1::weight-{index}",
                                                                            f"-2::weight-{index}"],
-                                                                f"Show Details::show_details-{index}"]],
+                                                                f"Show Details::show_details-{index}",
+                                                                f"Hide::hide_show-{index}"]],
                                              butt_color=(False, self.get_background_color_to_use(index))))
         return self.properties_elements[-1]
 
@@ -1320,7 +1321,7 @@ class MainWin:
 
 if __name__ == '__main__':
     # Setting a default theme is exlusively used on the first startup.
-    # All settings (or just most) will otherwise be defined in the settings savefile.
+    # All settings (i think) will otherwise be defined in the settings savefile.
     sg.theme("DarkBrown4")
 
     settings = Settings(sg)
