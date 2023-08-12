@@ -16,12 +16,11 @@ def is_valid_color(color: str) -> bool:
     :param color: A string
     :return: Returns True if the string col is a proper hex color code, such as "#FFFFFF"
     """
-    if len(color) == 7:
-        if color[0] == "#":
-            for n in color[1:]:
-                if (48 <= ord(n) <= 57) or (65 <= ord(n) <= 70) or (97 <= ord(n) <= 102):
-                    return True
-                return False
+    if len(color) == 7 and color[0] == "#":
+        for n in color[1:]:
+            if (48 <= ord(n) <= 57) or (65 <= ord(n) <= 70) or (97 <= ord(n) <= 102):
+                return True
+            return False
     return False
 
 
@@ -106,7 +105,7 @@ def show_editor(title: str = "Show Editor", show: Show = None, show_purge: bool 
                            [sg.HSep()],
                            [sg.Column([
                                [sg.T("Release Info")],
-                               [butt(show.release_info, key="show_release_info",
+                               [butt(show.release_info.release_string, key="show_release_info",
                                      tooltip="Press ME!",
                                      size=(19, 1))]
                            ]),
@@ -131,13 +130,13 @@ def show_editor(title: str = "Show Editor", show: Show = None, show_purge: bool 
                        font=(settings.fonttype, settings.default_font_size),
                        keep_on_top=True)
 
-    release_info = show.release_info
+    release_string = show.release_info.release_string
     last_dismissal = show.last_dismissal
     while True:
         button, data = window.read()
         if button == "show_release_info":
-            release_info = get_release_string(release_info)
-            window["show_release_info"].update(release_info)
+            release_string = get_release_string(release_string)
+            window["show_release_info"].update(release_string)
         elif button == "dismiss_clear":
             last_dismissal = 0
             window["dismiss_clear"].update(visible=False)
@@ -172,13 +171,13 @@ def show_editor(title: str = "Show Editor", show: Show = None, show_purge: bool 
     show.ep_season_relevant = data["show_ep_season_relevant"]
 
     if purge_weight is False:
-        if show.release_info != release_info or show.last_dismissal != last_dismissal:
+        if show.release_info.release_string != release_string or show.last_dismissal != last_dismissal:
             show.last_dismissal = last_dismissal
-            show.release_info = release_info
+            show.release_info.set_release_string(release_string)
             shows.check_all_releases(allow_notifications=False)
         show.weight = data["show_weight"]
     else:
-        show.release_info = ""
+        show.release_info.set_release_string("")
         show.weight = purge_weight
         show.last_dismissal = 0
 
@@ -235,6 +234,9 @@ def get_date_wise_release_string(initial_release_string: str = "") -> str:
                        default_element_size=(9, 1))
 
     def get_current_string() -> str:
+        """
+        Returns the currently defined release info string.
+        """
         if window["never"].get():
             return f".{day} /{month} <{year} {min(60, hour)}:{min(60, minute)}"
         if window["yearly"].get():
@@ -243,6 +245,9 @@ def get_date_wise_release_string(initial_release_string: str = "") -> str:
             return f".{day} {hour}:{minute}"
 
     def set_upper_strings():
+        """
+        Displays the relevant user values on the window
+        """
         window["day"].update(value=day if day else 'N/A')
         window["month"].update(value=month if month and window["never"].get() or window["yearly"].get() else 'N/A')
         window["year"].update(value=year if year and window["never"].get() else 'N/A')
@@ -316,6 +321,9 @@ def get_release_string(initial_release_string="") -> str:
                         font=(settings.fonttype, settings.default_font_size), keep_on_top=True)
 
     def write_release_string():
+        """
+        Writes the release string on the window.
+        """
         if not weekday_as_string and not hour and not minute:
             rel_win["release_string"].update(value="")
             return
@@ -493,7 +501,7 @@ class MainWin:
         while not self.shouldbreak:
             settings.initialwinpos = self.win.CurrentLocation()
             settings.initialwinsize = self.win.Size
-            event, values = self.win.read(timeout=200)
+            event, values = self.win.read(timeout=100)
 
             # The methods called within the if-statement below are intended to update the scrollable area of the
             # .show_col column. However, it seems that this might be a bit inconsistent - i won't look further into

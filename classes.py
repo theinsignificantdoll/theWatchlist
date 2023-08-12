@@ -122,7 +122,7 @@ def hours_since_weekly(past_weekday: int, past_hour: int, past_minute: int, date
     return hours_since_release
 
 
-def hours_since_not_weekly(past_date_tuple: int,
+def hours_since_not_weekly(past_date_tuple: tuple[int, int, int],
                            past_hour: int,
                            past_minute: int,
                            date_obj: datetime.datetime) -> float:
@@ -301,6 +301,76 @@ def release_is_parseable(release_info) -> bool:
     return False
 
 
+class ReleaseInfo:
+    TYPE_UNDEFINED = 0
+    TYPE_WEEKDAY = 1
+    TYPE_DATE = 2
+
+    def __init__(self, release_string):
+        self.release_string = release_string
+        self.type = self.TYPE_UNDEFINED
+        self.hour = 0
+        self.minute = 0
+        self.weekday = 0
+        self.day = 0
+        self.month = 0
+        self.year = 0
+        self.parse()
+
+    def reset(self):
+        """
+        Resets the object
+        """
+        self.hour = 0
+        self.minute = 0
+        self.weekday = 7
+        self.day = 1
+        self.month = 1
+        self.year = 1
+        self.type = self.TYPE_UNDEFINED
+
+    def parse(self):
+        """
+        Parses .release_string updating all other values.
+        """
+        parsed = parse_release_info(self.release_string)
+        if not parsed:
+            self.reset()
+            return
+
+        if isinstance([0], tuple):
+            self.type = self.TYPE_DATE
+            self.day, self.month, self.year = parsed[0]
+        else:
+            self.type = self.TYPE_WEEKDAY
+            self.weekday = parsed[0]
+        self.hour = parsed[1]
+        self.minute = parsed[2]
+
+    def is_defined(self) -> bool:
+        """
+        Returns True if the object contains a defined time of release.
+        """
+        return self.type != self.TYPE_UNDEFINED
+
+    def set_release_string(self, new_release_string):
+        """
+        Changes the release_string and immediately parses it.
+        """
+        self.release_string = new_release_string
+        self.parse()
+
+    def hours_since_release(self) -> float:
+        """
+        Returns the number of hours since the show was released.
+        """
+        if self.type == self.TYPE_DATE:
+            return hours_since_not_weekly((self.day, self.month, self.year),
+                                          self.hour, self.minute, datetime.datetime.now())
+        elif self.type == self.TYPE_WEEKDAY:
+            return hours_since_weekly(self.weekday, self.hour, self.minute, datetime.datetime.now())
+
+
 class Show:
     def __init__(self,
                  num_id: Union[str, int] = -1,
@@ -311,7 +381,7 @@ class Show:
                  weight: Union[str, int] = 0,
                  color: Union[str, int] = 0,
                  ep_season_relevant: Union[str, bool] = True,
-                 release_info: str = "",
+                 release_string: str = "",
                  last_dismissal: Union[str, float] = 0,
                  is_hidden: Union[bool, str] = False):
 
@@ -322,7 +392,7 @@ class Show:
         self.link: str = link
         self.weight: int = int(weight)
         self.color: int = int(color)
-        self.release_info: str = release_info
+        self.release_string: str = release_string
         self.last_dismissal: float = float(last_dismissal)
         self.is_hidden: bool = is_hidden if isinstance(is_hidden, bool) else is_hidden == "True"
         self.ep_season_relevant: bool = ep_season_relevant if isinstance(ep_season_relevant, bool) \
@@ -330,13 +400,14 @@ class Show:
 
         self.is_recently_released = False
         self.auto_open_link_on_release = False
+        self.release_info = ReleaseInfo(release_string)
 
     def __repr__(self):
         return f"Show(num_id={self.id}, title={self.title.__repr__()}, ep={self.ep}," \
                f" season={self.season}, link={self.link.__repr__()}, weight={self.weight}," \
                f" color={self.color}, ep_season_relevant={self.ep_season_relevant}," \
-               f" release_info={self.release_info.__repr__()}," \
-               f" last_dismissal={self.last_dismissal:.4f})"
+               f" release_info={self.release_string.__repr__()}," \
+               f" last_dismissal={self.last_dismissal:.4f}, is_hidden={self.is_hidden})"
 
     def open_link(self):
         """
@@ -362,7 +433,7 @@ class Show:
         that the returned value will mostly (way, way more often than not) be equivalent between shows
         with the same release_info, assuming that the method is called at nearly the same time.
         """
-        parsed = parse_release_info(self.release_info)
+        parsed = parse_release_info(self.release_string)
         if not parsed:
             return 0
 
@@ -378,7 +449,12 @@ class Show:
             return round(hours_till_weekly(release_weekday, release_hour, release_minute, now), round_to)
 
     def string_time_till_release(self) -> str:
-        if not self.release_info or self.is_recently_released:
+        """
+        Returns a string of the amount of til till release. This string is suffixed by a unit (i.e. minute, hour etc.)
+        Note that the length of this string will not exceed 3 characters unless the time till release is in
+        100 years or more.
+        """
+        if not self.release_string or self.is_recently_released:
             return ""
         to_release = self.hours_to_release()
         if to_release <= 1:
@@ -401,22 +477,13 @@ class Show:
         :return: Whether show was released within grace_period.
         """
 
-        if not self.release_info:
+        if not self.release_info.is_defined():
             self.is_recently_released = False
             return self.is_recently_released
 
-        parsed = parse_release_info(self.release_info)
-        if not parsed:
-            self.is_recently_released = False
-            return self.is_recently_released
         now = datetime.datetime.now()
 
-        if isinstance(parsed[0], tuple):
-            date_tuple, hour, minute = parsed
-            hours_since_release = hours_since_not_weekly(date_tuple, hour, minute, now)
-        else:
-            release_weekday, release_hour, release_minute = parsed
-            hours_since_release = hours_since_weekly(release_weekday, release_hour, release_minute, now)
+        hours_since_release = self.release_info.hours_since_release()
 
         if self.last_dismissal > 1:
             hours_since_dismissal = hours_since_two_datetime_not_weekly(datetime.
@@ -473,7 +540,7 @@ class ShowsFileHandler:
                     weight=row[5],
                     color=row[6],
                     ep_season_relevant=row[7] if len(row) > 7 else None,
-                    release_info=row[8] if len(row) > 8 else "",
+                    release_string=row[8] if len(row) > 8 else "",
                     last_dismissal=row[9] if len(row) > 9 else 0,
                     is_hidden=row[10] if len(row) > 10 else None,
                 ))
@@ -488,7 +555,8 @@ class ShowsFileHandler:
             writer = csv.writer(csvfile, delimiter=self.delimiter, quotechar="|")
             for show in self.shows:
                 writer.writerow([show.id, show.title, show.ep, show.season, show.link, show.weight, show.color,
-                                 show.ep_season_relevant, show.release_info, show.last_dismissal, show.is_hidden])
+                                 show.ep_season_relevant, show.release_info.release_string,
+                                 show.last_dismissal, show.is_hidden])
 
     def pop(self, __index) -> Show:
         """
@@ -564,6 +632,10 @@ class ShowsFileHandler:
         return len(self.shows)
 
     def check_all_releases(self, allow_notifications=True):
+        """
+        Updates the release status of all shows. If allow_notifications and settings.send_notifications is True, then
+        a notification will also be sent if any show changes state from unreleased to recently released.
+        """
         for show in self.shows:
             prev_status = show.is_recently_released
             show.check_release(self.settings.release_grace_period)
@@ -587,11 +659,19 @@ class ShowsFileHandler:
         """
 
         def get_sorting_weight(show: Show) -> int:
+            """
+            Returns the 'sorting weight' of a show. This is the number that reflects both the
+            weight of the show and its release status. Note that the polarity of numbers is reversed.
+            """
             if show.is_recently_released:
                 return -show.weight - weight_to_add
             return -show.weight
 
         def main_key(show: Show):
+            """
+            The key used in the list.sort method, that will sort the shows firstly according to their weight
+            and secondly according to their title (alphabetically)
+            """
             return get_sorting_weight(show), show.title
 
         def upcoming_key(show: Show):
