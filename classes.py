@@ -419,8 +419,10 @@ class Show:
             hours_since_release = hours_since_weekly(release_weekday, release_hour, release_minute, now)
 
         if self.last_dismissal > 1:
-            hours_since_dismissal = hours_since_two_datetime_weekly(datetime.
-                                                                    datetime.fromtimestamp(self.last_dismissal), now)
+            hours_since_dismissal = hours_since_two_datetime_not_weekly(datetime.
+                                                                        datetime.
+                                                                        fromtimestamp(self.last_dismissal),
+                                                                        now)
             if hours_since_dismissal < hours_since_release or hours_since_release < 0:
                 self.is_recently_released = False
                 return self.is_recently_released
