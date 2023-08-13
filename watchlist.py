@@ -180,7 +180,6 @@ def show_editor(title: str = "Show Editor", show: Show = None, show_purge: bool 
         show.release_info.reset()
         show.weight = purge_weight
         show.last_dismissal = 0
-
     return show
 
 
@@ -625,7 +624,7 @@ class MainWin:
                     continue
                 show.id = shows.highest_id() + 1
                 shows.append(show)
-                self.sort_shows_and_display()
+                self.sort_shows_and_display(allow_release_notifications=False)
 
             elif "::multi_links-" in event:
                 ref_show = self.get_show_from_suffix(event)
@@ -730,11 +729,11 @@ class MainWin:
             return shows.from_index(__index)
         return shows.from_index_ignore_hidden(__index)
 
-    def sort_shows_and_display(self):
+    def sort_shows_and_display(self, allow_release_notifications=True):
         """
         Sorts and displays all shows. This function effectively updates the GUI.
         """
-        shows.check_all_releases()
+        shows.check_all_releases(allow_notifications=allow_release_notifications)
         shows.do_sorting(
             weight_to_add=settings.weight_to_add if settings.move_recently_released_to_top else 0,
             sort_by_upcoming=settings.sort_by_upcoming,
