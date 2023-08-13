@@ -130,13 +130,13 @@ def show_editor(title: str = "Show Editor", show: Show = None, show_purge: bool 
                        font=(settings.fonttype, settings.default_font_size),
                        keep_on_top=True)
 
-    release_string = show.release_info.release_string
+    release_info = show.release_info
     last_dismissal = show.last_dismissal
     while True:
         button, data = window.read()
         if button == "show_release_info":
-            release_string = get_release_string(release_string)
-            window["show_release_info"].update(release_string)
+            release_info = get_release_info(release_info)
+            window["show_release_info"].update(release_info.release_string)
         elif button == "dismiss_clear":
             last_dismissal = 0
             window["dismiss_clear"].update(visible=False)
@@ -171,13 +171,13 @@ def show_editor(title: str = "Show Editor", show: Show = None, show_purge: bool 
     show.ep_season_relevant = data["show_ep_season_relevant"]
 
     if purge_weight is False:
-        if show.release_info.release_string != release_string or show.last_dismissal != last_dismissal:
+        if show.release_info != release_info or show.last_dismissal != last_dismissal:
             show.last_dismissal = last_dismissal
-            show.release_info.set_release_string(release_string)
+            show.release_info = release_info
             shows.check_all_releases(allow_notifications=False)
         show.weight = data["show_weight"]
     else:
-        show.release_info.set_release_string("")
+        show.release_info.reset()
         show.weight = purge_weight
         show.last_dismissal = 0
 
@@ -202,7 +202,7 @@ def get_date_wise_release_string(initial_release_string: str = "") -> str:
     Retrieves a release string from the user using a GUI window. This release string is defined by day, month, year.
     Therefore, it is also repeating every month, year or never.
     """
-    parsed = parse_release_info(initial_release_string)
+    parsed = parse_release_string(initial_release_string)
     year = 0
     month = 0
     day = 0
@@ -289,15 +289,15 @@ def get_date_wise_release_string(initial_release_string: str = "") -> str:
             return get_current_string()
 
 
-def get_release_string(initial_release_string="") -> str:
+def get_release_info(initial_release_info: ReleaseInfo = ReleaseInfo()) -> ReleaseInfo:
     """
-    Retrieves a release string from the user. This function opens a GUI that allows the user to choose a weekday
-    based release string. It also allows the user to open get_date_wise_release_string. Therefore, this function may
-    return release strings repeating daily, weekly, monthly, yearly and never.
+    Opens a GUI which allows the user to define a ReleaseInfo object. This Object is then returned. If, however,
+    the user cancels, then the initial object is returned
     """
-    parsed = parse_release_info(initial_release_string)
-    if parsed:
-        weekday, hour, minute = parsed
+    if initial_release_info.is_defined():
+        weekday = initial_release_info.weekday
+        hour = initial_release_info.hour
+        minute = initial_release_info.minute
     else:
         hour = 0
         minute = 0
@@ -308,7 +308,7 @@ def get_release_string(initial_release_string="") -> str:
         [sg.Push(), sg.I(hour, key="hour", enable_events=True, justification="e"), sg.T(":"),
          sg.I(minute, key="minute", enable_events=True), sg.Push()],
         [butt("Save", bind_return_key=True), butt("Cancel"), sg.Push(), sg.B("DATE"), sg.Push(), sg.Button("CLEAR"),
-         sg.T(initial_release_string, key="release_string", size=(19, 1))]
+         sg.T(initial_release_info.release_string, key="release_string", size=(19, 1))]
     ]
 
     weekday_as_string = ""
@@ -335,10 +335,10 @@ def get_release_string(initial_release_string="") -> str:
 
         if event == sg.WIN_CLOSED or event == "Cancel":
             rel_win.close()
-            return initial_release_string
+            return initial_release_info
         elif event == "Save":
             rel_win.close()
-            return rel_win["release_string"].get()
+            return ReleaseInfo(rel_win["release_string"].get())
         elif event == "DATE":
             rel_win["release_string"].update(value=get_date_wise_release_string())
         elif event == "hour":

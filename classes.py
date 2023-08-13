@@ -17,9 +17,9 @@ weekday_to_int = {"mon": 0,
                   "sun": 6}
 
 
-def parse_release_info(release_info) -> Union[tuple[int, int, int], tuple[tuple[int, int, int], int, int], bool]:
+def parse_release_string(release_string) -> Union[tuple[int, int, int], tuple[tuple[int, int, int], int, int], bool]:
     """
-    Parses release_info. Note that weekday is converted to an integer, where monday is 0 and sunday is 6.
+    Parses release_string. Note that weekday is converted to an integer, where monday is 0 and sunday is 6.
     If no weekday is given, the integer 7 is returned.
     If no time of day is given, the time is returned as 00:00
     If neither is given, then False is returned.
@@ -43,7 +43,7 @@ def parse_release_info(release_info) -> Union[tuple[int, int, int], tuple[tuple[
     :return: A tuple of the release info. (weekday: int, hour: int, minute: int) or False
     """
     try:
-        space_split = release_info.lower().split(" ")
+        space_split = release_string.lower().split(" ")
         weekday = None
         hour = None
         minute = None
@@ -82,7 +82,7 @@ def parse_release_info(release_info) -> Union[tuple[int, int, int], tuple[tuple[
             return weekday, hour, minute
         return (day, month, year), hour, minute
     except (IndexError, KeyError, TypeError, ValueError):  # I don't know which Errors might appear,
-        return False  # and it doesn't really matter. It should just return False if release_info can't be parsed.
+        return False  # and it doesn't really matter. It should just return False if release_string can't be parsed.
 
 
 def hours_since_weekly(past_weekday: int, past_hour: int, past_minute: int, date_obj: datetime.datetime) -> float:
@@ -292,21 +292,12 @@ def hours_since_two_datetime_weekly(past_date: datetime.datetime, future_date: d
     return hours_since_weekly(weekday, past_date.hour, past_date.minute, future_date)
 
 
-def release_is_parseable(release_info) -> bool:
-    """
-    Checks whether a release follows the proper syntax.? (is that the word)
-    """
-    if parse_release_info(release_info):
-        return True
-    return False
-
-
 class ReleaseInfo:
     TYPE_UNDEFINED = 0
     TYPE_WEEKDAY = 1
     TYPE_DATE = 2
 
-    def __init__(self, release_string):
+    def __init__(self, release_string=""):
         self.release_string = release_string
         self.type = self.TYPE_UNDEFINED
         self.hour = 0
@@ -333,12 +324,12 @@ class ReleaseInfo:
         """
         Parses .release_string updating all other values.
         """
-        parsed = parse_release_info(self.release_string)
+        parsed = parse_release_string(self.release_string)
         if not parsed:
             self.reset()
             return
 
-        if isinstance([0], tuple):
+        if isinstance(parsed[0], tuple):
             self.type = self.TYPE_DATE
             self.day, self.month, self.year = parsed[0]
         else:
