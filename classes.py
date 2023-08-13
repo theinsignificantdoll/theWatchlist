@@ -370,6 +370,17 @@ class ReleaseInfo:
         elif self.type == self.TYPE_WEEKDAY:
             return hours_since_weekly(self.weekday, self.hour, self.minute, datetime.datetime.now())
 
+    def hours_to_release(self) -> float:
+        """
+        Returns the number of hours till release
+        """
+        if self.type == self.TYPE_DATE:
+            return hours_till_not_weekly((self.day, self.month, self.year), self.hour, self.minute,
+                                         datetime.datetime.now())
+        elif self.type == self.TYPE_WEEKDAY:
+            return hours_till_weekly(self.weekday, self.hour, self.minute,
+                                     datetime.datetime.now())
+
 
 class Show:
     def __init__(self,
@@ -392,7 +403,6 @@ class Show:
         self.link: str = link
         self.weight: int = int(weight)
         self.color: int = int(color)
-        self.release_string: str = release_string
         self.last_dismissal: float = float(last_dismissal)
         self.is_hidden: bool = is_hidden if isinstance(is_hidden, bool) else is_hidden == "True"
         self.ep_season_relevant: bool = ep_season_relevant if isinstance(ep_season_relevant, bool) \
@@ -433,20 +443,9 @@ class Show:
         that the returned value will mostly (way, way more often than not) be equivalent between shows
         with the same release_info, assuming that the method is called at nearly the same time.
         """
-        parsed = parse_release_info(self.release_string)
-        if not parsed:
+        if not self.release_info.is_defined():
             return 0
-
-        now = datetime.datetime.now()
-
-        round_to = 3
-
-        if isinstance(parsed[0], tuple):
-            date_tuple, hour, minute = parsed
-            return round(hours_till_not_weekly(date_tuple, hour, minute, now), round_to)
-        else:
-            release_weekday, release_hour, release_minute = parsed
-            return round(hours_till_weekly(release_weekday, release_hour, release_minute, now), round_to)
+        return round(self.release_info.hours_to_release(), 3)
 
     def string_time_till_release(self) -> str:
         """
@@ -454,7 +453,7 @@ class Show:
         Note that the length of this string will not exceed 3 characters unless the time till release is in
         100 years or more.
         """
-        if not self.release_string or self.is_recently_released:
+        if not self.release_info.is_defined() or self.is_recently_released:
             return ""
         to_release = self.hours_to_release()
         if to_release <= 1:
@@ -467,7 +466,7 @@ class Show:
             return f"{int(to_release / 168 + 0.5)}w"
         return f"{int(to_release / 8760 + 0.5)}y"
 
-    def check_release(self, grace_period: Union[int, float] = 24) -> bool:
+    def check_release(self, grace_period: Union[int, float]) -> bool:
         """
         Returns True if a show was released within - grace_period - hours. grace_period is ignored, if it is 0
         NOTE: Also returns False if release_info cannot be parsed, the show has been dismissed AFTER the last release
