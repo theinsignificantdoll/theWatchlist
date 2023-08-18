@@ -4,7 +4,7 @@ import os
 import webbrowser
 import datetime
 import time
-from notifypy import Notify
+from notifypy import notify
 
 import default_values as val
 
