@@ -7,6 +7,7 @@ import time
 from notifypy import Notify
 import default_values as val
 
+
 weekday_to_int = {"mon": 0,
                   "tue": 1,
                   "wed": 2,
