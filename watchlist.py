@@ -677,7 +677,8 @@ class MainWin:
             elif "::dismissal+ep+1-" in event:
                 show = self.get_show_from_suffix(event)
                 show.last_dismissal = time.time()
-                show.ep += 1
+                if show.ep_season_relevant:
+                    show.ep += 1
                 self.sort_shows_and_display()
 
             elif "::open_released-" in event:
