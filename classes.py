@@ -319,6 +319,7 @@ class ReleaseInfo:
         self.month = 1
         self.year = 1
         self.type = self.TYPE_UNDEFINED
+        self.release_string = ""
 
     def parse(self):
         """
