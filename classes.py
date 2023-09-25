@@ -689,7 +689,7 @@ class ShowsFileHandler:
         """
         Changes the .color index of shows to match a new text_colors according to the following rules:
 
-        When the possible text colors are changed, shows should keep the same color, if it has not been removed.
+        When the possible text colors are changed, shows should keep the same color if the color has not been removed.
         Otherwise, they should keep their current text_color index - unless this index is not present in the new
         text_colors. In this case, the color index of the show should be 0.
 
@@ -769,7 +769,8 @@ class Settings:
                  enable_secondary_show_background=val.enable_secondary_show_background,
                  send_notifications=val.send_notifications,
                  show_till_release=val.show_till_release,
-                 display_hidden=val.display_hidden):
+                 display_hidden=val.display_hidden,
+                 purge_color_index=val.purge_color_index):
 
         self.sg = sg
         # Note that some settings are not stored as attributes of this class, but are instead
@@ -802,6 +803,7 @@ class Settings:
         self.release_grace_period = release_grace_period
         self.default_text_color = self.text_colors[0] if default_text_color is None else default_text_color
         self.default_font_size = default_font_size
+        self.purge_color_index = purge_color_index
 
         self.weight_to_add = weight_to_add
         self.move_recently_released_to_top = move_recently_released_to_top
@@ -838,7 +840,7 @@ class Settings:
                 self.shorten_with_ellpisis, self.releases_visible, self.release_grace_period, self.default_text_color,
                 self.default_font_size, self.move_recently_released_to_top, self.weight_to_add, self.sort_by_upcoming,
                 self.secondary_show_background, self.enable_secondary_show_background, self.send_notifications,
-                self.show_till_release, self.display_hidden]
+                self.show_till_release, self.display_hidden, self.purge_color_index]
 
     def load(self):
         """
@@ -885,6 +887,7 @@ class Settings:
                 self.max_title_display_len = int(displaydata[1])
                 self.release_grace_period = int(displaydata[2])
                 self.weight_to_add = int(displaydata[3])
+                self.purge_color_index = int(displaydata[4])
             except IndexError:
                 missing_data = True
 
@@ -929,7 +932,7 @@ class Settings:
             writer.writerow([*self.initialwinsize, *self.initialwinpos])
             writer.writerow([self.search_results])
             writer.writerow([self.show_amount, self.max_title_display_len, self.release_grace_period,
-                             self.weight_to_add])
+                             self.weight_to_add, self.purge_color_index])
             writer.writerow([self.indices_visible, self.show_all, self.shorten_with_ellpisis, self.releases_visible,
                              self.move_recently_released_to_top, self.sort_by_upcoming,
                              self.enable_secondary_show_background, self.send_notifications, self.show_till_release,

@@ -44,6 +44,7 @@ enable_secondary_show_background = False
 send_notifications = False
 show_till_release = True
 display_hidden = False
+purge_color_index = -1  # If purge color index is -1, then no colors will be changed
 
 
 #######################################################################################
