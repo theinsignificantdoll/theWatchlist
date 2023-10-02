@@ -770,7 +770,8 @@ class Settings:
                  send_notifications=val.send_notifications,
                  show_till_release=val.show_till_release,
                  display_hidden=val.display_hidden,
-                 purge_color_index=val.purge_color_index):
+                 purge_color_index=val.purge_color_index,
+                 initial_show_color_index=val.initial_show_color_index):
 
         self.sg = sg
         # Note that some settings are not stored as attributes of this class, but are instead
@@ -804,6 +805,7 @@ class Settings:
         self.default_text_color = self.text_colors[0] if default_text_color is None else default_text_color
         self.default_font_size = default_font_size
         self.purge_color_index = purge_color_index
+        self.initial_show_color_index = initial_show_color_index
 
         self.weight_to_add = weight_to_add
         self.move_recently_released_to_top = move_recently_released_to_top
@@ -840,7 +842,7 @@ class Settings:
                 self.shorten_with_ellpisis, self.releases_visible, self.release_grace_period, self.default_text_color,
                 self.default_font_size, self.move_recently_released_to_top, self.weight_to_add, self.sort_by_upcoming,
                 self.secondary_show_background, self.enable_secondary_show_background, self.send_notifications,
-                self.show_till_release, self.display_hidden, self.purge_color_index]
+                self.show_till_release, self.display_hidden, self.purge_color_index, self.initial_show_color_index]
 
     def load(self):
         """
@@ -888,6 +890,7 @@ class Settings:
                 self.release_grace_period = int(displaydata[2])
                 self.weight_to_add = int(displaydata[3])
                 self.purge_color_index = int(displaydata[4])
+                self.initial_show_color_index = int(displaydata[5])
             except IndexError:
                 missing_data = True
 
@@ -932,7 +935,7 @@ class Settings:
             writer.writerow([*self.initialwinsize, *self.initialwinpos])
             writer.writerow([self.search_results])
             writer.writerow([self.show_amount, self.max_title_display_len, self.release_grace_period,
-                             self.weight_to_add, self.purge_color_index])
+                             self.weight_to_add, self.purge_color_index, self.initial_show_color_index])
             writer.writerow([self.indices_visible, self.show_all, self.shorten_with_ellpisis, self.releases_visible,
                              self.move_recently_released_to_top, self.sort_by_upcoming,
                              self.enable_secondary_show_background, self.send_notifications, self.show_till_release,

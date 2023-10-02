@@ -68,7 +68,7 @@ def show_editor(title: str = "Show Editor", show: Show = None, show_purge: bool 
     :return: True if something has been changed and False if nothing has been changed.
     """
     if show is None:  # make a dummy show.
-        show = Show()
+        show = Show(color=settings.initial_show_color_index)
     window = sg.Window(title,
                        [
                            [sg.Column([
@@ -948,7 +948,8 @@ class MainWin:
                 [sg.T("Search Results")],
                 [sg.T("Title Length")],
                 [sg.T("Show Cut-off")],
-                [sg.T("Purge Color Index")]]
+                [sg.T("Purge Show Color")],
+                [sg.T("Initial Show Color")]]
         col2 = [[sg.In(settings.fontsize, key="fsize", tooltip="Any integer")],
                 [sg.In(settings.fonttype, key="ftype",
                        tooltip="Any font name, as one might use in Word or libreOffice Writer")],
@@ -975,7 +976,10 @@ class MainWin:
                           default_value=settings.text_colors[settings.purge_color_index]
                           if settings.purge_color_index != -1
                           else "",
-                          key="purge_color")]]
+                          key="purge_show_color")],
+                [sg.Combo([n for n in settings.text_colors],
+                          default_value=settings.text_colors[settings.initial_show_color_index],
+                          key="initial_show_color")]]
         col3 = [[sg.ColorChooserButton("Field Background Color:", target="field_bg_color")],
                 [sg.T("Shorten With Ellipsis:")],
                 [sg.T("Release Grace Period:")],
@@ -1066,7 +1070,10 @@ class MainWin:
                     if not is_valid_color(pref_win["secondary_show_background"].get()):
                         raise ValueError
 
-                    if not v["purge_color"] in settings.text_colors:
+                    if not v["purge_show_color"] in settings.text_colors:
+                        raise ValueError
+
+                    if not v["initial_show_color"] in settings.text_colors:
                         raise ValueError
 
                     gotcolors = pref_win["txtcolor"].get().split("-")
@@ -1107,7 +1114,8 @@ class MainWin:
                 settings.enable_secondary_show_background = pref_win["enable_secondary_show_background"].get()
                 settings.secondary_show_background = pref_win["secondary_show_background"].get()
                 settings.send_notifications = pref_win["send_notifications"].get()
-                settings.purge_color_index = settings.text_colors.index(v["purge_color"])
+                settings.purge_color_index = settings.text_colors.index(v["purge_show_color"])
+                settings.initial_show_color_index = settings.text_colors.index(v["initial_show_color"])
 
                 if settings.save():
                     self.restart()
