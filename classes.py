@@ -594,9 +594,9 @@ class ShowsFileHandler:
 
     def get_num_of_shown(self) -> int:
         """
-        Returns the number of items in self.shows where is_hidden is False AND is_recently_released is False
+        Returns the number of items in self.shows where is_hidden is False OR is_recently_released is True
         """
-        return sum([not i.is_hidden and not i.is_recently_released for i in self.shows])
+        return sum([not i.is_hidden or i.is_recently_released for i in self.shows])
 
     def __getitem__(self, item):
         """

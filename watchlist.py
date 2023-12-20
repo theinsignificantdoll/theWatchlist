@@ -366,6 +366,91 @@ def get_release_info(initial_release_info: ReleaseInfo = ReleaseInfo()) -> Relea
             rel_win["minute"].update(value="0")
 
 
+def get_existing_weights(shows_obj: ShowsFileHandler):
+    """
+    Returns a dict with the used weights as keys and the amount of shows using them as weights as their value.
+    """
+    weight_dict = {}
+    for show in shows_obj:
+        if show.weight in weight_dict:
+            weight_dict[show.weight] += 1
+            continue
+        weight_dict[show.weight] = 1
+    return weight_dict
+
+
+def change_weights(change_dict: dict[int, int]):
+    shows_changed = []
+    for weight in change_dict:
+        for show in shows:
+            if show.weight == weight and show.id not in shows_changed:
+                show.weight = change_dict[weight]
+                shows_changed.append(show.id)
+
+
+def weight_control_panel():
+    """
+    Opens a window which allows the user to modify the weights of shows on a large scale.
+    """
+    weight_dict = get_existing_weights(shows)
+    original_weights = weight_dict.copy()
+    layout = [
+        [sg.Col([[sg.Text("Weight"), sg.Text("Amount")]])],
+        [sg.Col([
+            [sg.Text(f"{key}", key=f"weight_{ind}", size=(5, 1), justification="e"),
+             sg.Push(),
+             sg.Text(f" -> "),
+             sg.Push(),
+             sg.Text(f"{weight_dict[key]}", size=(4, 1)),
+             sg.Push(),
+             sg.Button("↑", key=f"up_{ind}"),
+             sg.Push(),
+             sg.Button(f"↓", key=f"down_{ind}")] for ind, key in enumerate(weight_dict)
+        ]),
+        ],
+        [sg.Button("SAVE"), sg.Button("CANCEL")]
+    ]
+    window = sg.Window("Weight Control Panel", layout=layout, font=(settings.fonttype, settings.default_font_size))
+
+    def write_weights():
+        for ind, key in enumerate(weight_dict):
+            window[f"weight_{ind}"](key)
+
+    while True:
+        event, values = window.read()
+        if event == sg.WIN_CLOSED or event == "CANCEL":
+            window.close()
+            break
+        elif event.startswith("up_"):
+            index = int(event.removeprefix("up_"))
+            new_weights = {}
+            for ind, key in enumerate(weight_dict):
+                if ind <= index:
+                    new_weights[key+1] = weight_dict[key]
+                    continue
+                new_weights[key] = weight_dict[key]
+            weight_dict = new_weights
+            write_weights()
+        elif event.startswith("down_"):
+            index = int(event.removeprefix("down_"))
+            new_weights = {}
+            for ind, key in enumerate(weight_dict):
+                if ind >= index:
+                    new_weights[key-1] = weight_dict[key]
+                    continue
+                new_weights[key] = weight_dict[key]
+            weight_dict = new_weights
+            write_weights()
+        elif event == "SAVE":
+            new_weights_list = [key for key in weight_dict]
+            change_dict = {}
+            for ind, key in enumerate(original_weights):
+                change_dict[key] = new_weights_list[ind]
+            change_weights(change_dict)
+            window.close()
+            break
+
+
 def guide():
     """
     Opens a non-interactive window showing some user guides.
@@ -453,7 +538,8 @@ class MainWin:
                    sg.Checkbox("", key="display_hidden_checkbox", text_color=settings.button_color,
                                tooltip="Enables or disables the showing of hidden shows",
                                default=settings.display_hidden, enable_events=True),
-                   butt(" 📖 ", key="open_guide", border_width=0, tooltip="Open guide")]
+                   butt(" 📖 ", key="open_guide", border_width=0, tooltip="Open guide"),
+                   butt(" 🏋 ", key="open_weight_control_panel", border_width=0, tooltip="Open Weight Control Panel")]
                   ]
 
         layout = [
@@ -488,7 +574,7 @@ class MainWin:
         self.sort_shows_and_display()
 
         for key in ("add_show", "preferences", "show_all", "search_button", "index_checkbox", "release_checkbox",
-                    "open_guide"):
+                    "open_guide", "open_weight_control_panel"):
             self.win[key].block_focus()
             self.win[key].set_cursor("plus")
 
@@ -610,6 +696,9 @@ class MainWin:
 
             elif event == "open_guide":
                 guide()
+
+            elif event == "open_weight_control_panel":
+                weight_control_panel()
 
             elif event == "preferences":
                 self.update_preferences()
@@ -1347,8 +1436,8 @@ class MainWin:
 
 
 if __name__ == '__main__':
-    # Setting a default theme is exlusively used on the first startup.
-    # All settings (i think) will otherwise be defined in the settings savefile.
+    # Setting a default theme is exlusively used on the first system startup.
+    # All settings should otherwise be defined in the settings savefile.
     sg.theme("DarkBrown4")
 
     settings = Settings(sg)
@@ -1362,3 +1451,7 @@ if __name__ == '__main__':
 
     settings.save()
     shows.save()
+
+
+print("hello")
+print()
