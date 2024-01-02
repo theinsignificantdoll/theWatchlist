@@ -103,7 +103,8 @@ def show_editor(title: str = "Show Editor", show: Show = None, show_purge: bool 
                                ])
                            ],
                            [sg.HSep()],
-                           [sg.Column([
+                           [
+                            sg.Col([[sg.Column([
                                [sg.T("Release Info")],
                                [butt(show.release_info.release_string, key="show_release_info",
                                      tooltip="Press ME!",
@@ -112,6 +113,13 @@ def show_editor(title: str = "Show Editor", show: Show = None, show_purge: bool 
                                sg.Column([[sg.T()],
                                           [butt("Clear dismissal", key="dismiss_clear",
                                                 visible=show.last_dismissal != 0)]]),
+                           ]]),
+                           sg.Col([
+                               [sg.T("Ended")],
+                               [sg.Checkbox("", key="ended_checkbox", default=show.ended)]
+                           ]),
+                           sg.Push(),
+                           sg.Col([[
                                sg.Push(),
                                sg.Column([
                                    [sg.T("Purge Weight")],
@@ -120,8 +128,7 @@ def show_editor(title: str = "Show Editor", show: Show = None, show_purge: bool 
                                                          "then Release Info will be cleared\n"
                                                          "As such this field is useful for quickly discarding\n"
                                                          "shows, once they have been finished.")]
-                               ]) if show_purge else sg.T()
-                           ],
+                               ]) if show_purge else sg.T()]])],
                            [sg.Button("Save", bind_return_key=True), sg.Button("Cancel")]],
                        disable_close=True,
                        auto_size_buttons=True,
@@ -163,25 +170,33 @@ def show_editor(title: str = "Show Editor", show: Show = None, show_purge: bool 
         sg.popup_error(title="Couldn't convert to integer")
         return False
 
+    do_release_update = False
+
     show.title = data["show_title"]
     show.ep = data["show_ep"]
     show.season = data["show_season"]
     show.link = data["show_link"]
     show.is_hidden = data["show_is_hidden"]
     show.ep_season_relevant = data["show_ep_season_relevant"]
+    if show.ended != data["ended_checkbox"]:
+        show.ended = data["ended_checkbox"]
+        do_release_update = True
 
     if purge_weight is False:
         if show.release_info != release_info or show.last_dismissal != last_dismissal:
             show.last_dismissal = last_dismissal
             show.release_info = release_info
-            shows.check_all_releases(allow_notifications=False)
+            do_release_update = True
         show.weight = data["show_weight"]
     else:
-        show.release_info.reset()
+        show.ended = True
         show.weight = purge_weight
         show.last_dismissal = 0
         if settings.purge_color_index >= 0:
             show.color = settings.purge_color_index
+
+    if do_release_update:
+        shows.check_all_releases(allow_notifications=False)
     return show
 
 
@@ -1451,7 +1466,3 @@ if __name__ == '__main__':
 
     settings.save()
     shows.save()
-
-
-print("hello")
-print()

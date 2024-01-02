@@ -386,7 +386,8 @@ class Show:
                  ep_season_relevant: Union[str, bool] = True,
                  release_string: str = "",
                  last_dismissal: Union[str, float] = 0,
-                 is_hidden: Union[bool, str] = False):
+                 is_hidden: Union[bool, str] = False,
+                 ended: Union[str, bool] = False):
 
         self.id: int = int(num_id)
         self.title: str = title
@@ -397,6 +398,7 @@ class Show:
         self.color: int = int(color)
         self.last_dismissal: float = float(last_dismissal)
         self.is_hidden: bool = is_hidden if isinstance(is_hidden, bool) else is_hidden == "True"
+        self.ended: bool = ended if isinstance(ended, bool) else ended == "True"
         self.ep_season_relevant: bool = ep_season_relevant if isinstance(ep_season_relevant, bool) \
             else ep_season_relevant == "True"
 
@@ -445,7 +447,7 @@ class Show:
         Note that the length of this string will not exceed 3 characters unless the time till release is in
         100 years or more.
         """
-        if not self.release_info.is_defined() or self.is_recently_released:
+        if not self.release_info.is_defined() or self.is_recently_released or self.ended:
             return ""
         to_release = self.hours_to_release()
         if to_release <= 1:
@@ -468,7 +470,7 @@ class Show:
         :return: Whether show was released within grace_period.
         """
 
-        if not self.release_info.is_defined():
+        if not self.release_info.is_defined() or self.ended:
             self.is_recently_released = False
             return self.is_recently_released
 
@@ -534,6 +536,7 @@ class ShowsFileHandler:
                     release_string=row[8] if len(row) > 8 else "",
                     last_dismissal=row[9] if len(row) > 9 else 0,
                     is_hidden=row[10] if len(row) > 10 else None,
+                    ended=row[11] if len(row) > 11 else None,
                 ))
         self.check_all_releases(allow_notifications=False)
         return self.shows
@@ -547,7 +550,7 @@ class ShowsFileHandler:
             for show in self.shows:
                 writer.writerow([show.id, show.title, show.ep, show.season, show.link, show.weight, show.color,
                                  show.ep_season_relevant, show.release_info.release_string,
-                                 show.last_dismissal, show.is_hidden])
+                                 show.last_dismissal, show.is_hidden, show.ended])
 
     def pop(self, __index) -> Show:
         """
