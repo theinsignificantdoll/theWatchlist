@@ -84,8 +84,8 @@ def show_editor(title: str = "Show Editor", show: Show = None, show_purge: bool 
                                    [sg.InputText(show.season, key="show_season", size=(8, 1))]
                                ]),
                                sg.Column([
-                                   [sg.T("Link")],
-                                   [sg.InputText(show.link, key="show_link", size=(15, 1))]
+                                   [sg.B("Link")],
+                                   [sg.InputText(show.get_link_string(), key="show_link", size=(15, 1))]
                                ]),
                                sg.Column([
                                    [sg.T("Weight")],
@@ -137,6 +137,7 @@ def show_editor(title: str = "Show Editor", show: Show = None, show_purge: bool 
                        font=(settings.fonttype, settings.default_font_size),
                        keep_on_top=True)
 
+    _link_list = show.links
     release_info = show.release_info
     last_dismissal = show.last_dismissal
     while True:
@@ -147,6 +148,11 @@ def show_editor(title: str = "Show Editor", show: Show = None, show_purge: bool 
         elif button == "dismiss_clear":
             last_dismissal = 0
             window["dismiss_clear"].update(visible=False)
+        elif button == "Link":
+            _link_list = graphical_string_list_manager(_link_list, "Links")
+            temp_show = Show()
+            temp_show.links = _link_list
+            window["show_link"](temp_show.get_link_string())
         else:
             break
     window.close()
@@ -175,7 +181,7 @@ def show_editor(title: str = "Show Editor", show: Show = None, show_purge: bool 
     show.title = data["show_title"]
     show.ep = data["show_ep"]
     show.season = data["show_season"]
-    show.link = data["show_link"]
+    show.set_link_string(data["show_link"])
     show.is_hidden = data["show_is_hidden"]
     show.ep_season_relevant = data["show_ep_season_relevant"]
     if show.ended != data["ended_checkbox"]:
@@ -198,6 +204,48 @@ def show_editor(title: str = "Show Editor", show: Show = None, show_purge: bool 
     if do_release_update:
         shows.check_all_releases(allow_notifications=False)
     return show
+
+
+def graphical_string_list_manager(initial_list: list[str], list_name="Strings") -> list[str]:
+    layout = [
+        [sg.T(list_name)],
+        [sg.Listbox(initial_list, key="LIST", size=(48, 10))],
+        [sg.HSep()],
+        [sg.Input(key="NEW_ELEMENT")],
+        [sg.Button("Delete")],
+        [sg.Button("Add before"), sg.Button("Add after")],
+        [sg.HSep()],
+        [sg.Button("SAVE"), sg.Button("CANCEL")]
+    ]
+
+    new_list = initial_list.copy()
+
+    window = sg.Window(f"{list_name} Editor", layout=layout)
+    while True:
+        event, values = window.read()
+
+        if event == sg.WIN_CLOSED or event == "CANCEL":
+            window.close()
+            return initial_list
+        elif event == "SAVE":
+            window.close()
+            return new_list
+        elif len(event) > 3 and event[:3] == "Add":
+            index = new_list.index(values["LIST"][0]) if values["LIST"] else 0
+            if event.removeprefix("Add ") == "after":
+                try:
+                    new_list = new_list[:index + 1] + [values["NEW_ELEMENT"]] + new_list[index + 1:]
+                except IndexError:
+                    new_list = new_list[:index] + [values["NEW_ELEMENT"]] + new_list[index:]
+            else:
+                new_list = new_list[:index] + [values["NEW_ELEMENT"]] + new_list[index:]
+            window["LIST"](values=new_list)
+        elif event == "Delete":
+            if not values["LIST"]:
+                continue
+            selected = values["LIST"][0]
+            new_list.remove(selected)
+            window["LIST"](values=new_list)
 
 
 def butt(button_text="", key=None, tooltip=None, butt_color=(False, None), border_width=None, size=(None, None),

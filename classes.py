@@ -17,6 +17,9 @@ weekday_to_int = {"mon": 0,
                   "sun": 6}
 
 
+link_seperator = "<NEXT_LINK>"
+
+
 def parse_release_string(release_string) -> Union[tuple[int, int, int], tuple[tuple[int, int, int], int, int], bool]:
     """
     Parses release_string. Note that weekday is converted to an integer, where monday is 0 and sunday is 6.
@@ -380,7 +383,7 @@ class Show:
                  title: str = "",
                  ep: Union[str, int] = 0,
                  season: Union[str, int] = 1,
-                 link: str = "",
+                 link_string: str = "",
                  weight: Union[str, int] = 0,
                  color: Union[str, int] = 0,
                  ep_season_relevant: Union[str, bool] = True,
@@ -393,7 +396,8 @@ class Show:
         self.title: str = title
         self.ep: int = int(ep)
         self.season: int = int(season)
-        self.link: str = link
+        self.links: list[str] = []
+        self.set_link_string(link_string)
         self.weight: int = int(weight)
         self.color: int = int(color)
         self.last_dismissal: float = float(last_dismissal)
@@ -413,12 +417,30 @@ class Show:
                f" release_info={self.release_string.__repr__()}," \
                f" last_dismissal={self.last_dismissal:.4f}, is_hidden={self.is_hidden})"
 
+    def get_link_string(self):
+        """
+        Gets a string-representation of self.links
+        """
+        return link_seperator.join(self.links)
+
+    def set_link_string(self, new: str):
+        """
+        Defines self.links based on a string-representation from the get_link_string method
+        """
+        self.links = new.split(link_seperator)
+
     def open_link(self):
         """
         Opens the link of the show in a browser
         """
-        if self.link:
-            webbrowser.open(self.link)
+        season = int(self.season)
+        if len(self.links) >= season:
+            link = self.links[season - 1]
+        else:
+            link = self.links[-1]
+
+        if link:
+            webbrowser.open(link)
 
     def send_release_notification(self):
         """
@@ -529,7 +551,7 @@ class ShowsFileHandler:
                     title=row[1],
                     ep=row[2],
                     season=row[3],
-                    link=row[4],
+                    link_string=row[4],
                     weight=row[5],
                     color=row[6],
                     ep_season_relevant=row[7] if len(row) > 7 else None,
@@ -548,7 +570,7 @@ class ShowsFileHandler:
         with open(self.savefile, "w", newline="") as csvfile:
             writer = csv.writer(csvfile, delimiter=self.delimiter, quotechar="|")
             for show in self.shows:
-                writer.writerow([show.id, show.title, show.ep, show.season, show.link, show.weight, show.color,
+                writer.writerow([show.id, show.title, show.ep, show.season, show.get_link_string(), show.weight, show.color,
                                  show.ep_season_relevant, show.release_info.release_string,
                                  show.last_dismissal, show.is_hidden, show.ended])
 
