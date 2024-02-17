@@ -463,22 +463,32 @@ class Show:
             return 0
         return round(self.release_info.hours_to_release(), 3)
 
-    def string_time_till_release(self) -> str:
+    def string_time_till_release(self, precise_time_left=False) -> str:
         """
-        Returns a string of the amount of til till release. This string is suffixed by a unit (i.e. minute, hour etc.)
-        Note that the length of this string will not exceed 3 characters unless the time till release is in
+        Returns a string of the amount of time till release. This string is suffixed by a unit (i.e. m, h etc.)
+        Note that the length of this string will not (and should not) exceed 3 characters unless the time till release is in
         100 years or more.
         """
         if not self.release_info.is_defined() or self.is_recently_released or self.ended:
             return ""
         to_release = self.hours_to_release()
-        if to_release <= 1:
+        if not precise_time_left:
+            if to_release <= 1:
+                return f"{int(to_release * 60 + 0.5)}m"
+            elif to_release <= 24:
+                return f"{int(to_release + 0.5)}h"
+            elif to_release <= 168:
+                return f"{int(to_release / 24 + 0.5)}d"
+            elif to_release <= 8760:
+                return f"{int(to_release / 168 + 0.5)}w"
+            return f"{int(to_release / 8760 + 0.5)}y"
+        if to_release < 1.6415:  # 99m or less left
             return f"{int(to_release * 60 + 0.5)}m"
-        elif to_release <= 24:
+        elif to_release < 99.499:
             return f"{int(to_release + 0.5)}h"
-        elif to_release <= 168:
+        elif to_release < 2387.97:
             return f"{int(to_release / 24 + 0.5)}d"
-        elif to_release <= 8760:
+        elif to_release < 16715.8:
             return f"{int(to_release / 168 + 0.5)}w"
         return f"{int(to_release / 8760 + 0.5)}y"
 
@@ -761,7 +771,7 @@ class Settings:
         .__init__
         .represent_as_list
 
-        and the default_values.py (imported as val) file.
+        and default_values.py (imported as val) file.
     """
 
     def __init__(self, sg,
@@ -796,7 +806,8 @@ class Settings:
                  show_till_release=val.show_till_release,
                  display_hidden=val.display_hidden,
                  purge_color_index=val.purge_color_index,
-                 initial_show_color_index=val.initial_show_color_index):
+                 initial_show_color_index=val.initial_show_color_index,
+                 remaining_time_prioritise_precision=val.remaining_time_prioritise_precision):
 
         self.sg = sg
         # Note that some settings are not stored as attributes of this class, but are instead
@@ -831,6 +842,7 @@ class Settings:
         self.default_font_size = default_font_size
         self.purge_color_index = purge_color_index
         self.initial_show_color_index = initial_show_color_index
+        self.remaining_time_prioritise_precision = remaining_time_prioritise_precision
 
         self.weight_to_add = weight_to_add
         self.move_recently_released_to_top = move_recently_released_to_top
@@ -867,7 +879,8 @@ class Settings:
                 self.shorten_with_ellpisis, self.releases_visible, self.release_grace_period, self.default_text_color,
                 self.default_font_size, self.move_recently_released_to_top, self.weight_to_add, self.sort_by_upcoming,
                 self.secondary_show_background, self.enable_secondary_show_background, self.send_notifications,
-                self.show_till_release, self.display_hidden, self.purge_color_index, self.initial_show_color_index]
+                self.show_till_release, self.display_hidden, self.purge_color_index, self.initial_show_color_index,
+                self.remaining_time_prioritise_precision]
 
     def load(self):
         """
@@ -931,6 +944,7 @@ class Settings:
                 self.send_notifications = state_data[7] == "True"
                 self.show_till_release = state_data[8] == "True"
                 self.display_hidden = state_data[9] == "True"
+                self.remaining_time_prioritise_precision = state_data[10] == "True"
             except IndexError:
                 missing_data = True
 
@@ -964,7 +978,7 @@ class Settings:
             writer.writerow([self.indices_visible, self.show_all, self.shorten_with_ellpisis, self.releases_visible,
                              self.move_recently_released_to_top, self.sort_by_upcoming,
                              self.enable_secondary_show_background, self.send_notifications, self.show_till_release,
-                             self.display_hidden])
+                             self.display_hidden, self.remaining_time_prioritise_precision])
 
         self._currently_saved_to_disk_list = self.represent_as_list()
         return True

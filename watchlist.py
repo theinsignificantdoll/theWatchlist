@@ -538,6 +538,198 @@ def guide():
             break
 
 
+def update_preferences():
+    """
+    Opens a GUI that allows the user to change the settings.
+    """
+    col1 = [[sg.T("Font size:")],
+            [sg.T("Font type:")],
+            [sg.Col([[sg.T("Text colors:"), sg.Push(),
+                      sg.Button(" + ", key="text_add"),
+                      sg.Button(" - ", key="text_remove")]])],
+            [sg.ColorChooserButton("Background color:", target="bg_color")],
+            [sg.ColorChooserButton("Menu background color:", target="menu_bg_color")],
+            [sg.T("Menu font size:")],
+            [sg.ColorChooserButton("Button Color", target="buttoncolor")],
+            [sg.T("Search Results")],
+            [sg.T("Title Length")],
+            [sg.T("Show Cut-off")],
+            [sg.T("Purge Show Color")],
+            [sg.T("Initial Show Color")]]
+    col2 = [[sg.In(settings.fontsize, key="fsize", tooltip="Any integer")],
+            [sg.In(settings.fonttype, key="ftype",
+                   tooltip="Any font name, as one might use in Word or libreOffice Writer")],
+            [sg.In("-".join(settings.text_colors), key="txtcolor",
+                   tooltip="Ex: '#ff0000-#404040' or '#ff0000-#404040-#878787'")],
+            [sg.In(sg.theme_background_color(), k="bg_color", tooltip="The background color",
+                   background_color=sg.theme_background_color())],
+            [sg.In(settings.right_click_selected_background, k="menu_bg_color",
+                   background_color=sg.theme_background_color(),
+                   tooltip="The background color of the right click menu")],
+            [sg.In(settings.right_click_fontsize, k="menu_font_size",
+                   tooltip="The font size of the right click menu")],
+            [sg.In(settings.button_color, key="buttoncolor", tooltip="A single color, Ex: '#e0e0e0'",
+                   background_color=sg.theme_background_color())],
+            [sg.In(settings.search_results, key="sresults",
+                   tooltip="The number of results shown when searching. Default:3")],
+            [sg.In(settings.max_title_display_len, key="title_length",
+                   tooltip="The amount of characters that should be displayed\n"
+                           "in titles. 0 to display all characters")],
+            [sg.In(settings.show_amount, key="showamount",
+                   tooltip="For performance reasons not all shows are displayed by default. This is the amount"
+                           " of shows on display.\nCan be toggled by the '^' button")],
+            [sg.Combo([n for n in settings.text_colors],
+                      default_value=settings.text_colors[settings.purge_color_index]
+                      if settings.purge_color_index != -1
+                      else "",
+                      key="purge_show_color")],
+            [sg.Combo([n for n in settings.text_colors],
+                      default_value=settings.text_colors[settings.initial_show_color_index],
+                      key="initial_show_color")]]
+    col3 = [[sg.ColorChooserButton("Field Background Color:", target="field_bg_color")],
+            [sg.T("Shorten With Ellipsis:")],
+            [sg.T("Release Grace Period:")],
+            [sg.ColorChooserButton("Default Text Color:", target="default_text_color")],
+            [sg.T("Default Font Size:")],
+            [sg.T("Recent Releases To Top:")],
+            [sg.T("Recent Release Weight Add:")],
+            [sg.T("Sort by Upcoming:")],
+            [sg.T("Alternate Show Background:")],
+            [sg.ColorChooserButton("Alternate Show Bg Color:", target="secondary_show_background")],
+            [sg.T("Send Notifications:")],
+            [sg.T("Precise Time Left:")],
+            ]
+    col4 = [[sg.In(sg.theme_input_background_color(), k="field_bg_color",
+                   tooltip="The background color of the input fields",
+                   background_color=sg.theme_background_color())],
+            [sg.Checkbox(default=settings.shorten_with_ellpisis, k="shorten_with_ellipsis", text="",
+                         text_color=settings.button_color, tooltip='Whether or not to end shortened titles'
+                                                                   ' with "..."')],
+            [sg.In(settings.release_grace_period, k="release_grace_period",
+                   tooltip="The number of hours after a show has been released that the show should be marked\n"
+                           "as having recently been released.")],
+            [sg.In(settings.default_text_color, k="default_text_color",
+                   tooltip="The text color to be used in subwindows.",
+                   background_color=sg.theme_background_color())],
+            [sg.In(settings.default_font_size, key="default_font_size", tooltip="The font size in subwindows")],
+            [sg.Checkbox("", key="move_recently_released_to_top", default=settings.move_recently_released_to_top)],
+            [sg.In(settings.weight_to_add, key="weight_to_add", tooltip="The weight that will be added to a show"
+                                                                        "when it is newly released.")],
+            [sg.Checkbox("", key="sort_by_upcoming", default=settings.sort_by_upcoming)],
+            [sg.Checkbox("", key="enable_secondary_show_background",
+                         default=settings.enable_secondary_show_background)],
+            [sg.In(settings.secondary_show_background, k="secondary_show_background",
+                   background_color=sg.theme_background_color())],
+            [sg.Checkbox("", key="send_notifications",
+                         default=settings.send_notifications)],
+            [sg.Checkbox("", key="remaining_time_prioritise_precision",
+                         default=settings.remaining_time_prioritise_precision)],
+            ]
+    pref_win = sg.Window("Preferences", layout=[
+        [sg.Col([[col1[i][0], sg.Push(), col2[i][0]] for i in range(len(col1))]),
+         sg.VSep(),
+         sg.Col([[col3[i][0], sg.Push(), col4[i][0]] for i in range(len(col3))],
+                expand_y=True, element_justification="n")],
+        [sg.Button("Save", bind_return_key=True), sg.Button("Cancel")]], default_element_size=(16, 1),
+                         font=(settings.fonttype, settings.default_font_size))
+    temp_text_colors = settings.text_colors.copy()
+
+    while True:
+        e, v = pref_win.read()
+        if e == sg.WIN_CLOSED or e == "Cancel":
+            pref_win.close()
+            break
+        elif e == "text_add":
+            _, hex_color = sg.askcolor()
+            if hex_color:
+                temp_text_colors.append(hex_color)
+            pref_win["txtcolor"].update("-".join(temp_text_colors))
+        elif e == "text_remove":
+            _e, _v = sg.Window("Choose one to delete", layout=[[sg.Combo(temp_text_colors, k="combo")],
+                                                               [sg.Button("Save", bind_return_key=True),
+                                                                sg.Button("Cancel")]]).read(close=True)
+            if _e == "Save" and _v["combo"]:
+                temp_text_colors.remove(_v["combo"])
+            pref_win["txtcolor"].update("-".join(temp_text_colors))
+        elif e == "Save":
+            try:
+                int(pref_win["fsize"].get())
+                int(pref_win["menu_font_size"].get())
+                int(pref_win["sresults"].get())
+                int(pref_win["title_length"].get())
+                int(pref_win["showamount"].get())
+                int(pref_win["release_grace_period"].get())
+                int(pref_win["default_font_size"].get())
+                int(pref_win["weight_to_add"].get())
+                if not is_valid_color(pref_win["buttoncolor"].get()):
+                    raise ValueError
+
+                if not is_valid_color(pref_win["menu_bg_color"].get()):
+                    raise ValueError
+
+                if not is_valid_color(pref_win["bg_color"].get()):
+                    raise ValueError
+
+                if not is_valid_color(pref_win["field_bg_color"].get()):
+                    raise ValueError
+
+                if not is_valid_color(pref_win["default_text_color"].get()):
+                    raise ValueError
+
+                if not is_valid_color(pref_win["secondary_show_background"].get()):
+                    raise ValueError
+
+                if not v["purge_show_color"] in settings.text_colors:
+                    raise ValueError
+
+                if not v["initial_show_color"] in settings.text_colors:
+                    raise ValueError
+
+                gotcolors = pref_win["txtcolor"].get().split("-")
+                if len(gotcolors) <= 0:
+                    raise ValueError
+                for col in gotcolors:
+                    if not is_valid_color(col):
+                        raise ValueError
+
+            except ValueError:
+                sg.popup_error("Unreadable value")
+                continue
+            pref_win.close()
+
+            settings.fontsize = pref_win["fsize"].get()
+            settings.fonttype = pref_win["ftype"].get()
+
+            written_text_colors = pref_win["txtcolor"].get().split("-")
+            if settings.text_colors != written_text_colors:
+                shows.new_text_colors(settings.text_colors, written_text_colors)
+                settings.text_colors = written_text_colors
+
+            sg.theme_background_color(pref_win["bg_color"].get())
+            sg.theme_input_background_color(pref_win["field_bg_color"].get())
+            settings.right_click_selected_background = pref_win["menu_bg_color"].get()
+            settings.right_click_fontsize = int(pref_win["menu_font_size"].get())
+            settings.button_color = pref_win["buttoncolor"].get()
+            settings.search_results = int(pref_win["sresults"].get())
+            settings.max_title_display_len = int(pref_win["title_length"].get())
+            settings.show_amount = int(pref_win["showamount"].get())
+            settings.shorten_with_ellpisis = pref_win["shorten_with_ellipsis"].get()
+            settings.release_grace_period = int(pref_win["release_grace_period"].get())
+            settings.default_text_color = pref_win["default_text_color"].get()
+            settings.default_font_size = int(pref_win["default_font_size"].get())
+            settings.move_recently_released_to_top = pref_win["move_recently_released_to_top"].get()
+            settings.weight_to_add = int(pref_win["weight_to_add"].get())
+            settings.sort_by_upcoming = pref_win["sort_by_upcoming"].get()
+            settings.enable_secondary_show_background = pref_win["enable_secondary_show_background"].get()
+            settings.secondary_show_background = pref_win["secondary_show_background"].get()
+            settings.send_notifications = pref_win["send_notifications"].get()
+            settings.purge_color_index = settings.text_colors.index(v["purge_show_color"])
+            settings.initial_show_color_index = settings.text_colors.index(v["initial_show_color"])
+            settings.remaining_time_prioritise_precision = pref_win["remaining_time_prioritise_precision"].get()
+
+            return settings.save()
+
+
 class MainWin:
     def __init__(self, main_loop=False):
         """
@@ -764,7 +956,9 @@ class MainWin:
                 weight_control_panel()
 
             elif event == "preferences":
-                self.update_preferences()
+                if update_preferences():
+                    self.restart()
+                    break
 
             elif event == "show_all":
                 self.toggle_show_all()
@@ -908,7 +1102,9 @@ class MainWin:
             self.win[f"title:{ind}"].update(value=limit_string_len(show.title, settings.max_title_display_len,
                                                                    use_ellipsis=settings.shorten_with_ellpisis),
                                             text_color=color)
-            self.win[f"till_release:{ind}"].update(value=show.string_time_till_release(),
+            self.win[f"till_release:{ind}"].update(value=show.string_time_till_release(
+                precise_time_left=settings.remaining_time_prioritise_precision
+            ),
                                                    text_color=color)
             self.win[f"Eminus:{ind}"].update(value="Ep:" if show.ep_season_relevant else "",
                                              text_color=color)
@@ -1083,195 +1279,6 @@ class MainWin:
                 search_win.close()
                 self.sort_shows_and_display()
                 return
-
-    def update_preferences(self):
-        """
-        Opens a GUI that allows the user to change the settings.
-        """
-        col1 = [[sg.T("Font size:")],
-                [sg.T("Font type:")],
-                [sg.Col([[sg.T("Text colors:"), sg.Push(),
-                          sg.Button(" + ", key="text_add"),
-                          sg.Button(" - ", key="text_remove")]])],
-                [sg.ColorChooserButton("Background color:", target="bg_color")],
-                [sg.ColorChooserButton("Menu background color:", target="menu_bg_color")],
-                [sg.T("Menu font size:")],
-                [sg.ColorChooserButton("Button Color", target="buttoncolor")],
-                [sg.T("Search Results")],
-                [sg.T("Title Length")],
-                [sg.T("Show Cut-off")],
-                [sg.T("Purge Show Color")],
-                [sg.T("Initial Show Color")]]
-        col2 = [[sg.In(settings.fontsize, key="fsize", tooltip="Any integer")],
-                [sg.In(settings.fonttype, key="ftype",
-                       tooltip="Any font name, as one might use in Word or libreOffice Writer")],
-                [sg.In("-".join(settings.text_colors), key="txtcolor",
-                       tooltip="Ex: '#ff0000-#404040' or '#ff0000-#404040-#878787'")],
-                [sg.In(sg.theme_background_color(), k="bg_color", tooltip="The background color",
-                       background_color=sg.theme_background_color())],
-                [sg.In(settings.right_click_selected_background, k="menu_bg_color",
-                       background_color=sg.theme_background_color(),
-                       tooltip="The background color of the right click menu")],
-                [sg.In(settings.right_click_fontsize, k="menu_font_size",
-                       tooltip="The font size of the right click menu")],
-                [sg.In(settings.button_color, key="buttoncolor", tooltip="A single color, Ex: '#e0e0e0'",
-                       background_color=sg.theme_background_color())],
-                [sg.In(settings.search_results, key="sresults",
-                       tooltip="The number of results shown when searching. Default:3")],
-                [sg.In(settings.max_title_display_len, key="title_length",
-                       tooltip="The amount of characters that should be displayed\n"
-                               "in titles. 0 to display all characters")],
-                [sg.In(settings.show_amount, key="showamount",
-                       tooltip="For performance reasons not all shows are displayed by default. This is the amount"
-                               " of shows on display.\nCan be toggled by the '^' button")],
-                [sg.Combo([n for n in settings.text_colors],
-                          default_value=settings.text_colors[settings.purge_color_index]
-                          if settings.purge_color_index != -1
-                          else "",
-                          key="purge_show_color")],
-                [sg.Combo([n for n in settings.text_colors],
-                          default_value=settings.text_colors[settings.initial_show_color_index],
-                          key="initial_show_color")]]
-        col3 = [[sg.ColorChooserButton("Field Background Color:", target="field_bg_color")],
-                [sg.T("Shorten With Ellipsis:")],
-                [sg.T("Release Grace Period:")],
-                [sg.ColorChooserButton("Default Text Color:", target="default_text_color")],
-                [sg.T("Default Font Size:")],
-                [sg.T("Recent Releases To Top:")],
-                [sg.T("Recent Release Weight Add:")],
-                [sg.T("Sort by Upcoming:")],
-                [sg.T("Alternate Show Background:")],
-                [sg.ColorChooserButton("Alternate Show Bg Color:", target="secondary_show_background")],
-                [sg.T("Send Notifications:")],
-                ]
-        col4 = [[sg.In(sg.theme_input_background_color(), k="field_bg_color",
-                       tooltip="The background color of the input fields",
-                       background_color=sg.theme_background_color())],
-                [sg.Checkbox(default=settings.shorten_with_ellpisis, k="shorten_with_ellipsis", text="",
-                             text_color=settings.button_color, tooltip='Whether or not to end shortened titles'
-                                                                       ' with "..."')],
-                [sg.In(settings.release_grace_period, k="release_grace_period",
-                       tooltip="The number of hours after a show has been released that the show should be marked\n"
-                               "as having recently been released.")],
-                [sg.In(settings.default_text_color, k="default_text_color",
-                       tooltip="The text color to be used in subwindows.",
-                       background_color=sg.theme_background_color())],
-                [sg.In(settings.default_font_size, key="default_font_size", tooltip="The font size in subwindows")],
-                [sg.Checkbox("", key="move_recently_released_to_top", default=settings.move_recently_released_to_top)],
-                [sg.In(settings.weight_to_add, key="weight_to_add", tooltip="The weight that will be added to a show"
-                                                                            "when it is newly released.")],
-                [sg.Checkbox("", key="sort_by_upcoming", default=settings.sort_by_upcoming)],
-                [sg.Checkbox("", key="enable_secondary_show_background",
-                             default=settings.enable_secondary_show_background)],
-                [sg.In(settings.secondary_show_background, k="secondary_show_background",
-                       background_color=sg.theme_background_color())],
-                [sg.Checkbox("", key="send_notifications",
-                             default=settings.send_notifications)],
-                ]
-        pref_win = sg.Window("Preferences", layout=[
-            [sg.Col([[col1[i][0], sg.Push(), col2[i][0]] for i in range(len(col1))]),
-             sg.VSep(),
-             sg.Col([[col3[i][0], sg.Push(), col4[i][0]] for i in range(len(col3))],
-                    expand_y=True, element_justification="n")],
-            [sg.Button("Save", bind_return_key=True), sg.Button("Cancel")]], default_element_size=(16, 1),
-                             font=(settings.fonttype, settings.default_font_size))
-        temp_text_colors = settings.text_colors.copy()
-
-        while True:
-            e, v = pref_win.read()
-            if e == sg.WIN_CLOSED or e == "Cancel":
-                pref_win.close()
-                break
-            elif e == "text_add":
-                _, hex_color = sg.askcolor()
-                if hex_color:
-                    temp_text_colors.append(hex_color)
-                pref_win["txtcolor"].update("-".join(temp_text_colors))
-            elif e == "text_remove":
-                _e, _v = sg.Window("Choose one to delete", layout=[[sg.Combo(temp_text_colors, k="combo")],
-                                                                   [sg.Button("Save", bind_return_key=True),
-                                                                    sg.Button("Cancel")]]).read(close=True)
-                if _e == "Save" and _v["combo"]:
-                    temp_text_colors.remove(_v["combo"])
-                pref_win["txtcolor"].update("-".join(temp_text_colors))
-            elif e == "Save":
-                try:
-                    int(pref_win["fsize"].get())
-                    int(pref_win["menu_font_size"].get())
-                    int(pref_win["sresults"].get())
-                    int(pref_win["title_length"].get())
-                    int(pref_win["showamount"].get())
-                    int(pref_win["release_grace_period"].get())
-                    int(pref_win["default_font_size"].get())
-                    int(pref_win["weight_to_add"].get())
-                    if not is_valid_color(pref_win["buttoncolor"].get()):
-                        raise ValueError
-
-                    if not is_valid_color(pref_win["menu_bg_color"].get()):
-                        raise ValueError
-
-                    if not is_valid_color(pref_win["bg_color"].get()):
-                        raise ValueError
-
-                    if not is_valid_color(pref_win["field_bg_color"].get()):
-                        raise ValueError
-
-                    if not is_valid_color(pref_win["default_text_color"].get()):
-                        raise ValueError
-
-                    if not is_valid_color(pref_win["secondary_show_background"].get()):
-                        raise ValueError
-
-                    if not v["purge_show_color"] in settings.text_colors:
-                        raise ValueError
-
-                    if not v["initial_show_color"] in settings.text_colors:
-                        raise ValueError
-
-                    gotcolors = pref_win["txtcolor"].get().split("-")
-                    if len(gotcolors) <= 0:
-                        raise ValueError
-                    for col in gotcolors:
-                        if not is_valid_color(col):
-                            raise ValueError
-
-                except ValueError:
-                    sg.popup_error("Unreadable value")
-                    continue
-                pref_win.close()
-
-                settings.fontsize = pref_win["fsize"].get()
-                settings.fonttype = pref_win["ftype"].get()
-
-                written_text_colors = pref_win["txtcolor"].get().split("-")
-                if settings.text_colors != written_text_colors:
-                    shows.new_text_colors(settings.text_colors, written_text_colors)
-                    settings.text_colors = written_text_colors
-
-                sg.theme_background_color(pref_win["bg_color"].get())
-                sg.theme_input_background_color(pref_win["field_bg_color"].get())
-                settings.right_click_selected_background = pref_win["menu_bg_color"].get()
-                settings.right_click_fontsize = int(pref_win["menu_font_size"].get())
-                settings.button_color = pref_win["buttoncolor"].get()
-                settings.search_results = int(pref_win["sresults"].get())
-                settings.max_title_display_len = int(pref_win["title_length"].get())
-                settings.show_amount = int(pref_win["showamount"].get())
-                settings.shorten_with_ellpisis = pref_win["shorten_with_ellipsis"].get()
-                settings.release_grace_period = int(pref_win["release_grace_period"].get())
-                settings.default_text_color = pref_win["default_text_color"].get()
-                settings.default_font_size = int(pref_win["default_font_size"].get())
-                settings.move_recently_released_to_top = pref_win["move_recently_released_to_top"].get()
-                settings.weight_to_add = int(pref_win["weight_to_add"].get())
-                settings.sort_by_upcoming = pref_win["sort_by_upcoming"].get()
-                settings.enable_secondary_show_background = pref_win["enable_secondary_show_background"].get()
-                settings.secondary_show_background = pref_win["secondary_show_background"].get()
-                settings.send_notifications = pref_win["send_notifications"].get()
-                settings.purge_color_index = settings.text_colors.index(v["purge_show_color"])
-                settings.initial_show_color_index = settings.text_colors.index(v["initial_show_color"])
-
-                if settings.save():
-                    self.restart()
-                break
 
     def delete_element(self, index) -> sg.Button:
         """

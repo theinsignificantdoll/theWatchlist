@@ -46,6 +46,7 @@ show_till_release = True
 display_hidden = False
 purge_color_index = -1  # If purge color index is -1, then no colors will be changed
 initial_show_color_index = 0
+remaining_time_prioritise_precision = False
 
 
 #######################################################################################
