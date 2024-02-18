@@ -807,7 +807,8 @@ class Settings:
                  display_hidden=val.display_hidden,
                  purge_color_index=val.purge_color_index,
                  initial_show_color_index=val.initial_show_color_index,
-                 remaining_time_prioritise_precision=val.remaining_time_prioritise_precision):
+                 remaining_time_prioritise_precision=val.remaining_time_prioritise_precision,
+                 hidden_button_color=val.hidden_button_color):
 
         self.sg = sg
         # Note that some settings are not stored as attributes of this class, but are instead
@@ -852,6 +853,7 @@ class Settings:
         self.send_notifications = send_notifications
         self.show_till_release = show_till_release
         self.display_hidden = display_hidden
+        self.hidden_button_color = hidden_button_color
 
         self._currently_saved_to_disk_list = []  # is initially updated when the savefile is loaded
 
@@ -880,7 +882,7 @@ class Settings:
                 self.default_font_size, self.move_recently_released_to_top, self.weight_to_add, self.sort_by_upcoming,
                 self.secondary_show_background, self.enable_secondary_show_background, self.send_notifications,
                 self.show_till_release, self.display_hidden, self.purge_color_index, self.initial_show_color_index,
-                self.remaining_time_prioritise_precision]
+                self.remaining_time_prioritise_precision, self.hidden_button_color]
 
     def load(self):
         """
@@ -905,6 +907,7 @@ class Settings:
                 self.default_text_color = row[8]
                 self.default_font_size = row[9]
                 self.secondary_show_background = row[10]
+                self.hidden_button_color = row[11]
             except IndexError:
                 missing_data = True
 
@@ -970,7 +973,7 @@ class Settings:
                              self.button_color, self.sg.theme_background_color(),
                              self.right_click_selected_background, self.right_click_fontsize,
                              self.sg.theme_input_background_color(), self.default_text_color,
-                             self.default_font_size, self.secondary_show_background])
+                             self.default_font_size, self.secondary_show_background, self.hidden_button_color])
             writer.writerow([*self.initialwinsize, *self.initialwinpos])
             writer.writerow([self.search_results])
             writer.writerow([self.show_amount, self.max_title_display_len, self.release_grace_period,

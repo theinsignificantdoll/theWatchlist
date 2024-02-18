@@ -551,6 +551,7 @@ def update_preferences():
             [sg.ColorChooserButton("Menu background color:", target="menu_bg_color")],
             [sg.T("Menu font size:")],
             [sg.ColorChooserButton("Button Color", target="buttoncolor")],
+            [sg.ColorChooserButton("Hidden Button Color", target="hidden_button_color")],
             [sg.T("Search Results")],
             [sg.T("Title Length")],
             [sg.T("Show Cut-off")],
@@ -569,6 +570,8 @@ def update_preferences():
             [sg.In(settings.right_click_fontsize, k="menu_font_size",
                    tooltip="The font size of the right click menu")],
             [sg.In(settings.button_color, key="buttoncolor", tooltip="A single color, Ex: '#e0e0e0'",
+                   background_color=sg.theme_background_color())],
+            [sg.In(settings.hidden_button_color, key="hidden_button_color",
                    background_color=sg.theme_background_color())],
             [sg.In(settings.search_results, key="sresults",
                    tooltip="The number of results shown when searching. Default:3")],
@@ -664,6 +667,9 @@ def update_preferences():
                 if not is_valid_color(pref_win["buttoncolor"].get()):
                     raise ValueError
 
+                if not is_valid_color(pref_win["hidden_button_color"].get()):
+                    raise ValueError
+
                 if not is_valid_color(pref_win["menu_bg_color"].get()):
                     raise ValueError
 
@@ -726,6 +732,7 @@ def update_preferences():
             settings.purge_color_index = settings.text_colors.index(v["purge_show_color"])
             settings.initial_show_color_index = settings.text_colors.index(v["initial_show_color"])
             settings.remaining_time_prioritise_precision = pref_win["remaining_time_prioritise_precision"].get()
+            settings.hidden_button_color = pref_win["hidden_button_color"].get()
 
             return settings.save()
 
@@ -921,6 +928,10 @@ class MainWin:
                     self.win[f"Splus:{show_index}"].update(value=show.season)
                     self.update_last_show_change()
 
+            elif event.startswith("till_release:"):
+                settings.remaining_time_prioritise_precision = not settings.remaining_time_prioritise_precision
+                self.display_shows(do_till_release=True)
+
             elif event == "index_checkbox":
                 settings.indices_visible = self.win["index_checkbox"].get()
                 for show_index in range(self.number_of_displayed_shows):
@@ -928,11 +939,11 @@ class MainWin:
 
             elif event == "release_checkbox":
                 settings.releases_visible = self.win["release_checkbox"].get()
-                self.update_release_column()
+                self.display_shows(do_release=True)
 
             elif event == "till_release_checkbox":
                 settings.show_till_release = self.win["till_release_checkbox"].get()
-                self.update_till_release_column()
+                self.display_shows(do_till_release=True)
 
             elif event == "display_hidden_checkbox":
                 settings.display_hidden = self.win["display_hidden_checkbox"].get()
@@ -1015,7 +1026,7 @@ class MainWin:
             elif "::show_details-" in event:
                 show = self.get_show_from_suffix(event)
                 show.ep_season_relevant = not show.ep_season_relevant
-                self.sort_shows_and_display()
+                self.display_shows(do_ep_minus=True, do_ep_plus=True, do_season_minus=True, do_season_plus=True)
 
             elif "::dismissal-" in event:
                 show = self.get_show_from_suffix(event)
@@ -1080,7 +1091,15 @@ class MainWin:
 
     def sort_shows_and_display(self, allow_release_notifications=True):
         """
-        Sorts and displays all shows. This function effectively updates the GUI.
+        Sorts and displays all shows. This method effectively updates the GUI.
+        """
+        self.sort_shows(allow_release_notifications=allow_release_notifications)
+        self.display_shows()
+
+    @staticmethod
+    def sort_shows(allow_release_notifications):
+        """
+        Sorts the shows and can send out notifications
         """
         shows.check_all_releases(allow_notifications=allow_release_notifications)
         shows.do_sorting(
@@ -1088,38 +1107,79 @@ class MainWin:
             sort_by_upcoming=settings.sort_by_upcoming,
         )
 
-        to_display = self.num_of_shows_to_display()
+    def extend_or_subtract_rows(self, to_display):
+        """
+        Extends or subtracts the number of displayed rows to fit -to_display-.
+        """
         if to_display < self.number_of_displayed_shows:
             self.shorten_by_x_rows(self.number_of_displayed_shows - to_display)
         if to_display > self.number_of_displayed_shows:
             self.extend_by_x_rows(to_display - self.number_of_displayed_shows)
+
+    def to_display_with_safety(self):
+        """
+        Returns the number of shows to display and ensures the correct number of visual rows.
+        """
+        to_display = self.num_of_shows_to_display()
+        self.extend_or_subtract_rows(to_display)
+        return to_display
+
+    def display_shows(self, do_title=False, do_till_release=False, do_ep_minus=False,
+                      do_ep_plus=False, do_season_minus=False, do_season_plus=False, do_index=False,
+                      do_release=False, do_cursors=False, do_link=False, do_color_if_hidden=False):
+        """
+        Updates the values of elements of the GUI. If no elements are specified to be updated, all elements are updated.
+        """
+        all_elements = not (do_title or do_till_release or do_ep_minus or do_ep_plus or do_season_minus or do_season_plus
+                        or do_index or do_release or do_cursors or do_link or do_color_if_hidden)
+
+        self.to_display_with_safety()
 
         self.update_link_color()
         for ind in range(self.number_of_displayed_shows):
             show = self.get_show_from_visual_index(ind)
             color = settings.get_color(show.color)
 
-            self.win[f"title:{ind}"].update(value=limit_string_len(show.title, settings.max_title_display_len,
-                                                                   use_ellipsis=settings.shorten_with_ellpisis),
-                                            text_color=color)
-            self.win[f"till_release:{ind}"].update(value=show.string_time_till_release(
-                precise_time_left=settings.remaining_time_prioritise_precision
-            ),
-                                                   text_color=color)
-            self.win[f"Eminus:{ind}"].update(value="Ep:" if show.ep_season_relevant else "",
-                                             text_color=color)
-            self.win[f"Eplus:{ind}"].update(value=show.ep if show.ep_season_relevant else "",
-                                            text_color=color)
-            self.win[f"Sminus:{ind}"].update(value="S:" if show.ep_season_relevant else "",
-                                             text_color=color)
-            self.win[f"Splus:{ind}"].update(value=show.season if show.ep_season_relevant else "",
-                                            text_color=color)
-            self.win[f"index:{ind}"].update(text_color=color)
-            self.win[f"release:{ind}"].update(text_color=color)
-            self.set_cursors(ind)
+            if all_elements or do_title:
+                self.win[f"title:{ind}"].update(value=limit_string_len(show.title, settings.max_title_display_len,
+                                                                       use_ellipsis=settings.shorten_with_ellpisis),
+                                                text_color=color)
+            if all_elements or do_till_release:
+                self.win[f"till_release:{ind}"].update(value=show.string_time_till_release(
+                    precise_time_left=settings.remaining_time_prioritise_precision,
+                ),
+                                                       text_color=color,
+                                                       visible=settings.show_till_release)
+            if all_elements or do_ep_minus:
+                self.win[f"Eminus:{ind}"].update(value="Ep:" if show.ep_season_relevant else "",
+                                                 text_color=color)
+            if all_elements or do_ep_plus:
+                self.win[f"Eplus:{ind}"].update(value=show.ep if show.ep_season_relevant else "",
+                                                text_color=color)
+            if all_elements or do_season_minus:
+                self.win[f"Sminus:{ind}"].update(value="S:" if show.ep_season_relevant else "",
+                                                 text_color=color)
+            if all_elements or do_season_plus:
+                self.win[f"Splus:{ind}"].update(value=show.season if show.ep_season_relevant else "",
+                                                text_color=color)
+            if all_elements or do_index:
+                self.win[f"index:{ind}"].update(text_color=color)
+            if all_elements or do_release:
+                self.win[f"release:{ind}"].update(text_color=color,
+                                                  visible=settings.releases_visible and show.is_recently_released)
+            if all_elements or do_color_if_hidden:
+                color = settings.hidden_button_color if show.is_hidden else settings.button_color
+                self.win[f"delete:{ind}"].update(button_color=(color, None))
+                self.win[f"link:{ind}"].update(button_color=(color, None))
+                self.win[f"properties:{ind}"].update(button_color=(color, None))
+            if ((all_elements or do_link)
+                    and not ((all_elements or do_color_if_hidden) or not show.auto_open_link_on_release)):
+                self.win[f"link:{ind}"].update(button_color=(
+                    settings.get_color(show.color) if show.auto_open_link_on_release else settings.button_color,
+                    None))
+            if all_elements or do_cursors:
+                self.set_cursors(ind)
 
-        self.update_release_column()
-        self.update_till_release_column()
         self.update_last_show_change()
 
     def update_link_color(self):
@@ -1133,23 +1193,6 @@ class MainWin:
                 continue
             self.win[f"link:{index}"] \
                 .update(button_color=(settings.button_color, None))
-
-    def update_release_column(self):
-        """
-        Ensures that the .is_recently_released is correctly shown on the GUI
-        Note that this function does not update the release status of shows, it merely displays it.
-        """
-        for index, show in enumerate(shows[:self.number_of_displayed_shows]):
-            self.win[f"release:{index}"] \
-                .update(visible=settings.releases_visible and show.is_recently_released)
-
-    def update_till_release_column(self):
-        """
-        Ensures that the visibility of the time_till_release columns is correct
-        """
-        for index, show in enumerate(shows[:self.number_of_displayed_shows]):
-            self.win[f"till_release:{index}"] \
-                .update(visible=settings.show_till_release)
 
     def update_show_color(self, show: Show, new_color_id: int, show_index=None):
         """
@@ -1314,7 +1357,8 @@ class MainWin:
         """
         self.time_till_release_elements.append(sg.Text(key=f"till_release:{index}",
                                                        size=(self.time_till_release_len, 1),
-                                                       background_color=self.get_background_color_to_use(index)))
+                                                       background_color=self.get_background_color_to_use(index),
+                                                       enable_events=True))
         return self.time_till_release_elements[-1]
 
     def ep_minus_element(self, index) -> sg.Text:
