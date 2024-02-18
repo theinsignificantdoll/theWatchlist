@@ -1,5 +1,5 @@
 from watchlist import recently_released_string as rele_str  # shortened, so that it fits better in the strings
-# This file is used to avoid cluttering some of the other files. It simply contains all of the
+# This file is used to avoid cluttering some of the other files. It simply contains all the
 # user guides in text.
 
 introduction = \
