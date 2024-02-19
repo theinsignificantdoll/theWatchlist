@@ -994,7 +994,7 @@ class MainWin:
             elif "::auto_open_on_release-" in event:
                 show = self.get_show_from_suffix(event)
                 show.auto_open_link_on_release = not show.auto_open_link_on_release
-                self.update_link_color()
+                self.display_shows(do_link=True)
 
             elif "::tit_color-" in event:
                 col = event.split(":")[0]
@@ -1135,7 +1135,6 @@ class MainWin:
 
         self.to_display_with_safety()
 
-        self.update_link_color()
         for ind in range(self.number_of_displayed_shows):
             show = self.get_show_from_visual_index(ind)
             color = settings.get_color(show.color)
@@ -1173,7 +1172,7 @@ class MainWin:
                 self.win[f"link:{ind}"].update(button_color=(color, None))
                 self.win[f"properties:{ind}"].update(button_color=(color, None))
             if ((all_elements or do_link)
-                    and not ((all_elements or do_color_if_hidden) or not show.auto_open_link_on_release)):
+                    and (not (all_elements or do_color_if_hidden) or (not show.auto_open_link_on_release))):
                 self.win[f"link:{ind}"].update(button_color=(
                     settings.get_color(show.color) if show.auto_open_link_on_release else settings.button_color,
                     None))
