@@ -60,5 +60,5 @@ delay_to_save_shows = 3
 # The maximum amount of seconds inbetween checking the release state of shows.
 update_release_vals_interval = 30
 # The mark next to shows that are recently released.
-# Copy us: ✓ 📅 ★ ✰ ⚝ ⭐ ✨
+# Examples: ✓ 📅 ★ ✰ ⚝ ⭐ ✨
 recently_released_string = "✨"

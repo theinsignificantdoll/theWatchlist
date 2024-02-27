@@ -1172,26 +1172,16 @@ class MainWin:
                 self.win[f"link:{ind}"].update(button_color=(color, None))
                 self.win[f"properties:{ind}"].update(button_color=(color, None))
             if ((all_elements or do_link)
-                    and (not (all_elements or do_color_if_hidden) or (not show.auto_open_link_on_release))):
+                    or (not (all_elements or do_color_if_hidden) or (not show.auto_open_link_on_release))):
                 self.win[f"link:{ind}"].update(button_color=(
-                    settings.get_color(show.color) if show.auto_open_link_on_release else settings.button_color,
+                    settings.get_color(show.color) if show.auto_open_link_on_release
+                    else
+                    (settings.button_color if not show.is_hidden else settings.hidden_button_color),
                     None))
             if all_elements or do_cursors:
                 self.set_cursors(ind)
 
         self.update_last_show_change()
-
-    def update_link_color(self):
-        """
-        Ensures that the color of all link buttons is correct
-        """
-        for index, show in enumerate(shows[:self.number_of_displayed_shows]):
-            if show.auto_open_link_on_release:
-                self.win[f"link:{index}"] \
-                    .update(button_color=(settings.get_color(show.color), None))
-                continue
-            self.win[f"link:{index}"] \
-                .update(button_color=(settings.button_color, None))
 
     def update_show_color(self, show: Show, new_color_id: int, show_index=None):
         """
