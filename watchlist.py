@@ -121,6 +121,12 @@ def show_editor(title: str = "Show Editor", show: Show = None, show_purge: bool 
                            sg.Push(),
                            sg.Col([[
                                sg.Push(),
+                               sg.Col([
+                                   [sg.T()],
+                                   [sg.Button("Reset", key="reset_button")]
+                               ]) if show_purge else sg.T()]]),
+                           sg.Col([[
+                               sg.Push(),
                                sg.Column([
                                    [sg.T("Purge Weight")],
                                    [sg.InputText(key="purge_weight",
@@ -140,6 +146,7 @@ def show_editor(title: str = "Show Editor", show: Show = None, show_purge: bool 
     _link_list = show.links
     release_info = show.release_info
     last_dismissal = show.last_dismissal
+    show_color = show.color
     while True:
         button, data = window.read()
         if button == "show_release_info":
@@ -148,6 +155,10 @@ def show_editor(title: str = "Show Editor", show: Show = None, show_purge: bool 
         elif button == "dismiss_clear":
             last_dismissal = 0
             window["dismiss_clear"].update(visible=False)
+        elif button == "reset_button":
+            show_color = settings.initial_show_color_index
+            window["show_weight"].update(str(Show().weight))
+            window["ended_checkbox"].update(value=False)
         elif button == "Link":
             _link_list = graphical_string_list_manager(_link_list, "Links")
             temp_show = Show()
@@ -184,6 +195,7 @@ def show_editor(title: str = "Show Editor", show: Show = None, show_purge: bool 
     show.set_link_string(data["show_link"])
     show.is_hidden = data["show_is_hidden"]
     show.ep_season_relevant = data["show_ep_season_relevant"]
+    show.color = show_color
     if show.ended != data["ended_checkbox"]:
         show.ended = data["ended_checkbox"]
         do_release_update = True
