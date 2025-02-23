@@ -364,6 +364,15 @@ class ReleaseInfo:
                                           self.hour, self.minute, datetime.datetime.now())
         elif self.type == self.TYPE_WEEKDAY:
             return hours_since_weekly(self.weekday, self.hour, self.minute, datetime.datetime.now())
+        return 0
+
+    def hours_since_two_releases(self) -> float:
+        """
+        Returns the number of hours since the second-last release. Returns 0 if there has only been one release.
+        """
+        if self.type == self.TYPE_DATE:
+            return 0
+        return self.hours_since_release() + 24*7
 
     def hours_to_release(self) -> float:
         """
@@ -459,9 +468,26 @@ class Show:
         that the returned value will mostly (way, way more often than not) be equivalent between shows
         with the same release_info, assuming that the method is called at nearly the same time.
         """
-        if not self.release_info.is_defined():
+        if not self.release_info.is_defined() or self.ended:
             return 0
         return round(self.release_info.hours_to_release(), 3)
+
+    def hours_since_last_dismissal(self) -> float:
+        """
+        Returns the number of hours since last dismissal
+        """
+        now = datetime.datetime.now()
+        return hours_since_two_datetime_not_weekly(datetime.datetime.fromtimestamp(self.last_dismissal),
+                                                   now)
+
+    def was_dismissed(self) -> bool:
+        """
+        Determines whether the show was dismissed before another episode aired. In other
+        words, has the previously aired episode been watched by the user?
+        """
+        hours_since_dismissal = self.hours_since_last_dismissal()
+        hours_since_release = self.release_info.hours_since_two_releases()
+        return hours_since_dismissal < hours_since_release
 
     def string_time_till_release(self, precise_time_left=False) -> str:
         """
@@ -506,15 +532,10 @@ class Show:
             self.is_recently_released = False
             return self.is_recently_released
 
-        now = datetime.datetime.now()
-
         hours_since_release = self.release_info.hours_since_release()
 
         if self.last_dismissal > 1:
-            hours_since_dismissal = hours_since_two_datetime_not_weekly(datetime.
-                                                                        datetime.
-                                                                        fromtimestamp(self.last_dismissal),
-                                                                        now)
+            hours_since_dismissal = self.hours_since_last_dismissal()
             if hours_since_dismissal < hours_since_release or hours_since_release < 0:
                 self.is_recently_released = False
                 return self.is_recently_released
@@ -633,6 +654,16 @@ class ShowsFileHandler:
         """
         return sum([not i.is_hidden or i.is_recently_released for i in self.shows])
 
+    def get_recently_released_shows(self):
+        """
+        Returns a list of all recently released shows
+        """
+        recently_released = []
+        for show in self.shows:
+            if show.is_recently_released:
+                recently_released.append(show)
+        return recently_released
+
     def __getitem__(self, item):
         """
         Intermediary method allowing for list-like behavior
@@ -706,14 +737,17 @@ class ShowsFileHandler:
             follows:
             Firstly, according to the sorting weight of the shows.
             Secondly, shows that are currently released are placed at the top.
-            Thirdly, According how long there is until their release. Note that shows without a release schedule are
+            Thirdly, according to how long there is until their release. Note that shows without a release schedule are
                 sorted as if they are going to be released in an infinite amount of time.
             Fourthly, alphabetically (According to show.title).
             """
-            to_release = show.hours_to_release()
+            if show.was_dismissed():
+                secondary = show.hours_to_release()
+            else:
+                secondary = -show.hours_since_last_dismissal()
             if show.is_recently_released:
-                return get_sorting_weight(show), 0, to_release if to_release != 0.0 else 99999999, show.title
-            return get_sorting_weight(show), 1 if to_release > 0 else 2, to_release, show.title
+                return get_sorting_weight(show), 0, secondary if secondary != 0.0 else 99999999, show.title
+            return get_sorting_weight(show), 1 if secondary > 0 else 2, secondary, show.title
 
         if sort_by_upcoming:
             self.shows.sort(key=upcoming_key)
@@ -988,6 +1022,6 @@ class Settings:
 
     def get_color(self, index) -> str:
         """
-        Retrieves a color from index. Notably this function doesn't throw an IndexError if the index is too large.
+        Retrieves a color from index. Notably, this method doesn't throw an IndexError if the index is too large.
         """
         return self.text_colors[index % len(self.text_colors)]

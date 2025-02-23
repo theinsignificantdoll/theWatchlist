@@ -1,3 +1,4 @@
+import random
 from classes import *
 import guide_strings
 from default_values import delay_to_save_shows, update_release_vals_interval, recently_released_string
@@ -261,13 +262,17 @@ def graphical_string_list_manager(initial_list: list[str], list_name="Strings") 
 
 
 def butt(button_text="", key=None, tooltip=None, butt_color=(False, None), border_width=None, size=(None, None),
-         mouseover_colors=sg.theme_background_color(), disabled=False, right_click_menu=None,
+         mouseover_colors=(False, None), disabled=False, right_click_menu=None,
          bind_return_key=False, visible=True) -> sg.Button:
     """
     A wrapper function for sg.Button with some different default values
     """
     if not butt_color[0]:
         butt_color = (settings.button_color, butt_color[1])
+
+    if not mouseover_colors[0]:
+        mouseover_colors = butt_color
+
     return sg.Button(button_text=button_text, key=key, tooltip=tooltip, button_color=butt_color,
                      border_width=border_width, size=size, mouseover_colors=mouseover_colors, disabled=disabled,
                      right_click_menu=right_click_menu, bind_return_key=bind_return_key, visible=visible)
@@ -496,26 +501,54 @@ def weight_control_panel():
         if event == sg.WIN_CLOSED or event == "CANCEL":
             window.close()
             break
+
         elif event.startswith("up_"):
             index = int(event.removeprefix("up_"))
-            new_weights = {}
-            for ind, key in enumerate(weight_dict):
-                if ind <= index:
-                    new_weights[key+1] = weight_dict[key]
-                    continue
-                new_weights[key] = weight_dict[key]
-            weight_dict = new_weights
+            weights = [key for key in weight_dict]
+            weight_values = [weight_dict[key] for key in weights]
+            weights.reverse()
+            out_weights = []
+            weight_values.reverse()
+            out_values = []
+            pre_key = ""
+            done = False
+            target_index = len(weights) - index - 1
+            for key in weights:
+                ind = weights.index(key)
+                if ind >= target_index:
+                    if (isinstance(pre_key, int) and key != pre_key + 1) or done:
+                        done = True
+                    else:
+                        pre_key = key
+                        out_weights.append(key + 1)
+                        out_values.append(weight_dict[key])
+                        continue
+
+                out_weights.append(key)
+                out_values.append(weight_dict[key])
+            out_weights.reverse()
+            out_values.reverse()
+            weight_dict = {out_weights[i]: out_values[i] for i in range(len(weights))}
             write_weights()
+
         elif event.startswith("down_"):
             index = int(event.removeprefix("down_"))
             new_weights = {}
+            pre_key = ""
+            done = False
             for ind, key in enumerate(weight_dict):
                 if ind >= index:
-                    new_weights[key-1] = weight_dict[key]
-                    continue
+                    if (isinstance(pre_key, int) and key != pre_key - 1) or done:
+                        done = True
+                    else:
+                        pre_key = key
+                        new_weights[key-1] = weight_dict[key]
+                        continue
+
                 new_weights[key] = weight_dict[key]
             weight_dict = new_weights
             write_weights()
+
         elif event == "SAVE":
             new_weights_list = [key for key in weight_dict]
             change_dict = {}
@@ -1057,6 +1090,9 @@ class MainWin:
                     if show.is_recently_released:
                         show.open_link()
 
+            elif "::open_random-" in event:
+                random.choice(shows.get_recently_released_shows()).open_link()
+
     def get_show_and_index_from_suffix(self, string: str, splitter: str = None) -> tuple[Show, int]:
         """
         Retrieves the show and index from a right click event.
@@ -1451,7 +1487,8 @@ class MainWin:
                                              visible=False,
                                              right_click_menu=["", [f"Dismiss::dismissal-{index}",
                                                                     f"Dismiss Ep++::dismissal+ep+1-{index}",
-                                                                    f"Open Released::open_released-{index}"]],
+                                                                    f"Open Released::open_released-{index}",
+                                                                    f"Open Random Released::open_random-{index}"]],
                                              background_color=self.get_background_color_to_use(index)))
         return self.release_elements[-1]
 
