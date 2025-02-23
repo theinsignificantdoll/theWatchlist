@@ -709,39 +709,21 @@ def update_preferences():
                 int(pref_win["release_grace_period"].get())
                 int(pref_win["default_font_size"].get())
                 int(pref_win["weight_to_add"].get())
-                if not is_valid_color(pref_win["buttoncolor"].get()):
-                    raise ValueError
 
-                if not is_valid_color(pref_win["hidden_button_color"].get()):
-                    raise ValueError
-
-                if not is_valid_color(pref_win["menu_bg_color"].get()):
-                    raise ValueError
-
-                if not is_valid_color(pref_win["bg_color"].get()):
-                    raise ValueError
-
-                if not is_valid_color(pref_win["field_bg_color"].get()):
-                    raise ValueError
-
-                if not is_valid_color(pref_win["default_text_color"].get()):
-                    raise ValueError
-
-                if not is_valid_color(pref_win["secondary_show_background"].get()):
-                    raise ValueError
-
-                if not v["purge_show_color"] in settings.text_colors:
-                    raise ValueError
-
-                if not v["initial_show_color"] in settings.text_colors:
-                    raise ValueError
+                assert is_valid_color(pref_win["buttoncolor"].get())
+                assert is_valid_color(pref_win["hidden_button_color"].get())
+                assert is_valid_color(pref_win["menu_bg_color"].get())
+                assert is_valid_color(pref_win["bg_color"].get())
+                assert is_valid_color(pref_win["field_bg_color"].get())
+                assert is_valid_color(pref_win["default_text_color"].get())
+                assert is_valid_color(pref_win["secondary_show_background"].get())
+                assert v["purge_show_color"] in settings.text_colors
+                assert v["initial_show_color"] in settings.text_colors
 
                 gotcolors = pref_win["txtcolor"].get().split("-")
-                if len(gotcolors) <= 0:
-                    raise ValueError
+                assert len(gotcolors) > 0
                 for col in gotcolors:
-                    if not is_valid_color(col):
-                        raise ValueError
+                    assert is_valid_color(col)
 
             except ValueError:
                 sg.popup_error("Unreadable value")
