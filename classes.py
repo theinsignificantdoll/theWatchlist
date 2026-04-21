@@ -4,6 +4,7 @@ import os
 import webbrowser
 import datetime
 import time
+import datetime
 from notifypy import Notify
 import default_values as val
 
@@ -574,7 +575,7 @@ class ShowsFileHandler:
         Reads the save file into memory and therefore updates self.shows
         """
         self.shows = []
-        with open(self.savefile, newline="") as csvfile:
+        with open(self.savefile, newline="", encoding="utf-8") as csvfile:
             reader = csv.reader(csvfile, delimiter=self.delimiter, quotechar="|")
             for row in reader:
                 self.shows.append(Show(
@@ -598,12 +599,15 @@ class ShowsFileHandler:
         """
         Writes the current self.shows to disk.
         """
-        with open(self.savefile, "w", newline="") as csvfile:
+        now = datetime.datetime.now()
+        tempsavefile = f"saved.csv.temp.{now.year}.{now.month}.{now.day}.{now.hour}.{now.minute}.{now.second}"
+        with open(tempsavefile, "w", newline="", encoding="utf-8") as csvfile:
             writer = csv.writer(csvfile, delimiter=self.delimiter, quotechar="|")
             for show in self.shows:
                 writer.writerow([show.id, show.title, show.ep, show.season, show.get_link_string(), show.weight, show.color,
                                  show.ep_season_relevant, show.release_info.release_string,
                                  show.last_dismissal, show.is_hidden, show.ended])
+        os.rename(tempsavefile, self.savefile)
 
     def pop(self, __index) -> Show:
         """
@@ -923,7 +927,7 @@ class Settings:
         Reads the settings file and reads it into memory. If any
         settings are missing from the file, it will also call .save(force_write=True).
         """
-        with open(self.savefile, newline="") as csvfile:
+        with open(self.savefile, newline="", encoding="utf-8") as csvfile:
             reader = csv.reader(csvfile, delimiter=self.delimiter, quotechar="|")
 
             missing_data = False
@@ -1001,7 +1005,7 @@ class Settings:
         if not force_write and self._currently_saved_to_disk_list == self.represent_as_list():
             return False
 
-        with open(self.savefile, "w", newline="") as csvfile:
+        with open(self.savefile, "w", newline="", encoding="utf-8") as csvfile:
             writer = csv.writer(csvfile, delimiter=self.delimiter, quotechar="|")
             writer.writerow([self.fontsize, self.fonttype, "-".join(self.text_colors),
                              self.button_color, self.sg.theme_background_color(),

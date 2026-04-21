@@ -894,7 +894,7 @@ class MainWin:
                 self.close()
                 break
             elif event.startswith("Mouse"):  # Ignore MouseWheel:Up and MouseWheel:Down events
-                pass
+                pass                         # (end if early)
             elif event == "__TIMEOUT__":
                 now = time.time()
                 if self.last_show_change != 0 and now - self.last_show_change > delay_to_save_shows:
