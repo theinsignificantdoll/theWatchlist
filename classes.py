@@ -607,6 +607,10 @@ class ShowsFileHandler:
                 writer.writerow([show.id, show.title, show.ep, show.season, show.get_link_string(), show.weight, show.color,
                                  show.ep_season_relevant, show.release_info.release_string,
                                  show.last_dismissal, show.is_hidden, show.ended])
+        back_up_saved = "auto_back_saved.csv"
+        if os.path.exists(back_up_saved):
+            os.remove(back_up_saved)
+        os.rename(self.savefile, back_up_saved)
         os.rename(tempsavefile, self.savefile)
 
     def pop(self, __index) -> Show:
